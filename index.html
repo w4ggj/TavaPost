@@ -1,1 +1,143 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TavaPost Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; max-width: 800px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, button, textarea { width: 100%; margin-top: 10px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #0056b3; }
+        .hidden { display: none; }
+        #loading { color: #d9534f; font-weight: bold; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1 style="text-align: center;">TavaPost</h1>
+
+    <div id="auth-section" class="card">
+        <h2>Login</h2>
+        <input type="email" id="email" placeholder="Email Address">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Log In</button>
+        <p id="auth-error" style="color: red;" class="hidden"></p>
+    </div>
+
+    <div id="app-section" class="card hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>Create New Post</h2>
+            <button onclick="logout()" style="width: auto; background-color: #6c757d;">Logout</button>
+        </div>
+        
+        <input type="file" id="imageInput" accept="image/*">
+        <button onclick="generateDraft()">1. Generate AI Draft</button>
+        
+        <p id="loading" class="hidden">Sending image to Gemini AI Visualizer... please wait.</p>
+
+        <textarea id="draftText" rows="8" placeholder="Your AI generated text will appear here. You can edit it before posting." class="hidden"></textarea>
+        
+        <button id="approveBtn" onclick="approveAndPost()" class="hidden" style="background-color: #28a745;">2. Approve & Post to Socials</button>
+    </div>
+
+    <script>
+        // --- INITIALIZE SUPABASE ---
+        // PASTE YOUR KEYS HERE
+        const SUPABASE_URL = 'https://TavaPost.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS';
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // --- UI TOGGLING ---
+        function checkSession() {
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                if (session) {
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('app-section').classList.remove('hidden');
+                } else {
+                    document.getElementById('auth-section').classList.remove('hidden');
+                    document.getElementById('app-section').classList.add('hidden');
+                }
+            });
+        }
+        
+        checkSession(); // Run on page load
+
+        // --- AUTHENTICATION ---
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+                document.getElementById('auth-error').innerText = error.message;
+                document.getElementById('auth-error').classList.remove('hidden');
+            } else {
+                checkSession();
+            }
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            checkSession();
+        }
+
+        // --- APP LOGIC ---
+        async function generateDraft() {
+            const fileInput = document.getElementById('imageInput');
+            if (fileInput.files.length === 0) {
+                alert("Please select an image first.");
+                return;
+            }
+
+            // Show loading text
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('draftText').classList.add('hidden');
+            document.getElementById('approveBtn').classList.add('hidden');
+
+            // Get the secure token for the logged-in user
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session.access_token;
+
+            // Prepare the image to send to Python
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                // Send to your local FastAPI server
+                const response = await fetch('http://127.0.0.1:8000/generate-draft', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Display the text and unhide the editor
+                    document.getElementById('draftText').value = result.draft_text;
+                    document.getElementById('draftText').classList.remove('hidden');
+                    document.getElementById('approveBtn').classList.remove('hidden');
+                } else {
+                    alert("Error from server: " + result.detail);
+                }
+            } catch (err) {
+                alert("Failed to connect to the backend. Is Uvicorn running?");
+            } finally {
+                // Hide loading text
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        async function approveAndPost() {
+            // This grabs the edited text from the box
+            const finalText = document.getElementById('draftText').value;
+            alert("Draft Approved! \n\n(This is where Phase 4 will kick in to post to your socials and move the Google Drive file).");
+        }
+    </script>
+</body>
+</html>
