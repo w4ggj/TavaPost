@@ -33,7 +33,13 @@
             <h2>Create New Post</h2>
             <button onclick="logout()" style="width: auto; background-color: #6c757d;">Logout</button>
         </div>
-        
+        <div class="settings-box" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background-color: #f9f9f9;">
+            <h3 style="margin-top: 0;">My Custom AI Instructions</h3>
+            <textarea id="customPrompt" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" rows="3" placeholder="e.g., Act as the social media manager for @grumpagrinch. Write a sarcastic, grumpy TikTok caption for this photo..."></textarea>
+            <br>
+            <button onclick="saveSettings()" style="margin-top: 10px; padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Save Instructions</button>
+            <span id="save-status" class="hidden" style="color: green; margin-left: 10px;">Saved!</span>
+        </div>
         <input type="file" id="imageInput" accept="image/*">
         <button onclick="generateDraft()">1. Generate AI Draft</button>
         
@@ -59,6 +65,7 @@
                 if (session) {
                     document.getElementById('auth-section').classList.add('hidden');
                     document.getElementById('app-section').classList.remove('hidden');
+                    loadSettings(); // <-- ADD THIS LINE HERE
                 } else {
                     document.getElementById('auth-section').classList.remove('hidden');
                     document.getElementById('app-section').classList.add('hidden');
@@ -88,6 +95,46 @@
         }
 
         // --- APP LOGIC ---
+        // --- SETTINGS LOGIC ---
+        async function loadSettings() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+
+            // Go to Supabase and look for this user's saved prompt
+            const { data, error } = await supabaseClient
+                .from('user_settings')
+                .select('custom_prompt')
+                .eq('user_id', session.user.id)
+                .single();
+
+            if (data && data.custom_prompt) {
+                document.getElementById('customPrompt').value = data.custom_prompt;
+            }
+        }
+
+        async function saveSettings() {
+            const promptText = document.getElementById('customPrompt').value;
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            
+            if (!session) return;
+
+            // Save the new prompt to the database linked to this specific user ID
+            const { error } = await supabaseClient
+                .from('user_settings')
+                .upsert({ 
+                    user_id: session.user.id, 
+                    custom_prompt: promptText 
+                });
+
+            if (error) {
+                alert("Error saving: " + error.message);
+            } else {
+                // Show a quick "Saved!" message
+                const status = document.getElementById('save-status');
+                status.classList.remove('hidden');
+                setTimeout(() => status.classList.add('hidden'), 3000);
+            }
+        }
         async function generateDraft() {
             const fileInput = document.getElementById('imageInput');
             if (fileInput.files.length === 0) {
