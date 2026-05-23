@@ -50,7 +50,7 @@ async def generate_draft(file: UploadFile = File(...), user = Depends(get_curren
 
         image_bytes = await file.read()
         
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         response = model.generate_content([
             instructions, 
             {"mime_type": file.content_type, "data": image_bytes}
