@@ -98,10 +98,9 @@
     </div>
 
     <script>
-        // --- INITIALIZE SUPABASE CONFIGURATION ----
-        // Swap these placeholders out for your real project keys from your Supabase Dashboard settings!
-            const SUPABASE_URL = "https://fntsthjupopvbwvmfsmz.supabase.co";
-            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-actual-anon-key...";
+        // --- INITIALIZE SUPABASE CONFIGURATION ---
+            const SUPABASE_URL = "https://your-project-id.supabase.co"; // Double check no trailing slash /
+            const SUPABASE_KEY = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; // Must be a single unbroken string
 
             const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
