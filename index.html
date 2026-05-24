@@ -204,12 +204,10 @@
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return;
 
-    console.log("Fetching settings for user UUID:", session.user.id);
-
     try {
         const { data, error } = await supabaseClient
             .from('user_settings')
-            .select('custom_prompt, ayrshare_profile_key')
+            .select('custom_prompt, zernio_facebook_id, zernio_instagram_id') // 🚀 Updated selection fields
             .eq('user_id', session.user.id)
             .maybeSingle();
 
@@ -218,24 +216,29 @@
             return;
         }
 
-        console.log("Raw settings database payload received:", data);
-
         if (data) {
-            // 1. Restore your custom instructions text box
             if (data.custom_prompt) {
                 document.getElementById('customPrompt').value = data.custom_prompt;
-            } else {
-                document.getElementById('customPrompt').value = ""; // Clear if empty
             }
             
-            // 2. Restore the Facebook Visual Status Indicator Badge
+            // 🚀 FACEBOOK STATUS BADGE CHECK
             const fbStatus = document.getElementById('fb-status');
-            if (data.ayrshare_profile_key) {
+            if (data.zernio_facebook_id) {
                 fbStatus.innerText = "Connected ✅";
                 fbStatus.className = "text-green";
             } else {
                 fbStatus.innerText = "Not Connected";
                 fbStatus.className = "text-red";
+            }
+
+            // 🚀 INSTAGRAM STATUS BADGE CHECK
+            const igStatus = document.getElementById('ig-status');
+            if (data.zernio_instagram_id) {
+                igStatus.innerText = "Connected ✅";
+                igStatus.className = "text-green";
+            } else {
+                igStatus.innerText = "Not Connected";
+                igStatus.className = "text-red";
             }
         }
     } catch (err) {
