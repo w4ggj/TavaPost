@@ -1,5 +1,6 @@
 import uuid
 import os
+import httpx
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
@@ -20,6 +21,7 @@ app.add_middleware(
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+AYRSHARE_API_KEY = os.getenv("AYRSHARE_API_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("Missing Supabase credentials in .env file.")
@@ -91,3 +93,6 @@ async def generate_draft(file: UploadFile = File(...), authorization: str = Head
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post("/get-social-connect-link")
+    @app.post("/publish-post")
