@@ -1,3 +1,4 @@
+import uuid
 import os
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,27 +41,53 @@ async def get_current_user(authorization: str = Header(...)):
     return user_response.user
 
 @app.post("/generate-draft")
-async def generate_draft(file: UploadFile = File(...), user = Depends(get_current_user)):
+async def generate_draft(file: UploadFile = File(...), authorization: str = Header(None)):
+    # 1. Security Check
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    token = authorization.split(" ")[1]
+    user_res = supabase.auth.get_user(token)
+    if not user_res or not user_res.user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+        
+    user_id = user_res.user.id
+    
     try:
-        profile_response = supabase.table("user_profiles").select("gemini_prompt_instructions").eq("id", user.id).execute()
+        # 2. Upload Image to Supabase Storage
+        file_bytes = await file.read()
+        file_ext = file.filename.split('.')[-1]
+        unique_filename = f"{user_id}_{uuid.uuid4().hex}.{file_ext}"
         
-        instructions = "Write an engaging social media post for this image."
-        if profile_response.data and profile_response.data[0].get("gemini_prompt_instructions"):
-            instructions = profile_response.data[0]["gemini_prompt_instructions"]
-
-        image_bytes = await file.read()
+        supabase.storage.from_("tavapost-images").upload(
+            path=unique_filename,
+            file=file_bytes,
+            file_options={"content-type": file.content_type}
+        )
         
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        response = model.generate_content([
-            instructions, 
-            {"mime_type": file.content_type, "data": image_bytes}
-        ])
-
-        return {"draft_text": response.text, "status": "success"}
-
+        # 3. Get the Public URL for Zapier
+        image_url = supabase.storage.from_("tavapost-images").get_public_url(unique_filename)
+        
+        # 4. Fetch Your Custom Instructions
+        settings = supabase.table("user_settings").select("custom_prompt").eq("user_id", user_id).execute()
+        
+        # If you haven't saved a prompt yet, it uses a default fallback
+        if settings.data and settings.data[0].get('custom_prompt'):
+            custom_prompt = settings.data[0]['custom_prompt']
+        else:
+            custom_prompt = "Write a standard social media caption for this image."
+        
+        # 5. Ask Gemini for 3 Options
+        image_parts = [{"mime_type": file.content_type, "data": file_bytes}]
+        prompt_text = f"{custom_prompt}\n\nPlease generate exactly 3 distinct caption options based on these instructions. Format the output as a numbered list (1, 2, 3) so I can easily choose one."
+        
+        response = model.generate_content([prompt_text, image_parts[0]])
+        
+        # 6. Send the text AND the new image link back to the website
+        return {
+            "draft_text": response.text,
+            "image_url": image_url
+        }
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Generation failed: {str(e)}")
-
-@app.post("/approve-and-post")
-async def approve_post(data: dict, user = Depends(get_current_user)):
-    return {"status": "success", "message": "Post approved! (Publishing logic coming soon)"}
+        raise HTTPException(status_code=500, detail=str(e))
