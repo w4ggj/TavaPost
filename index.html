@@ -33,17 +33,19 @@
             <h2>Create New Post</h2>
             <button onclick="logout()" style="width: auto; background-color: #6c757d;">Logout</button>
         </div>
-        <div class="settings-box" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background-color: #f9f9f9;">
-            <h3 style="margin-top: 0;">My Custom Instructions</h3>
-            <textarea id="customPrompt" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" rows="12" placeholder="e.g., Act as the social media manager for @grumpagrinch. Write a sarcastic, grumpy TikTok caption for this photo..."></textarea>
-            <br>
-            <button onclick="saveSettings()" style="margin-top: 10px; padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Save Instructions</button>
-            <span id="save-status" class="hidden" style="color: green; margin-left: 10px;">Saved!</span>
-        </div>
-        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+    <div class="settings-box" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background-color: #f9f9f9;">
+    
     <h4 style="margin-top: 0;">My Zapier/Make Webhook URL:</h4>
-    <input type="text" id="webhookUrl" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" placeholder="https://hooks.zapier.com/...">
-</div>
+    <input type="text" id="webhookUrl" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ccc;" placeholder="https://hooks.zapier.com/...">
+
+    <h3 style="margin-top: 0;">My Custom Instructions</h3>
+    <textarea id="customPrompt" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" rows="10"></textarea>
+    
+    <br>
+    
+    <button onclick="saveSettings()" style="margin-top: 10px; padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Save All Settings</button>
+    <span id="save-status" class="hidden" style="color: green; margin-left: 10px;">Saved!</span>
+    </div>
         <input type="file" id="imageInput" accept="image/*">
         <button onclick="generateDraft()">1. Generate Draft</button>
         
@@ -124,22 +126,23 @@
 
         async function saveSettings() {
             const promptText = document.getElementById('customPrompt').value;
+            const webhookText = document.getElementById('webhookUrl').value; // Get the URL
             const { data: { session } } = await supabaseClient.auth.getSession();
             
             if (!session) return;
 
-            // Save the new prompt to the database linked to this specific user ID
+            // Save BOTH to the database
             const { error } = await supabaseClient
                 .from('user_settings')
                 .upsert({ 
                     user_id: session.user.id, 
-                    custom_prompt: promptText 
+                    custom_prompt: promptText,
+                    zapier_webhook_url: webhookText // Update the DB column
                 });
 
             if (error) {
                 alert("Error saving: " + error.message);
             } else {
-                // Show a quick "Saved!" message
                 const status = document.getElementById('save-status');
                 status.classList.remove('hidden');
                 setTimeout(() => status.classList.add('hidden'), 3000);
