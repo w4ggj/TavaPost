@@ -40,6 +40,10 @@
             <button onclick="saveSettings()" style="margin-top: 10px; padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Save Instructions</button>
             <span id="save-status" class="hidden" style="color: green; margin-left: 10px;">Saved!</span>
         </div>
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+    <h4 style="margin-top: 0;">My Zapier/Make Webhook URL:</h4>
+    <input type="text" id="webhookUrl" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" placeholder="https://hooks.zapier.com/...">
+</div>
         <input type="file" id="imageInput" accept="image/*">
         <button onclick="generateDraft()">1. Generate Draft</button>
         
