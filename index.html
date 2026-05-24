@@ -137,11 +137,11 @@
     // The .upsert() command is the "secret sauce" to prevent duplicates
     const { error } = await supabaseClient
         .from('user_settings')
-        .upsert({ 
-            user_id: session.user.id, 
+        .upsert({
+            user_id: session.user.id,
             custom_prompt: promptText,
-            zapier_webhook_url: webhookText 
-        }, { onConflict: 'user_id' }); // This line forces it to look for an existing user_id
+            zapier_webhook_url: webhookText
+        });
 
     if (error) {
         alert("Error saving: " + error.message);
