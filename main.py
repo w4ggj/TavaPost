@@ -109,7 +109,7 @@ async def get_connect_url(platform: str):
 
     try:
         # 🚀 ADDED THE redirect_url PARAMETER TO THE END OF THIS STRING:
-        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profile_id}&redirect_url=https://w4ggj.github.io/index.html"
+        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profile_id}&redirect_url=https://w4ggj.github.io/TavaPost/index.html"
         
         headers = {
             "Authorization": f"Bearer {clean_key}"
