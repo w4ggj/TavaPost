@@ -45,9 +45,15 @@
         
         <p id="loading" class="hidden">Sending image to Gemini AI Visualizer... please wait.</p>
 
-        <textarea id="draftText" rows="8" placeholder="Your AI generated text will appear here. You can edit it before posting." class="hidden"></textarea>
-        
-        <button id="approveBtn" onclick="approveAndPost()" class="hidden" style="background-color: #28a745;">2. Approve & Post to Socials</button>
+    <div id="selection-area" class="hidden" style="margin-top: 20px; padding: 15px; background: #f1f5f9; border-radius: 8px;">
+         <h3 style="margin-top: 0;">1. Select Your Favorite Draft:</h3>
+         <div id="draft-cards" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;"></div>
+
+         <h3>2. Final Polish (Edit if needed):</h3>
+         <textarea id="finalCaption" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" rows="4"></textarea>
+         <br>
+         <button onclick="publishToZapier()" style="margin-top: 15px; padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">🚀 Send to Zapier</button>
+     </div>
     </div>
 
     <script>
@@ -165,14 +171,36 @@
 
                 const result = await response.json();
                 
-                if (response.ok) {
-                    // Display the text and unhide the editor
-                    document.getElementById('draftText').value = result.draft_text;
-                    document.getElementById('draftText').classList.remove('hidden');
-                    document.getElementById('approveBtn').classList.remove('hidden');
-                } else {
-                    alert("Error from server: " + result.detail);
-                }
+               if (response.ok) {
+                 // Save the image URL globally and unhide the selection area
+                 window.currentImageUrl = result.image_url;
+                 document.getElementById('selection-area').classList.remove('hidden');
+
+                 // Chop the AI text into 3 options (splitting by "1.", "2.", "3.")
+                 const options = result.draft_text.split(/(?:^|\n)\**\d+\.\**\s/).filter(opt => opt.trim().length > 5);
+                 const cardsContainer = document.getElementById('draft-cards');
+                 cardsContainer.innerHTML = ""; // Clear old cards
+
+                 if (options.length > 0) {
+                     options.forEach((opt) => {
+                         const card = document.createElement('div');
+                         card.style.cssText = "border: 2px solid #ccc; padding: 15px; border-radius: 8px; cursor: pointer; flex: 1; min-width: 250px; background: #fff;";
+                         card.innerText = opt.trim();
+                         card.onclick = () => {
+                             // Highlight selected card in green
+                             Array.from(cardsContainer.children).forEach(c => c.style.borderColor = '#ccc');
+                             card.style.borderColor = '#28a745';
+                             document.getElementById('finalCaption').value = opt.trim();
+                         };
+                         cardsContainer.appendChild(card);
+                     });
+                 } else {
+                     // Fallback just in case Gemini formats it weirdly
+                     document.getElementById('finalCaption').value = result.draft_text;
+                 }
+             } else {
+                 alert("Error from server: " + result.detail);
+             }
             } catch (err) {
                 alert("Failed to connect to the backend. Is it running?");
             } finally {
@@ -181,9 +209,41 @@
             }
         }
 
-        async function approveAndPost() {
-            const finalText = document.getElementById('draftText').value;
-            alert("Draft Approved! \n\n(This is where Phase 4 will kick in to post to your socials).");
-        }
-    </script></body>
+async function publishToZapier() {
+         // WE WILL PASTE YOUR REAL ZAPIER URL HERE IN THE NEXT STEP
+         const ZAPIER_WEBHOOK_URL = 'YOUR_ZAPIER_WEBHOOK_URL'; 
+
+         const finalCaption = document.getElementById('finalCaption').value;
+         const imageUrl = window.currentImageUrl;
+
+         if (!finalCaption || !imageUrl) {
+             alert("Missing caption or image URL!");
+             return;
+         }
+
+         if (ZAPIER_WEBHOOK_URL === 'YOUR_ZAPIER_WEBHOOK_URL') {
+             alert("We need to plug your Zapier URL into the code first!");
+             return;
+         }
+
+         try {
+             const response = await fetch(ZAPIER_WEBHOOK_URL, {
+                 method: 'POST',
+                 body: JSON.stringify({
+                     image_url: imageUrl,
+                     caption: finalCaption
+                 })
+             });
+
+             alert("Success! Sent to Zapier. It is posting to your accounts now.");
+
+             // Clear the screen for the next post
+             document.getElementById('selection-area').classList.add('hidden');
+             document.getElementById('finalCaption').value = "";
+         } catch (err) {
+             alert("Error sending to Zapier. Check connection.");
+         }
+     }
+    </script>
+</body>
 </html>
