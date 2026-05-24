@@ -121,7 +121,7 @@
         checkSession(); // Run on page load
 
         // --- AUTHENTICATION ---
-        async function login() {
+async function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
@@ -134,7 +134,7 @@
             }
         }
 
-        async function logout() {
+async function logout() {
             await supabaseClient.auth.signOut();
             checkSession();
         }
@@ -228,7 +228,7 @@ async function loadSettings() {
     }
 }
 
-        async function saveSettings() {
+async function saveSettings() {
     const promptText = document.getElementById('customPrompt').value;
     const webhookText = document.getElementById('webhookUrl').value;
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -252,7 +252,7 @@ async function loadSettings() {
         setTimeout(() => status.classList.add('hidden'), 3000);
     }
 }
-        async function generateDraft() {
+async function generateDraft() {
             const fileInput = document.getElementById('imageInput');
             if (fileInput.files.length === 0) {
                 alert("Please select an image first.");
@@ -353,6 +353,21 @@ async function publishToSocials() {
         }
     } catch (err) {
         alert("Server connection failed. Check your internet.");
+    }
+}
+        
+// Inside your page initialization code:
+async function checkSession() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+        // ... your existing session setup code ...
+        
+        // ADD THIS LINE HERE so it checks the URL for tokens every time the page boots up!
+        await handleZernioCallback(); 
+        
+        await loadSettings();
+    } else {
+        // ... show login screen ...
     }
 }
     </script>
