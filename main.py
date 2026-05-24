@@ -94,6 +94,7 @@ async def generate_draft(file: UploadFile = File(...), authorization: str = Head
         raise HTTPException(status_code=500, detail=str(e))
 
 # New Secure Zernio OAuth Link Proxy
+# New Secure Zernio OAuth Link Proxy with Trace Logging
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str):
     profile_id = "6a1350634beb548c15895d64"
@@ -102,14 +103,22 @@ async def get_connect_url(platform: str):
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Backend configuration missing ZERNIO_API_KEY environment variable.")
 
+    # Remove any accidential whitespace padding around the token string
+    clean_key = zernio_key.strip()
+
     try:
         zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profile_id}"
         headers = {
-            "Authorization": f"Bearer {zernio_key}"
+            "Authorization": f"Bearer {clean_key}"
         }
         
         async with httpx.AsyncClient() as client:
             resp = await client.get(zernio_endpoint, headers=headers)
+            
+            # Print explicit debugging data to Render logs
+            print(f"[Zernio Debug] Sent request to: {zernio_endpoint}")
+            print(f"[Zernio Debug] Status Code: {resp.status_code}")
+            print(f"[Zernio Debug] Response Body: {resp.text}")
             
             if resp.status_code != 200:
                 raise HTTPException(status_code=resp.status_code, detail=f"Zernio API returned an error: {resp.text}")
