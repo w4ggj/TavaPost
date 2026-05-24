@@ -52,7 +52,7 @@
          <h3>2. Final Polish (Edit if needed):</h3>
          <textarea id="finalCaption" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" rows="10"></textarea>
          <br>
-         <button onclick="publishToZapier()" style="margin-top: 15px; padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">🚀 Send to Social Media</button>
+         <button onclick="publishToSocials()" style="margin-top: 15px; padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">🚀 Send to Social Media</button>
      </div>
     </div>
 
@@ -209,41 +209,41 @@
             }
         }
 
-async function publishToZapier() {
-         // WE WILL PASTE YOUR REAL ZAPIER URL HERE IN THE NEXT STEP
-         const ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/16005365/4oqp7pd/'; 
+async function publishToSocials() {
+    const finalCaption = document.getElementById('finalCaption').value;
+    const imageUrl = window.currentImageUrl;
+    const { data: { session } } = await supabaseClient.auth.getSession();
 
-         const finalCaption = document.getElementById('finalCaption').value;
-         const imageUrl = window.currentImageUrl;
+    if (!finalCaption || !imageUrl || !session) {
+        alert("Missing caption, image, or login session!");
+        return;
+    }
 
-         if (!finalCaption || !imageUrl) {
-             alert("Missing caption or image URL!");
-             return;
-         }
-
-         if (ZAPIER_WEBHOOK_URL === 'YOUR_ZAPIER_WEBHOOK_URL') {
-             alert("We need to plug your Zapier URL into the code first!");
-             return;
-         }
-
-         try {
-             const response = await fetch(ZAPIER_WEBHOOK_URL, {
-                 method: 'POST',
-                 body: JSON.stringify({
-                     image_url: imageUrl,
-                     caption: finalCaption
-                 })
-             });
-
-             alert("Success! Sent to Zapier. It is posting to your accounts now.");
-
-             // Clear the screen for the next post
-             document.getElementById('selection-area').classList.add('hidden');
-             document.getElementById('finalCaption').value = "";
-         } catch (err) {
-             alert("Error sending to Zapier. Check connection.");
-         }
-     }
+    try {
+        const response = await fetch('https://tavapost-backend.onrender.com/publish-post', {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                image_url: imageUrl,
+                caption: finalCaption
+            })
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+            alert("Success! Your post has been sent to your Zapier webhook.");
+            document.getElementById('selection-area').classList.add('hidden');
+            document.getElementById('finalCaption').value = "";
+        } else {
+            alert("Error posting: " + result.detail);
+        }
+    } catch (err) {
+        alert("Server connection failed. Check your internet.");
+    }
+}
     </script>
 </body>
 </html>
