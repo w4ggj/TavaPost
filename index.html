@@ -261,15 +261,100 @@
         }
 
         async function generateDraft() {
-            // Placeholder for your draft image processing logic
-            console.log("Draft generation process initiated.");
-            const response = await fetch("https://tavapost-backend.onrender.com/generate-draft", { ... })
+            const fileInput = document.getElementById('imageInput');
+            const loadingLabel = document.getElementById('loading');
+            const selectionArea = document.getElementById('selection-area');
+            const draftCardsContainer = document.getElementById('draft-cards');
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("Please select an image file first.");
+                return;
+            }
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                alert("Session expired. Please log in again.");
+                return;
+            }
+
+            loadingLabel.classList.remove('hidden');
+            selectionArea.classList.add('hidden');
+            draftCardsContainer.innerHTML = "";
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                // ⚠️ Ensure this matches your live Render API URL!
+                const response = await fetch("https://tavapost-api.onrender.com/generate-draft", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${session.access_token}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error("Draft generation failed on the server.");
+                
+                const data = await response.json();
+                window.currentPostImageUrl = data.image_url;
+
+                const options = data.draft_text.split(/\d+\.\s+/).filter(txt => txt.trim().length > 0);
+                
+                options.forEach((optionText, index) => {
+                    const card = document.createElement('div');
+                    card.style = "background: white; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; flex: 1; min-width: 200px;";
+                    card.innerHTML = `<strong>Option ${index + 1}</strong><p style="font-size:0.9rem; margin:8px 0 0 0;">${optionText.trim()}</p>`;
+                    card.onclick = () => {
+                        document.getElementById('finalCaption').value = optionText.trim();
+                    };
+                    draftCardsContainer.appendChild(card);
+                });
+
+                loadingLabel.classList.add('hidden');
+                selectionArea.classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                alert(`Error: ${err.message}`);
+                loadingLabel.classList.add('hidden');
+            }
         }
 
         async function publishToSocials() {
-            // Placeholder for your webhook post execution logic
-            console.log("Publishing process triggered.");
-            const response = await fetch("hhttps://tavapost-backend.onrender.com/publish-post", { ... })
+            const caption = document.getElementById('finalCaption').value;
+            if (!caption.trim()) {
+                alert("Please select or write a caption before publishing.");
+                return;
+            }
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+
+            try {
+                // ⚠️ Ensure this matches your live Render API URL!
+                const response = await fetch("https://tavapost-api.onrender.com/publish-post", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({
+                        image_url: window.currentPostImageUrl || "",
+                        caption: caption
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === "success") {
+                    alert("🚀 Post successfully sent to your social feeds!");
+                } else {
+                    alert("Failed to deliver post data through the gateway link.");
+                }
+            } catch (err) {
+                console.error("Publish execution failed:", err);
+                alert("Error dispatching post to background server.");
+            }
         }
 
         // Run checking block on deployment initialization
