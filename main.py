@@ -95,16 +95,20 @@ async def generate_draft(file: UploadFile = File(...), authorization: str = Head
 
 # New Secure Zernio OAuth Link Proxy
 # New Secure Zernio OAuth Link Proxy with Trace Logging
+# Updated Secure Zernio Proxy with Explicit Variable Scrubbing
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str):
     profile_id = "6a1350634beb548c15895d64"
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     
     if not zernio_key:
-        raise HTTPException(status_code=500, detail="Backend configuration missing ZERNIO_API_KEY environment variable.")
+        raise HTTPException(
+            status_code=500, 
+            detail="Backend configuration missing ZERNIO_API_KEY environment variable."
+        )
 
-    # Remove any accidential whitespace padding around the token string
-    clean_key = zernio_key.strip()
+    # SECURE SCRUB: Strip structural white spaces, newlines, or accidentally copied quote marks
+    clean_key = zernio_key.strip().replace('"', '').replace("'", "")
 
     try:
         zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profile_id}"
@@ -115,16 +119,22 @@ async def get_connect_url(platform: str):
         async with httpx.AsyncClient() as client:
             resp = await client.get(zernio_endpoint, headers=headers)
             
-            # Print explicit debugging data to Render logs
-            print(f"[Zernio Debug] Sent request to: {zernio_endpoint}")
-            print(f"[Zernio Debug] Status Code: {resp.status_code}")
-            print(f"[Zernio Debug] Response Body: {resp.text}")
+            # Print explicit raw verification data to Render logs
+            print(f"[Zernio Diagnostic] Target URL: {zernio_endpoint}")
+            print(f"[Zernio Diagnostic] HTTP Status Return: {resp.status_code}")
+            print(f"[Zernio Diagnostic] Gateway Response Body: {resp.text}")
             
             if resp.status_code != 200:
-                raise HTTPException(status_code=resp.status_code, detail=f"Zernio API returned an error: {resp.text}")
+                # Return the explicit message from Zernio so we can see what it's complaining about
+                raise HTTPException(
+                    status_code=resp.status_code, 
+                    detail=f"Zernio Rejected Request: {resp.text}"
+                )
                 
             return resp.json()
             
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
