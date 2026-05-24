@@ -71,7 +71,6 @@ async def generate_draft(file: UploadFile = File(...), authorization: str = Head
         # 4. Fetch Your Custom Instructions
         settings = supabase.table("user_settings").select("custom_prompt").eq("user_id", user_id).execute()
         
-        # If you haven't saved a prompt yet, it uses a default fallback
         if settings.data and settings.data[0].get('custom_prompt'):
             custom_prompt = settings.data[0]['custom_prompt']
         else:
@@ -80,7 +79,7 @@ async def generate_draft(file: UploadFile = File(...), authorization: str = Head
         # 5. Ask Gemini for 3 Options
         image_parts = [{"mime_type": file.content_type, "data": file_bytes}]
         prompt_text = f"{custom_prompt}\n\nPlease generate exactly 3 distinct caption options based on these instructions. Format the output as a numbered list (1, 2, 3) so I can easily choose one."
-
+        
         model = genai.GenerativeModel('gemini-2.0-flash')
         response = model.generate_content([prompt_text, image_parts[0]])
         
