@@ -93,9 +93,7 @@ async def generate_draft(file: UploadFile = File(...), authorization: str = Head
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# New Secure Zernio OAuth Link Proxy
-# New Secure Zernio OAuth Link Proxy with Trace Logging
-# Updated Secure Zernio Proxy with Explicit Variable Scrubbing
+# New Secure Zernio OAuth Link Proxy with Automatic Redirect Parameter
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str):
     profile_id = "6a1350634beb548c15895d64"
@@ -107,11 +105,12 @@ async def get_connect_url(platform: str):
             detail="Backend configuration missing ZERNIO_API_KEY environment variable."
         )
 
-    # SECURE SCRUB: Strip structural white spaces, newlines, or accidentally copied quote marks
     clean_key = zernio_key.strip().replace('"', '').replace("'", "")
 
     try:
-        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profile_id}"
+        # 🚀 ADDED THE redirect_url PARAMETER TO THE END OF THIS STRING:
+        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profile_id}&redirect_url=https://w4ggj.github.io/index.html"
+        
         headers = {
             "Authorization": f"Bearer {clean_key}"
         }
@@ -119,13 +118,11 @@ async def get_connect_url(platform: str):
         async with httpx.AsyncClient() as client:
             resp = await client.get(zernio_endpoint, headers=headers)
             
-            # Print explicit raw verification data to Render logs
             print(f"[Zernio Diagnostic] Target URL: {zernio_endpoint}")
             print(f"[Zernio Diagnostic] HTTP Status Return: {resp.status_code}")
             print(f"[Zernio Diagnostic] Gateway Response Body: {resp.text}")
             
             if resp.status_code != 200:
-                # Return the explicit message from Zernio so we can see what it's complaining about
                 raise HTTPException(
                     status_code=resp.status_code, 
                     detail=f"Zernio Rejected Request: {resp.text}"
@@ -137,7 +134,6 @@ async def get_connect_url(platform: str):
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/publish-post")
 async def publish_post(payload: dict, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
