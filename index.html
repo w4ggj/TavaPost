@@ -128,29 +128,29 @@
 }
 
         async function saveSettings() {
-            const promptText = document.getElementById('customPrompt').value;
-            const webhookText = document.getElementById('webhookUrl').value; // Get the URL
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            
-            if (!session) return;
+    const promptText = document.getElementById('customPrompt').value;
+    const webhookText = document.getElementById('webhookUrl').value;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    if (!session) return;
 
-            // Save BOTH to the database
-            const { error } = await supabaseClient
-                .from('user_settings')
-                .upsert({ 
-                    user_id: session.user.id, 
-                    custom_prompt: promptText,
-                    zapier_webhook_url: webhookText // Update the DB column
-                });
+    // The .upsert() command is the "secret sauce" to prevent duplicates
+    const { error } = await supabaseClient
+        .from('user_settings')
+        .upsert({ 
+            user_id: session.user.id, 
+            custom_prompt: promptText,
+            zapier_webhook_url: webhookText 
+        }, { onConflict: 'user_id' }); // This line forces it to look for an existing user_id
 
-            if (error) {
-                alert("Error saving: " + error.message);
-            } else {
-                const status = document.getElementById('save-status');
-                status.classList.remove('hidden');
-                setTimeout(() => status.classList.add('hidden'), 3000);
-            }
-        }
+    if (error) {
+        alert("Error saving: " + error.message);
+    } else {
+        const status = document.getElementById('save-status');
+        status.classList.remove('hidden');
+        setTimeout(() => status.classList.add('hidden'), 3000);
+    }
+}
         async function generateDraft() {
             const fileInput = document.getElementById('imageInput');
             if (fileInput.files.length === 0) {
