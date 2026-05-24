@@ -202,25 +202,47 @@
 
         // --- PERSISTENCE AND GENERATION DRIVERS ---
         async function loadSettings() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
 
-            const { data } = await supabaseClient
-                .from('user_settings')
-                .select('custom_prompt, ayrshare_profile_key')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
+    console.log("Fetching settings for user UUID:", session.user.id);
 
-            if (data) {
-                if (data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
-                
-                if (data.ayrshare_profile_key) {
-                    const fbStatus = document.getElementById('fb-status');
-                    fbStatus.innerText = "Connected ✅";
-                    fbStatus.className = "text-green";
-                }
+    try {
+        const { data, error } = await supabaseClient
+            .from('user_settings')
+            .select('custom_prompt, ayrshare_profile_key')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+        if (error) {
+            console.error("Supabase read error:", error.message);
+            return;
+        }
+
+        console.log("Raw settings database payload received:", data);
+
+        if (data) {
+            // 1. Restore your custom instructions text box
+            if (data.custom_prompt) {
+                document.getElementById('customPrompt').value = data.custom_prompt;
+            } else {
+                document.getElementById('customPrompt').value = ""; // Clear if empty
+            }
+            
+            // 2. Restore the Facebook Visual Status Indicator Badge
+            const fbStatus = document.getElementById('fb-status');
+            if (data.ayrshare_profile_key) {
+                fbStatus.innerText = "Connected ✅";
+                fbStatus.className = "text-green";
+            } else {
+                fbStatus.innerText = "Not Connected";
+                fbStatus.className = "text-red";
             }
         }
+    } catch (err) {
+        console.error("Failed to parse settings loop:", err);
+    }
+}
 
         async function saveSettings() {
             const { data: { session } } = await supabaseClient.auth.getSession();
