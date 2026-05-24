@@ -138,22 +138,69 @@
 
         // --- APP LOGIC ---
         // --- SETTINGS LOGIC ---
-        async function loadSettings() {
+        // Kick off the Zernio OAuth loop
+function connectPlatform(platform) {
+    // Save a quick state flag so we know what user is connecting when they return
+    localStorage.setItem('connecting_platform', platform);
+    
+    // Redirect the user straight to Zernio's pre-approved connection portal
+    window.location.href = `https://zernio.com/api/v1/connect/${platform}`;
+}
+
+// Check the URL for the returning Zernio account ID token
+async function handleZernioCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const accountId = urlParams.get('accountId');
+    const platform = localStorage.getItem('connecting_platform');
+
+    if (accountId && platform) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) return;
+
+        let updateData = { user_id: session.user.id };
+        
+        // We can reuse your existing database columns or map them clearly
+        if (platform === 'facebook') {
+            updateData.ayrshare_profile_key = accountId; // Storing the Zernio account ID here
+        }
+
+        const { error } = await supabaseClient
+            .from('user_settings')
+            .upsert(updateData);
+
+        if (!error) {
+            // Clean up the URL bar so the code doesn't keep running on refresh
+            window.history.replaceState({}, document.title, window.location.pathname);
+            localStorage.removeItem('connecting_platform');
+            alert(`${platform.toUpperCase()} connected successfully!`);
+            loadSettings(); // Reload UI text statuses
+        } else {
+            console.error("Error saving account token:", error.message);
+        }
+    }
+}
+
+// Update your existing loadSettings function to toggle the "Connected" text flags
+async function loadSettings() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return;
 
-    // Use .eq to filter by the logged-in user's ID
-    const { data, error } = await supabaseClient
+    const { data } = await supabaseClient
         .from('user_settings')
-        .select('custom_prompt, zapier_webhook_url')
-        .eq('user_id', session.user.id) // This ensures we only get YOUR settings
-        .maybeSingle(); // Use maybeSingle() to avoid errors if 0 or 1 row is found
+        .select('custom_prompt, ayrshare_profile_key')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
 
     if (data) {
         if (data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
-        if (data.zapier_webhook_url) document.getElementById('webhookUrl').value = data.zapier_webhook_url;
-    } else if (error) {
-        console.error("Error loading settings:", error.message);
+        
+        // Update the connection status indicators in your HTML
+        if (data.ayrshare_profile_key) {
+            const fbStatus = document.getElementById('fb-status');
+            fbStatus.innerText = "Connected ✅";
+            fbStatus.classList.remove('text-red-500');
+            fbStatus.classList.add('text-green-500');
+        }
     }
 }
 
