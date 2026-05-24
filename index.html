@@ -109,20 +109,23 @@
         // --- APP LOGIC ---
         // --- SETTINGS LOGIC ---
         async function loadSettings() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
 
-            // Go to Supabase and look for this user's saved prompt
-            const { data, error } = await supabaseClient
-                .from('user_settings')
-                .select('custom_prompt')
-                .eq('user_id', session.user.id)
-                .single();
+    // Use .eq to filter by the logged-in user's ID
+    const { data, error } = await supabaseClient
+        .from('user_settings')
+        .select('custom_prompt, zapier_webhook_url')
+        .eq('user_id', session.user.id) // This ensures we only get YOUR settings
+        .maybeSingle(); // Use maybeSingle() to avoid errors if 0 or 1 row is found
 
-            if (data && data.custom_prompt) {
-                document.getElementById('customPrompt').value = data.custom_prompt;
-            }
-        }
+    if (data) {
+        if (data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
+        if (data.zapier_webhook_url) document.getElementById('webhookUrl').value = data.zapier_webhook_url;
+    } else if (error) {
+        console.error("Error loading settings:", error.message);
+    }
+}
 
         async function saveSettings() {
             const promptText = document.getElementById('customPrompt').value;
