@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 import google.generativeai as genai
 from dotenv import load_dotenv
+import httpx  # Cleanly imported at the top level
 
 load_dotenv()
 
@@ -92,6 +93,32 @@ async def generate_draft(file: UploadFile = File(...), authorization: str = Head
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# New Secure Zernio OAuth Link Proxy
+@app.get("/api/get-connect-url")
+async def get_connect_url(platform: str):
+    profile_id = "6a1350634beb548c15895d64"
+    zernio_key = os.environ.get("ZERNIO_API_KEY")
+    
+    if not zernio_key:
+        raise HTTPException(status_code=500, detail="Backend configuration missing ZERNIO_API_KEY environment variable.")
+
+    try:
+        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profile_id}"
+        headers = {
+            "Authorization": f"Bearer {zernio_key}"
+        }
+        
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(zernio_endpoint, headers=headers)
+            
+            if resp.status_code != 200:
+                raise HTTPException(status_code=resp.status_code, detail=f"Zernio API returned an error: {resp.text}")
+                
+            return resp.json()
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/publish-post")
 async def publish_post(payload: dict, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
@@ -110,7 +137,6 @@ async def publish_post(payload: dict, authorization: str = Header(None)):
     user_webhook_url = settings.data[0]['zapier_webhook_url']
 
     # Fire the post out to their personal Zapier account
-    import httpx
     async with httpx.AsyncClient() as client:
         try:
             resp = await client.post(user_webhook_url, json={
