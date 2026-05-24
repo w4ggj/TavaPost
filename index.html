@@ -150,8 +150,8 @@
 
             // Show loading text
             document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('draftText').classList.add('hidden');
-            document.getElementById('approveBtn').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('selection-area').classList.add('hidden');
 
             // Get the secure token for the logged-in user
             const { data: { session } } = await supabaseClient.auth.getSession();
