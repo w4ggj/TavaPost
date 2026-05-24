@@ -80,7 +80,8 @@ async def generate_draft(file: UploadFile = File(...), authorization: str = Head
         # 5. Ask Gemini for 3 Options
         image_parts = [{"mime_type": file.content_type, "data": file_bytes}]
         prompt_text = f"{custom_prompt}\n\nPlease generate exactly 3 distinct caption options based on these instructions. Format the output as a numbered list (1, 2, 3) so I can easily choose one."
-        
+
+        model = genai.GenerativeModel('gemini-2.0-flash')
         response = model.generate_content([prompt_text, image_parts[0]])
         
         # 6. Send the text AND the new image link back to the website
