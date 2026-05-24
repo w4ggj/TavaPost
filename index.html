@@ -139,15 +139,29 @@
         // --- APP LOGIC ---
         // --- SETTINGS LOGIC ---
         // Kick off the Zernio OAuth loop
-// Kick off the Zernio OAuth loop
-function connectPlatform(platform) {
+// Kick off the Zernio OAuth loop properly by parsing the authUrl
+async function connectPlatform(platform) {
     localStorage.setItem('connecting_platform', platform);
     
-    // Put your actual Zernio profile ID here:
+    // Your verified Zernio Profile ID
     const profileId = "6a1350634beb548c15895d64"; 
     
-    // Redirect with the required profileId parameter
-    window.location.href = `https://zernio.com/api/v1/connect/${platform}?profileId=${profileId}`;
+    try {
+        // 1. Call Zernio's endpoint to generate the authentic authorization URL
+        const response = await fetch(`https://zernio.com/api/v1/connect/${platform}?profileId=${profileId}`);
+        const data = await response.json();
+        
+        // 2. Check if Zernio successfully generated the authUrl string
+        if (data && data.authUrl) {
+            // 3. Command the browser window to jump straight to Meta's login page
+            window.location.href = data.authUrl;
+        } else {
+            alert("Error generating authentication link: " + (data.error || "Unknown error"));
+        }
+    } catch (err) {
+        console.error("OAuth Connection Error:", err);
+        alert("Failed to connect to the social authorization gateway.");
+    }
 }
 
 // Check the URL for the returning Zernio account ID token
