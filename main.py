@@ -1,6 +1,5 @@
 import uuid
 import os
-import httpx
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
@@ -21,7 +20,6 @@ app.add_middleware(
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-AYRSHARE_API_KEY = os.getenv("AYRSHARE_API_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("Missing Supabase credentials in .env file.")
@@ -94,5 +92,31 @@ async def generate_draft(file: UploadFile = File(...), authorization: str = Head
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/get-social-connect-link")
-    @app.post("/publish-post")
+@app.post("/publish-post")
+async def publish_post(payload: dict, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    token = authorization.split(" ")[1]
+    user_res = supabase.auth.get_user(token)
+    user_id = user_res.user.id
+
+    # Look up this user's specific Zapier Webhook URL
+    settings = supabase.table("user_settings").select("zapier_webhook_url").eq("user_id", user_id).execute()
+    
+    if not settings.data or not settings.data[0].get('zapier_webhook_url'):
+        raise HTTPException(status_code=400, detail="No Zapier Webhook URL found in your settings!")
+    
+    user_webhook_url = settings.data[0]['zapier_webhook_url']
+
+    # Fire the post out to their personal Zapier account
+    import httpx
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.post(user_webhook_url, json={
+                "image_url": payload.get("image_url"),
+                "caption": payload.get("caption")
+            })
+            return {"status": "success" if resp.status_code == 200 else "error"}
+        except Exception:
+            raise HTTPException(status_code=500, detail="Failed to reach your Zapier webhook.")
