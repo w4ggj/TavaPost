@@ -64,16 +64,16 @@
             padding: 0 1.5rem;
         }
 
-        /* Strict View Toggle Handlers */
+        /* View Toggle Controllers */
         .view-section { display: none !important; }
         .view-active-flex { display: flex !important; }
         .view-active-block { display: block !important; }
 
-        /* VIEW 1: AUTHENTICATION PORTAL PANEL (STABLE TOP-CENTERED) */
+        /* Login Portal Wrapper (Stable Top-Centered) */
         .login-wrapper {
             display: flex;
-            justify-content: center;    /* Centers horizontally */
-            padding: 6rem 1rem 0 1rem;  /* Smooth padding anchor from top header */
+            justify-content: center;
+            padding: 6rem 1rem 0 1rem;
             width: 100%;
         }
 
@@ -112,12 +112,9 @@
             font-family: inherit;
         }
 
-        input:focus {
-            outline: none;
-            border-color: var(--accent-green);
-        }
+        input:focus { outline: none; border-color: var(--accent-green); }
 
-        /* Dashboard Grid Layout */
+        /* Branded Dashboard Grid Layout (Swapped Sides) */
         .grid-layout {
             display: grid;
             grid-template-columns: 1fr;
@@ -125,7 +122,10 @@
         }
 
         @media (min-width: 968px) {
-            .grid-layout { grid-template-columns: 1.2fr 0.8fr; }
+            .grid-layout { 
+                /* Left side is now the smaller Social Panel, Right side is the Core Tool Pipeline */
+                grid-template-columns: 0.8fr 1.2fr; 
+            }
         }
 
         .panel {
@@ -143,9 +143,41 @@
             padding-left: 0.75rem;
         }
 
-        /* Universal Instructions Guide Box */
+        /* Collapsible Accordion Element Boxes */
+        .interactive-accordion {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .interactive-accordion summary {
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-main);
+            user-select: none;
+            outline: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .interactive-accordion summary::-webkit-details-marker { display: none; }
+        
+        .interactive-accordion summary::after {
+            content: '＋';
+            color: var(--accent-green);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .interactive-accordion[open] summary::after {
+            content: '－';
+        }
+
         .guide-box {
-            background: rgba(51, 65, 85, 0.3);
+            background: rgba(51, 65, 85, 0.2);
             border: 1px dashed var(--border-color);
             border-radius: 8px;
             padding: 1rem;
@@ -172,6 +204,11 @@
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
             margin-bottom: 1.5rem;
+        }
+
+        @media (min-width: 968px) {
+            /* Stacks social components beautifully on desktop grids */
+            .connection-grid { grid-template-columns: 1fr; }
         }
 
         .conn-card {
@@ -308,7 +345,7 @@
     </div>
 
     <div id="view-dashboard" class="view-section container">
-        <details class="guide-box" open>
+        <details class="guide-box">
             <summary>✨ Quick Start Guide</summary>
             <ul>
                 <li><strong>1. Connect Channels:</strong> Verify your target Facebook and Instagram profiles show green status indicators. Click to link new accounts.</li>
@@ -319,15 +356,35 @@
         </details>
 
         <div class="grid-layout">
+            
+            <aside class="panel" style="height: fit-content;">
+                <h2 class="panel-title">Social Profiles</h2>
+                <div class="connection-grid">
+                    <div class="conn-card">
+                        <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
+                        <div id="fb-status" class="badge badge-red">Not Connected</div>
+                        <button class="btn btn-fb" onclick="connectPlatform('facebook')">Connect Page</button>
+                    </div>
+                    <div class="conn-card" style="margin-top: 0.5rem;">
+                        <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
+                        <div id="ig-status" class="badge badge-red">Not Connected</div>
+                        <button class="btn btn-ig" onclick="connectPlatform('instagram')">Connect IG</button>
+                    </div>
+                </div>
+            </aside>
+
             <main class="panel">
-                <h2 class="panel-title">Custom Brand Instructions</h2>
-                <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules, or target audience rules here..."></textarea>
-                <button class="btn btn-primary" onclick="saveSettings()">Save Instructions Settings</button>
-                <span id="save-status" class="text-green hidden" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
+                
+                <details class="interactive-accordion">
+                    <summary>⚙️ Brand Alignment Instructions</summary>
+                    <div style="margin-top: 1.25rem;">
+                        <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules, or target audience rules here..."></textarea>
+                        <button class="btn btn-primary" onclick="saveSettings()">Save Instructions Settings</button>
+                        <span id="save-status" class="text-green hidden" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
+                    </div>
+                </details>
 
-                <hr style="border:none; border-top:1px solid var(--border-color); margin:2rem 0;">
-
-                <h2 class="panel-title">Content Generator Pipeline</h2>
+                <h2 class="panel-title">Content Pipeline</h2>
                 <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
                     <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
                     <input type="file" id="imageInput" class="hidden" accept="image/*" onchange="updateFileInputLabel()">
@@ -354,28 +411,12 @@
                 </div>
             </main>
 
-            <aside class="panel" style="height: fit-content;">
-                <h2 class="panel-title">Connected Social Channels</h2>
-                <div class="connection-grid">
-                    <div class="conn-card">
-                        <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
-                        <div id="fb-status" class="badge badge-red">Not Connected</div>
-                        <button class="btn btn-fb" onclick="connectPlatform('facebook')">Connect Page</button>
-                    </div>
-                    <div class="conn-card">
-                        <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
-                        <div id="ig-status" class="badge badge-red">Not Connected</div>
-                        <button class="btn btn-ig" onclick="connectPlatform('instagram')">Connect IG</button>
-                    </div>
-                </div>
-            </aside>
         </div>
     </div>
 
     <script>
         const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
-        // 🚀 QUICK RE-REMINDER: Paste your real Supabase Client Anon Key right below!
-        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
+        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; // Double check your key is in here
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
         
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
@@ -393,12 +434,10 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             
             if (!session) {
-                // Maintained flex-alignment parameters prevent corner jumping completely
                 document.getElementById('view-login').className = "login-wrapper view-active-flex";
                 document.getElementById('view-dashboard').className = "view-section";
                 document.getElementById('header-logout').className = "btn btn-logout hidden";
             } else {
-                // Shift dashboard grid up and hide credentials form panel cleanly
                 document.getElementById('view-login').className = "view-section";
                 document.getElementById('view-dashboard').className = "container view-active-block";
                 document.getElementById('header-logout').className = "btn btn-logout view-active-block";
@@ -557,65 +596,4 @@
                 });
 
                 loadingLabel.classList.add('hidden');
-                btnGen.classList.remove('btn-disabled');
-                selectionArea.classList.remove('hidden');
-
-            } catch (err) {
-                console.error(err);
-                alert(`Pipeline Error: ${err.message}`);
-                loadingLabel.classList.add('hidden');
-                btnGen.classList.remove('btn-disabled');
-            }
-        }
-
-        async function publishToSocials() {
-            const caption = document.getElementById('finalCaption').value;
-            const btnPub = document.getElementById('btn-publish');
-            if (!caption.trim()) {
-                alert("Please select or edit a caption variant first.");
-                return;
-            }
-
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
-
-            btnPub.classList.add('btn-disabled');
-            btnPub.innerText = "Publishing Content... Please Wait...";
-
-            try {
-                const response = await fetch(`${backendBaseUrl}/publish-post`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${session.access_token}`
-                    },
-                    body: JSON.stringify({
-                        image_url: window.currentPostImageUrl || "",
-                        caption: caption
-                    })
-                });
-
-                const data = await response.json();
-                if (data.status === "success") {
-                    alert("🚀 Post successfully published to your active social feeds!");
-                } else {
-                    alert("Delivery mismatch. Review connection profile statuses.");
-                }
-            } catch (err) {
-                console.error(err);
-                alert("Error communicating with background content server.");
-            } finally {
-                btnPub.classList.remove('btn-disabled');
-                btnPub.innerText = "🚀 Publish Directly to Social Channels";
-            }
-        }
-
-        async function signOutUser() {
-            await supabaseClient.auth.signOut();
-            await checkSession();
-        }
-
-        window.onload = checkSession;
-    </script>
-</body>
-</html>
+                btnGen.classList.remove('btn
