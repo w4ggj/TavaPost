@@ -9,22 +9,18 @@
     
     <style>
         :root {
-            --bg-main: #0f172a;        /* Deep Slate Base */
-            --bg-card: #1e293b;        /* Charcoal Card Fill */
-            --border-color: #334155;   /* Crisp Muted Border */
-            --text-main: #f8fafc;      /* Crisp White Text */
-            --text-muted: #94a3b8;     /* Ash Gray Secondary Text */
-            --accent-green: #10b981;   /* Emerald Green Brand Accent */
-            --accent-purple: #a855f7;  /* Instagram Purple Accent */
-            --accent-blue: #3b82f6;    /* Facebook Blue Accent */
-            --warning-amber: #f59e0b;  /* Queue/Processing Amber */
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --warning-amber: #f59e0b;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             background-color: var(--bg-main);
@@ -47,211 +43,47 @@
             align-items: center;
         }
 
-        .brand-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: -0.05em;
-            text-transform: uppercase;
-        }
-
-        .brand-title span {
-            color: var(--accent-green);
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 2rem auto;
-            padding: 0 1.5rem;
-        }
-
+        .brand-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.05em; text-transform: uppercase; }
+        .brand-title span { color: var(--accent-green); }
+        .container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
         .view-section { display: none !important; }
         .view-active-flex { display: flex !important; }
         .view-active-block { display: block !important; }
 
-        .login-wrapper {
-            width: 100%;
-            justify-content: center;
-            padding: 6rem 1rem 0 1rem;
-        }
-
-        .login-panel {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 2.5rem 2rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 420px;
-        }
-
-        .input-group {
-            text-align: left;
-            margin-bottom: 1.25rem;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-        }
-
-        input[type="email"], input[type="password"] {
-            width: 100%;
-            background-color: var(--bg-main);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-main);
-            padding: 0.75rem 1rem;
-            font-family: inherit;
-        }
-
+        .login-wrapper { width: 100%; justify-content: center; padding: 6rem 1rem 0 1rem; }
+        .login-panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2.5rem 2rem; width: 100%; max-width: 420px; }
+        .input-group { text-align: left; margin-bottom: 1.25rem; }
+        .input-group label { display: block; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
+        input[type="email"], input[type="password"] { width: 100%; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 0.75rem 1rem; }
         input:focus { outline: none; border-color: var(--accent-green); }
 
-        .panel {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 2rem;
-        }
-
-        .panel-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            border-left: 3px solid var(--accent-green);
-            padding-left: 0.75rem;
-        }
-
-        .interactive-accordion {
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .interactive-accordion summary {
-            font-weight: 600;
-            cursor: pointer;
-            color: var(--text-main);
-            user-select: none;
-            outline: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        .panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; }
+        .panel-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-left: 3px solid var(--accent-green); padding-left: 0.75rem; }
+        .interactive-accordion { background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; }
+        .interactive-accordion summary { font-weight: 600; cursor: pointer; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; }
         .interactive-accordion summary::-webkit-details-marker { display: none; }
+        .interactive-accordion summary::after { content: '＋'; color: var(--accent-green); font-weight: 700; }
+        .interactive-accordion[open] summary::after { content: '－'; }
+
+        .connection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+        @media (max-width: 568px) { .connection-grid { grid-template-columns: 1fr; } }
+        .conn-card { background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; text-align: center; }
         
-        .interactive-accordion summary::after {
-            content: '＋';
-            color: var(--accent-green);
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-        
-        .interactive-accordion[open] summary::after {
-            content: '－';
-        }
-
-        .connection-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            margin-top: 1rem;
-        }
-
-        @media (max-width: 568px) {
-            .connection-grid { grid-template-columns: 1fr; }
-        }
-
-        .conn-card {
-            background: rgba(15, 23, 42, 0.4);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-
-        .badge {
-            display: inline-block;
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            text-transform: uppercase;
-            margin-top: 0.5rem;
-        }
-
+        .badge { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.5rem; border-radius: 4px; text-transform: uppercase; margin-top: 0.5rem; }
         .badge-red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
         .badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
 
-        .guide-box {
-            background: rgba(51, 65, 85, 0.2);
-            border: 1px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .guide-box summary {
-            font-weight: 600;
-            cursor: pointer;
-            color: var(--accent-green);
-        }
-
-        .guide-box ul {
-            margin-top: 0.75rem;
-            padding-left: 1.25rem;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
+        .guide-box { background: rgba(51, 65, 85, 0.2); border: 1px dashed var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+        .guide-box summary { font-weight: 600; cursor: pointer; color: var(--accent-green); }
+        .guide-box ul { margin-top: 0.75rem; padding-left: 1.25rem; color: var(--text-muted); font-size: 0.9rem; }
         .guide-box li { margin-bottom: 0.5rem; }
 
-        textarea {
-            width: 100%;
-            background-color: var(--bg-main);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-main);
-            padding: 1rem;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 150px;
-            margin-bottom: 1rem;
-        }
-
+        textarea { width: 100%; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 1rem; resize: vertical; min-height: 150px; margin-bottom: 1rem; }
         textarea:focus { outline: none; border-color: var(--accent-green); }
 
-        .file-dropzone {
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 1.5rem;
-            text-align: center;
-            background: rgba(15, 23, 42, 0.2);
-            margin-bottom: 1rem;
-            cursor: pointer;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.05em;
-        }
-
+        .file-dropzone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 1.5rem; text-align: center; background: rgba(15, 23, 42, 0.2); margin-bottom: 1rem; cursor: pointer; }
+        
+        .btn { width: 100%; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s ease; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em; }
         .btn-primary { background-color: var(--accent-green); color: var(--bg-main); }
         .btn-primary:hover { opacity: 0.9; }
         .btn-fb { background-color: transparent; border: 1px solid var(--accent-blue); color: var(--text-main); margin-top: 0.5rem;}
@@ -259,37 +91,11 @@
         .btn-ig { background-color: transparent; border: 1px solid var(--accent-purple); color: var(--text-main); margin-top: 0.5rem;}
         .btn-ig:hover { background: rgba(168, 85, 247, 0.1); }
         .btn-logout { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: auto; }
-        .btn-logout:hover { color: var(--text-main); border-color: var(--text-main); }
         .btn-disabled { background-color: var(--border-color) !important; color: var(--text-muted) !important; cursor: not-allowed; }
 
-        .pipeline-warning {
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: 6px;
-            padding: 0.75rem 1rem;
-            font-size: 0.85rem;
-            color: #fbbf24;
-            margin-top: 1rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.5rem;
-        }
-
-        .draft-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .draft-card {
-            background: var(--bg-main);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1.25rem;
-            cursor: pointer;
-        }
-
+        .pipeline-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.85rem; color: #fbbf24; margin-top: 1rem; display: flex; gap: 0.5rem; }
+        .draft-container { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem; }
+        .draft-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; cursor: pointer; }
         .draft-card:hover { border-color: var(--accent-green); }
         .draft-card header { background: none; border: none; padding: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--accent-green); font-weight: 700; text-transform: uppercase; }
 
@@ -306,40 +112,36 @@
 
     <div id="system-crash-alert" class="view-section container">
         <div class="panel" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.05);">
-            <h2 class="text-red" style="font-size: 1.25rem; margin-bottom: 0.5rem;">⚠️ System Handshake Failure</h2>
-            <p id="crash-diagnostic-text" style="color: var(--text-muted); font-size: 0.9rem;">Your client failed to build a handshake connection with your tracking database.</p>
+            <h2 class="text-red">⚠️ System Handshake Failure</h2>
+            <p id="crash-diagnostic-text" style="color: var(--text-muted); font-size: 0.9rem;">Your client failed to connect with your database.</p>
         </div>
     </div>
 
     <div id="view-login" class="view-section login-wrapper">
         <div class="login-panel">
-            <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 700;">Welcome to Studio</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your brand and social content</p>
-            
+            <h2 style="margin-bottom: 0.5rem;">Welcome to Studio</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your brand content</p>
             <div class="input-group">
                 <label>Email Address</label>
                 <input type="email" id="login-email" placeholder="you@yourbrand.com">
             </div>
-            
             <div class="input-group" style="margin-bottom: 2rem;">
                 <label>Password</label>
                 <input type="password" id="login-password" placeholder="••••••••••••">
             </div>
-            
             <button class="btn btn-primary" onclick="signInUser()">Log In</button>
             <p id="login-error" class="text-red view-section" style="margin-top: 1rem; font-size: 0.8rem;"></p>
         </div>
     </div>
 
     <div id="view-dashboard" class="view-section container">
-        
         <details class="guide-box">
             <summary>✨ Quick Start Guide</summary>
             <ul>
-                <li><strong>1. Connect Channels:</strong> Expand <em>Studio Settings</em> below to link your target Facebook and Instagram profiles.</li>
-                <li><strong>2. Map Voice Guidelines:</strong> Drop your customized prompt structure inside your settings box, then click save.</li>
-                <li><strong>3. Process Assets:</strong> Load an image file into the content pipeline space below to run visual interpretation routines.</li>
-                <li><strong>4. Polish & Sync:</strong> Tap on your preferred variant card to drop it directly into the editor pane, adjust any manual variables, and push live.</li>
+                <li><strong>1. Connect Channels:</strong> Link your Facebook and Instagram profiles below under settings.</li>
+                <li><strong>2. Map Voice Guidelines:</strong> Save your custom instructions inside your prompt box.</li>
+                <li><strong>3. Process Assets:</strong> Load an image file to run Gemini visual analysis routines.</li>
+                <li><strong>4. Polish & Sync:</strong> Select a card to fill the text pane and push directly live.</li>
             </ul>
         </details>
 
@@ -358,10 +160,9 @@
                         <button type="button" class="btn btn-ig" onclick="connectPlatform('instagram'); return false;">Connect IG</button>
                     </div>
                 </div>
-
                 <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                    <h4 style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;">Custom Brand Instructions</h4>
-                    <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules, or target audience rules here..."></textarea>
+                    <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase;">Custom Brand Instructions</h4>
+                    <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules here..."></textarea>
                     <button class="btn btn-primary" onclick="saveSettings()">Save Instructions Settings</button>
                     <span id="save-status" class="text-green view-section" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
                 </div>
@@ -378,10 +179,10 @@
             <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
             
             <p id="generation-disclaimer" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 0.6rem; letter-spacing: 0.01em;">
-                ℹ️ Image downscaling, matrix translation, and Gemini AI context processing typically require <strong>15 to 45 seconds</strong>.
+                ℹ️ Image canvas downscaling and Gemini AI visual analysis typically finish within <strong>15 to 45 seconds</strong>.
             </p>
 
-            <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Running semantic scene tracking and parsing multi-variant options... Please stand by...</div>
+            <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Running deep image matrix interpretation and generating caption variants... Please wait...</div>
 
             <div id="selection-area" class="view-section" style="margin-top:2rem;">
                 <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
@@ -395,7 +196,7 @@
                 <div class="pipeline-warning">
                     <span>⚠️</span>
                     <div>
-                        <strong>Social Media Processing Window:</strong> Media integration loops typically require between <strong>30 seconds to 3 minutes</strong> while third-party networks finalize network data processing. Do not close this tab or double click publish.
+                        <strong>Social Media Processing Window:</strong> Media integrations typically take <strong>30 seconds to 3 minutes</strong> while networks process metrics. Do not close this tab or duplicate clicks.
                     </div>
                 </div>
             </div>
@@ -433,7 +234,6 @@
         async function checkSession() {
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
-                
                 if (!session) {
                     document.getElementById('view-login').className = "login-wrapper view-active-flex";
                     document.getElementById('view-dashboard').className = "view-section";
@@ -442,12 +242,11 @@
                     document.getElementById('view-login').className = "view-section";
                     document.getElementById('view-dashboard').className = "container view-active-block";
                     document.getElementById('header-logout').className = "btn btn-logout view-active-block";
-                    
                     await handleZernioCallback();
                     await loadSettings();
                 }
             } catch (err) {
-                console.error("Session routine exception caught: ", err.message);
+                console.error(err);
             }
         }
 
@@ -455,14 +254,9 @@
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
             const errorLabel = document.getElementById('login-error');
-            
             errorLabel.className = "view-section";
 
-            const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
-
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) {
                 errorLabel.innerText = `Login Failed: ${error.message}`;
                 errorLabel.className = "text-red view-active-block";
@@ -545,27 +339,15 @@
 
         async function connectPlatform(platform) {
             if (window.event) window.event.preventDefault(); 
-
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) {
-                alert("Session expired. Please log in again.");
-                return;
-            }
+            if (!session) return;
 
             localStorage.setItem('connecting_platform', platform);
-            
             try {
                 const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=${session.user.id}`);
-                if (!response.ok) throw new Error("Backend connection handshake failed.");
-                
                 const data = await response.json();
-                if (data.authUrl) {
-                    window.location.href = data.authUrl;
-                } else {
-                    throw new Error("Invalid response format received from Zernio gateway.");
-                }
+                if (data.authUrl) window.location.href = data.authUrl;
             } catch (err) {
-                console.error("Connection Node Error: ", err);
                 alert(`Handshake Fault: ${err.message}`);
             }
         }
@@ -590,35 +372,24 @@
             loadingLabel.className = "view-active-block";
             btnGen.classList.add('btn-disabled');
             selectionArea.className = "view-section";
-            if (staticDisclaimer) staticDisclaimer.className = "view-section"; // 🚀 Hide static warning while loading
+            if (staticDisclaimer) staticDisclaimer.className = "view-section";
             draftCardsContainer.innerHTML = "";
 
             const rawFile = fileInput.files[0];
             const customPromptValue = customPromptInput ? customPromptInput.value : "";
-            const maxFileSizeInBytes = 4 * 1024 * 1024; // 4MB Guard
+            const maxFileSizeInBytes = 4 * 1024 * 1024; 
             
             if (rawFile.size > maxFileSizeInBytes) {
                 const img = new Image();
                 img.src = URL.createObjectURL(rawFile);
-                
                 img.onload = async function() {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    
-                    let width = img.width;
-                    let height = img.height;
-                    const max_size = 1920; 
-                    
-                    if (width > height) {
-                        if (width > max_size) { height *= max_size / width; width = max_size; }
-                    } else {
-                        if (height > max_size) { width *= max_size / height; height = max_size; }
-                    }
-                    
-                    canvas.width = width;
-                    canvas.height = height;
+                    let width = img.width; let height = img.height; const max_size = 1920; 
+                    if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } }
+                    else { if (height > max_size) { width *= max_size / height; height = max_size; } }
+                    canvas.width = width; canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
-                    
                     canvas.toBlob(async function(blob) {
                         const formData = new FormData();
                         formData.append("file", blob, "compressed_upload.jpg");
@@ -650,13 +421,12 @@
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.detail || `Server returned status code ${response.status}`);
+                    throw new Error(errorData.detail || `Server error status ${response.status}`);
                 }
                 
                 const data = await response.json();
                 window.currentPostImageUrl = data.image_url;
 
-                // Robust split strategy handles numeric keys generated via LLM blocks
                 const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(txt => txt.trim().length > 0);
                 
                 options.forEach((optionText, index) => {
@@ -684,7 +454,7 @@
                 alert(`Pipeline Error: ${err.message}`);
                 loadingLabel.className = "view-section";
                 btnGen.classList.remove('btn-disabled');
-                if (staticDisclaimer) staticDisclaimer.className = "view-active-block"; // Restore on error
+                if (staticDisclaimer) staticDisclaimer.className = "view-active-block";
             }
         }
 
@@ -699,7 +469,6 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) return;
 
-            // 🚀 NEW: Pull your active, connected channel records straight from your Supabase settings table tracker
             const { data: settings } = await supabaseClient
                 .from('user_settings')
                 .select('zernio_facebook_id, zernio_instagram_id')
@@ -710,7 +479,7 @@
             const igId = settings ? settings.zernio_instagram_id : null;
 
             if (!fbId && !igId) {
-                alert("Delivery Aborted: No active channel profile tracking states linked. Expand 'Studio Settings' above to connect your pages first.");
+                alert("Aborted: No active channel accounts connected under settings.");
                 return;
             }
 
@@ -727,8 +496,8 @@
                     body: JSON.stringify({
                         image_url: window.currentPostImageUrl || "",
                         caption: caption,
-                        fb_account_id: fbId || "", // Pass keys down the pipeline securely
-                        ig_account_id: igId || ""  // Pass keys down the pipeline securely
+                        fb_account_id: fbId || "",
+                        ig_account_id: igId || ""
                     })
                 });
 
@@ -736,7 +505,7 @@
                 if (data.status === "success") {
                     alert("🚀 Post successfully published to your active social feeds!");
                 } else {
-                    alert(`Delivery Mismatch: ${data.detail || 'Review connection profile statuses.'}`);
+                    alert(`Delivery Mismatch: ${data.detail || 'Review connections profile statuses.'}`);
                 }
             } catch (err) {
                 console.error(err);
