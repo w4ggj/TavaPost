@@ -169,35 +169,40 @@
             }
         }
 
-        async function handleZernioCallback() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const accountId = urlParams.get('accountId');
-            const platform = localStorage.getItem('connecting_platform');
+async function handleZernioCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const accountId = urlParams.get('accountId');
+    const platform = localStorage.getItem('connecting_platform');
 
-            if (accountId && platform) {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (!session) return;
+    if (accountId && platform) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) return;
 
-                let updateData = { user_id: session.user.id };
-                
-                if (platform === 'facebook') {
-                    updateData.ayrshare_profile_key = accountId; 
-                }
-
-                const { error } = await supabaseClient
-                    .from('user_settings')
-                    .upsert(updateData);
-
-                if (!error) {
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    localStorage.removeItem('connecting_platform');
-                    alert(`${platform.toUpperCase()} linked successfully!`);
-                    await loadSettings();
-                } else {
-                    console.error("Token database save error:", error.message);
-                }
-            }
+        let updateData = { user_id: session.user.id };
+        
+        // 🚀 SWITCHED TO YOUR NEW ZERNIO COLUMN NAMES:
+        if (platform === 'facebook') {
+            updateData.zernio_facebook_id = accountId; 
+        } else if (platform === 'instagram') {
+            updateData.zernio_instagram_id = accountId;
         }
+
+        const { error } = await supabaseClient
+            .from('user_settings')
+            .upsert(updateData);
+
+        if (!error) {
+            // Clean url arguments, flush temporary storage, and refresh UI indicators
+            window.history.replaceState({}, document.title, window.location.pathname);
+            localStorage.removeItem('connecting_platform');
+            alert(`${platform.toUpperCase()} linked successfully!`);
+            await loadSettings();
+        } else {
+            console.error("Token database save error:", error.message);
+            alert(`Database Save Error: ${error.message}`);
+        }
+    }
+}
 
         // --- PERSISTENCE AND GENERATION DRIVERS ---
         async function loadSettings() {
@@ -247,21 +252,22 @@
 }
 
         async function saveSettings() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
 
-            const customPrompt = document.getElementById('customPrompt').value;
-            const statusLabel = document.getElementById('save-status');
+    const customPrompt = document.getElementById('customPrompt').value;
+    const statusLabel = document.getElementById('save-status');
 
-            const { error } = await supabaseClient
-                .from('user_settings')
-                .upsert({ user_id: session.user.id, custom_prompt: customPrompt });
+    // Clean and simple save for just the instructions text
+    const { error } = await supabaseClient
+        .from('user_settings')
+        .upsert({ user_id: session.user.id, custom_prompt: customPrompt });
 
-            if (!error) {
-                statusLabel.classList.remove('hidden');
-                setTimeout(() => statusLabel.classList.add('hidden'), 2000);
-            }
-        }
+    if (!error) {
+        statusLabel.classList.remove('hidden');
+        setTimeout(() => statusLabel.classList.add('hidden'), 2000);
+    }
+}
 
         async function generateDraft() {
             const fileInput = document.getElementById('imageInput');
