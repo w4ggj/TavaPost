@@ -50,13 +50,14 @@ async def get_connect_url(platform: str, profile_id: str = None):
 
 @app.post("/generate-draft")
 async def generate_draft(file: UploadFile = File(...)):
-    # 🚀 FIXED: Put the missing draft endpoint back on the map!
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Backend configuration missing ZERNIO_API_KEY.")
 
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
-    zernio_draft_url = "https://zernio.com/api/v1/publish" # Update this string if Zernio uses a different split draft endpoint URL
+    
+    # 🚀 FIXED: Switched endpoint destination path to the correct draft asset node!
+    zernio_draft_url = "https://zernio.com/api/v1/drafts" 
 
     headers = {
         "Authorization": f"Bearer {clean_key}"
