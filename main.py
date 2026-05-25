@@ -51,8 +51,6 @@ async def generate_draft(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
-    
-    # 🚀 FIXED: Added your developer profileId directly to the drafts URL parameter
     zernio_draft_url = "https://zernio.com/api/v1/drafts?profileId=6a1350634beb548c15895d64"
 
     headers = {
@@ -65,14 +63,25 @@ async def generate_draft(file: UploadFile = File(...)):
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             response = await client.post(zernio_draft_url, files=files, headers=headers)
+            
+            # If everything goes perfectly
             if response.status_code in [200, 201]:
                 return response.json()
-            else:
-                try:
-                    return response.json()
-                except:
-                    raise HTTPException(status_code=response.status_code, detail=response.text)
+            
+            # 🚀 DIAGNOSTIC ADDITION: Print out exactly what Zernio is complaining about
+            print(f"!!! ZERNIO API ERROR STATUS: {response.status_code} !!!")
+            print(f"!!! ZERNIO API ERROR DETAIL: {response.text} !!!")
+            
+            raise HTTPException(
+                status_code=response.status_code, 
+                detail=f"Zernio Error: {response.text}"
+            )
+            
+        except httpx.RequestError as req_err:
+            print(f"!!! HTTPX Network Transport Error: {str(req_err)} !!!")
+            raise HTTPException(status_code=500, detail=f"Transport Fault: {str(req_err)}")
         except Exception as e:
+            print(f"!!! General Exception Caught: {str(e)} !!!")
             raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/publish-post")
