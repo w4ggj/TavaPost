@@ -106,30 +106,21 @@ async def get_connect_url(platform: str, profile_id: str):
             detail="Backend configuration missing ZERNIO_API_KEY environment variable."
         )
 
-    try:
-        # 2. Build the live target integration endpoint
-        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profile_id}&redirect_url=https://studio.tavaone.com/index.html"
-        
-        # 3. Securely force the browser to jump directly to the authentication link
-        return RedirectResponse(url=zernio_endpoint)
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    clean_key = zernio_key.strip().replace('"', '').replace("'", "")
+    # Clean the key of any hidden whitespace or formatting artifacts
+    clean_key = zernio_key.strip().replace("'", "").replace('"', "")
 
     try:
-        # 🚀 ADDED THE redirect_url PARAMETER TO THE END OF THIS STRING:
-        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profile_id}&redirect_url=https://studio.tavaone.com/index.html"
+        # 🚀 Hardwire the exact, verified 24-character Zernio Developer Profile ID
+        zernio_profile_id = "6a1350634beb548c15895d64"
+
+        # Build the accurate endpoint destination string
+        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={zernio_profile_id}&redirect_url=https://studio.tavaone.com/index.html"
         
-        headers = {
-            "Authorization": f"Bearer {clean_key}"
-        }
-        
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(zernio_endpoint, headers=headers)
-            
-            print(f"[Zernio Diagnostic] Target URL: {zernio_endpoint}")
-            print(f"[Zernio Diagnostic] HTTP Status Return: {resp.status_code}")
+        # Securely bounce the browser out to the live Meta authentication screens
+        return RedirectResponse(url=zernio_endpoint)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
             print(f"[Zernio Diagnostic] Gateway Response Body: {resp.text}")
             
             if resp.status_code != 200:
