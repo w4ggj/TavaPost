@@ -1,4 +1,4 @@
-# TavaPost Studio Backend API Node // Ver 1.4.0
+# TavaPost Studio Backend API Node // Ver 1.5.0
 import os
 import httpx
 import base64
@@ -59,10 +59,10 @@ async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form
         
         headers = {"Content-Type": "application/json"}
         
-        # 🚀 FIXED: Injects your frontend custom instructions directly into the system prompt framework
-        system_rules = "CRITICAL: Output ONLY the options requested. Do not include introductory text, conversational fluff, markdown formatting text block headers, or wrappers."
+        # 🚀 FIXED: System prompt injection with mandatory execution layout rules
+        system_rules = "CRITICAL: Output ONLY the requested caption options. Do not include intro text, conversational filler, markdown formatting wrappers, or headers."
         if custom_prompt and custom_prompt.strip():
-            system_rules += f"\nStrict Voice Guidelines:\n{custom_prompt.strip()}"
+            system_rules += f"\nStrict Voice and Content Guidelines:\n{custom_prompt.strip()}"
 
         user_instruction = """
         Analyze this image and provide 3 distinct social media caption variations optimized for Facebook and Instagram. 
@@ -114,11 +114,13 @@ async def publish_post(payload: PostRequest):
         "Content-Type": "application/json"
     }
     
-    # 🚀 FIXED: Formatted exactly how Zernio's /v1/posts endpoint expects to map multi-channel arrays
+    # 🚀 FIXED: Structured correctly as an explicit account array payload for Zernio's channel parser
     body = {
-        "profileId": "6a1350634beb548c15895d64",
         "content": payload.caption,
-        "platforms": ["facebook", "instagram"]
+        "platforms": [
+            {"platform": "facebook", "accountId": "6a1350634beb548c15895d64"},
+            {"platform": "instagram", "accountId": "6a1350634beb548c15895d64"}
+        ]
     }
     
     async with httpx.AsyncClient(timeout=60.0) as client:
