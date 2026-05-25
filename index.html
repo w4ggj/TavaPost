@@ -699,6 +699,21 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) return;
 
+            // 🚀 NEW: Pull your active, connected channel records straight from your Supabase settings table tracker
+            const { data: settings } = await supabaseClient
+                .from('user_settings')
+                .select('zernio_facebook_id, zernio_instagram_id')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+
+            const fbId = settings ? settings.zernio_facebook_id : null;
+            const igId = settings ? settings.zernio_instagram_id : null;
+
+            if (!fbId && !igId) {
+                alert("Delivery Aborted: No active channel profile tracking states linked. Expand 'Studio Settings' above to connect your pages first.");
+                return;
+            }
+
             btnPub.classList.add('btn-disabled');
             btnPub.innerText = "Publishing Content... Please Wait...";
 
@@ -711,7 +726,9 @@
                     },
                     body: JSON.stringify({
                         image_url: window.currentPostImageUrl || "",
-                        caption: caption
+                        caption: caption,
+                        fb_account_id: fbId || "", // Pass keys down the pipeline securely
+                        ig_account_id: igId || ""  // Pass keys down the pipeline securely
                     })
                 });
 
@@ -719,7 +736,7 @@
                 if (data.status === "success") {
                     alert("🚀 Post successfully published to your active social feeds!");
                 } else {
-                    alert("Delivery mismatch. Review connection profile statuses.");
+                    alert(`Delivery Mismatch: ${data.detail || 'Review connection profile statuses.'}`);
                 }
             } catch (err) {
                 console.error(err);
