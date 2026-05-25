@@ -33,22 +33,33 @@ async def get_connect_url(platform: str, profile_id: str = None):
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
-    # 🚀 FIXED: Always uses your validated master Zernio profile token for the connection routing pass
+    # Always enforce the verified master Zernio profile token workspace
     active_profile = "6a1350634beb548c15895d64"
     
-    clean_key = zernio_key.strip().replace("'", "").replace('"', "")
+    # Aggressively clean up the token string to prevent any line breaks or quote leaks
+    clean_key = zernio_key.strip().replace("'", "").replace('"', "").replace("\n", "").replace("\r", "")
+    
     zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={active_profile}&redirect_url=https://studio.tavaone.com/index.html"
     
-    headers = {"Authorization": f"Bearer {clean_key}"}
+    headers = {
+        "Authorization": f"Bearer {clean_key}",
+        "Content-Type": "application/json"
+    }
 
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(zernio_endpoint, headers=headers)
+            
             if response.status_code == 200:
                 return response.json()
             else:
-                raise HTTPException(status_code=response.status_code, detail=response.text)
+                # 🚀 DIAGNOSTIC LOG: Prints the exact error reason straight into your Render terminal
+                print(f"!!! ZERNIO CONNECTION HANDSHAKE CRASH: {response.status_code} - {response.text} !!!")
+                raise HTTPException(status_code=response.status_code, detail=f"Zernio Handshake Rejected: {response.text}")
+                
         except Exception as e:
+            # Catch raw connection timeouts or network blocks
+            print(f"!!! BACKEND NETWORK EXCEPTION: {str(e)} !!!")
             raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-draft")
