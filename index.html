@@ -414,7 +414,8 @@
             const staticDisclaimer = document.getElementById('generation-disclaimer');
             
             try {
-                const response = await fetch(`${backendBaseUrl}/generate-draft`, {
+                // 🚀 FIXED: Appending the dynamic timestamp forces the browser to fetch live code patterns
+                const response = await fetch(`${backendBaseUrl}/generate-draft?t=${Date.now()}`, {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${accessToken}` },
                     body: formData
@@ -488,7 +489,8 @@
             btnPub.innerText = "Publishing Content... Please Wait...";
 
             try {
-                const response = await fetch(`${backendBaseUrl}/publish-post`, {
+                // 🚀 FIXED: Guarantees the social push clears any stubborn browser proxy cache layers
+                const response = await fetch(`${backendBaseUrl}/publish-post?t=${Date.now()}`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
