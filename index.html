@@ -377,13 +377,11 @@
             
             <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
             
-            <p id="generation-disclaimer" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 0.5rem; letter-spacing: 0.02em;">
-                ℹ️ Visual analysis, compression, and drafting cycles typically finalize within <strong>15 to 45 seconds</strong> depending on image complexity.
+            <p id="generation-disclaimer" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 0.6rem; letter-spacing: 0.01em;">
+                ℹ️ Image downscaling, matrix translation, and Gemini AI context processing typically require <strong>15 to 45 seconds</strong>.
             </p>
 
-            <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">
-                ⏳ Running deep visual interpretation and custom script layout mapping... Please stand by...
-            </div>
+            <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Running semantic scene tracking and parsing multi-variant options... Please stand by...</div>
 
             <div id="selection-area" class="view-section" style="margin-top:2rem;">
                 <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
@@ -578,7 +576,8 @@
             const selectionArea = document.getElementById('selection-area');
             const draftCardsContainer = document.getElementById('draft-cards');
             const btnGen = document.getElementById('btn-generate');
-            const customPromptInput = document.getElementById('customPrompt'); // Grab settings textarea element
+            const customPromptInput = document.getElementById('customPrompt');
+            const staticDisclaimer = document.getElementById('generation-disclaimer');
 
             if (!fileInput.files || fileInput.files.length === 0) {
                 alert("Please select an image file first.");
@@ -591,6 +590,7 @@
             loadingLabel.className = "view-active-block";
             btnGen.classList.add('btn-disabled');
             selectionArea.className = "view-section";
+            if (staticDisclaimer) staticDisclaimer.className = "view-section"; // 🚀 Hide static warning while loading
             draftCardsContainer.innerHTML = "";
 
             const rawFile = fileInput.files[0];
@@ -622,14 +622,14 @@
                     canvas.toBlob(async function(blob) {
                         const formData = new FormData();
                         formData.append("file", blob, "compressed_upload.jpg");
-                        formData.append("custom_prompt", customPromptValue); // 🚀 Send saved layout settings text
+                        formData.append("custom_prompt", customPromptValue);
                         await executeDraftUpload(formData, session.access_token);
                     }, "image/jpeg", 0.8);
                 };
             } else {
                 const formData = new FormData();
                 formData.append("file", rawFile);
-                formData.append("custom_prompt", customPromptValue); // 🚀 Send saved layout settings text
+                formData.append("custom_prompt", customPromptValue);
                 await executeDraftUpload(formData, session.access_token);
             }
         }
@@ -639,12 +639,9 @@
             const selectionArea = document.getElementById('selection-area');
             const draftCardsContainer = document.getElementById('draft-cards');
             const btnGen = document.getElementById('btn-generate');
-            const staticDisclaimer = document.getElementById('generation-disclaimer'); // Grab new element
+            const staticDisclaimer = document.getElementById('generation-disclaimer');
             
             try {
-                // Hide static line once the active spinner is running
-                if (staticDisclaimer) staticDisclaimer.className = "view-section";
-
                 const response = await fetch(`${backendBaseUrl}/generate-draft`, {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${accessToken}` },
@@ -659,6 +656,7 @@
                 const data = await response.json();
                 window.currentPostImageUrl = data.image_url;
 
+                // Robust split strategy handles numeric keys generated via LLM blocks
                 const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(txt => txt.trim().length > 0);
                 
                 options.forEach((optionText, index) => {
@@ -684,13 +682,12 @@
             } catch (err) {
                 console.error(err);
                 alert(`Pipeline Error: ${err.message}`);
-                
-                // Restore views cleanly on failure
                 loadingLabel.className = "view-section";
                 btnGen.classList.remove('btn-disabled');
-                if (staticDisclaimer) staticDisclaimer.className = "view-active-block";
+                if (staticDisclaimer) staticDisclaimer.className = "view-active-block"; // Restore on error
             }
         }
+
         async function publishToSocials() {
             const caption = document.getElementById('finalCaption').value;
             const btnPub = document.getElementById('btn-publish');
