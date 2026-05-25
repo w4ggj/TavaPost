@@ -18,6 +18,7 @@
             --accent-purple: #a855f7;
             --accent-blue: #3b82f6;
             --warning-amber: #f59e0b;
+            --danger-red: #ef4444;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -67,9 +68,9 @@
 
         .connection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
         @media (max-width: 568px) { .connection-grid { grid-template-columns: 1fr; } }
-        .conn-card { background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; text-align: center; }
+        .conn-card { background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; text-align: center; display: flex; flex-direction: column; justify-content: space-between; min-height: 160px; }
         
-        .badge { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.5rem; border-radius: 4px; text-transform: uppercase; margin-top: 0.5rem; }
+        .badge { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.5rem; border-radius: 4px; text-transform: uppercase; margin-top: 0.5rem; align-self: center; }
         .badge-red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
         .badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
 
@@ -86,10 +87,10 @@
         .btn { width: 100%; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s ease; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em; }
         .btn-primary { background-color: var(--accent-green); color: var(--bg-main); }
         .btn-primary:hover { opacity: 0.9; }
-        .btn-fb { background-color: transparent; border: 1px solid var(--accent-blue); color: var(--text-main); margin-top: 0.5rem;}
-        .btn-fb:hover { background: rgba(59, 130, 246, 0.1); }
-        .btn-ig { background-color: transparent; border: 1px solid var(--accent-purple); color: var(--text-main); margin-top: 0.5rem;}
-        .btn-ig:hover { background: rgba(168, 85, 247, 0.1); }
+        .btn-fb { background-color: var(--accent-blue); color: #fff; margin-top: 0.75rem; }
+        .btn-ig { background-color: var(--accent-purple); color: #fff; margin-top: 0.75rem; }
+        .btn-disconnect { background-color: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger-red); color: #f87171; margin-top: 0.75rem; }
+        .btn-disconnect:hover { background-color: var(--danger-red); color: var(--bg-main); }
         .btn-logout { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: auto; }
         .btn-disabled { background-color: var(--border-color) !important; color: var(--text-muted) !important; cursor: not-allowed; }
 
@@ -145,19 +146,27 @@
             </ul>
         </details>
 
-        <details class="interactive-accordion">
+        <details class="interactive-accordion" open>
             <summary>⚙️ Studio Settings</summary>
             <div>
                 <div class="connection-grid">
                     <div class="conn-card">
-                        <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
-                        <div id="fb-status" class="badge badge-red">Not Connected</div>
-                        <button type="button" class="btn btn-fb" onclick="connectPlatform('facebook'); return false;">Connect Page</button>
+                        <div>
+                            <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
+                            <div id="fb-status" class="badge badge-red">Not Connected</div>
+                        </div>
+                        <div id="fb-action-area">
+                            <button type="button" class="btn btn-fb" onclick="connectPlatform('facebook')">Connect Page</button>
+                        </div>
                     </div>
                     <div class="conn-card">
-                        <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
-                        <div id="ig-status" class="badge badge-red">Not Connected</div>
-                        <button type="button" class="btn btn-ig" onclick="connectPlatform('instagram'); return false;">Connect IG</button>
+                        <div>
+                            <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
+                            <div id="ig-status" class="badge badge-red">Not Connected</div>
+                        </div>
+                        <div id="ig-action-area">
+                            <button type="button" class="btn btn-ig" onclick="connectPlatform('instagram')">Connect IG</button>
+                        </div>
                     </div>
                 </div>
                 <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
@@ -169,7 +178,7 @@
             </div>
         </details>
 
-        <main class="panel">
+        <main class="panel" style="margin-top: 1.5rem;">
             <h2 class="panel-title">Content Pipeline</h2>
             <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
                 <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
@@ -191,6 +200,17 @@
                 <h3 style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL EDITING & POLISH ]</h3>
                 <textarea id="finalCaption" style="min-height:200px; margin-top:1rem;"></textarea>
                 
+                <div style="display: flex; gap: 1.5rem; margin-bottom: 1.25rem; background: rgba(15, 23, 42, 0.3); padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-main);">
+                        <input type="checkbox" id="publish-to-fb" checked style="accent-color: var(--accent-green); width: 1.1rem; height: 1.1rem; cursor: pointer;">
+                        Facebook
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-main);">
+                        <input type="checkbox" id="publish-to-ig" checked style="accent-color: var(--accent-green); width: 1.1rem; height: 1.1rem; cursor: pointer;">
+                        Instagram
+                    </label>
+                </div>
+
                 <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber);" onclick="publishToSocials()">🚀 Publish Directly to Social Channels</button>
                 
                 <div class="pipeline-warning">
@@ -301,21 +321,27 @@
                 if (data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
                 
                 const fbStatus = document.getElementById('fb-status');
+                const fbAction = document.getElementById('fb-action-area');
                 if (data.zernio_facebook_id) {
                     fbStatus.innerText = "Connected ✅";
                     fbStatus.className = "badge badge-green";
+                    fbAction.innerHTML = `<button type="button" class="btn btn-disconnect" onclick="disconnectPlatform('facebook')">Disconnect Page</button>`;
                 } else {
                     fbStatus.innerText = "Not Connected";
                     fbStatus.className = "badge badge-red";
+                    fbAction.innerHTML = `<button type="button" class="btn btn-fb" onclick="connectPlatform('facebook')">Connect Page</button>`;
                 }
                 
                 const igStatus = document.getElementById('ig-status');
+                const igAction = document.getElementById('ig-action-area');
                 if (data.zernio_instagram_id) {
                     igStatus.innerText = "Connected ✅";
                     igStatus.className = "badge badge-green";
+                    igAction.innerHTML = `<button type="button" class="btn btn-disconnect" onclick="disconnectPlatform('instagram')">Disconnect IG</button>`;
                 } else {
                     igStatus.innerText = "Not Connected";
                     igStatus.className = "badge badge-red";
+                    igAction.innerHTML = `<button type="button" class="btn btn-ig" onclick="connectPlatform('instagram')">Connect IG</button>`;
                 }
             }
         }
@@ -338,18 +364,42 @@
         }
 
         async function connectPlatform(platform) {
-            if (window.event) window.event.preventDefault(); 
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
+            if (!session) {
+                alert("Session timed out. Please refresh and log in.");
+                return;
+            }
 
             localStorage.setItem('connecting_platform', platform);
             try {
-                // 🚀 FIXED: Passes the identifier parameter explicitly matching the backend routing schema
-                const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=${session.user.id}`);
+                const targetUrl = `${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=6a1350634beb548c15895d64&t=${Date.now()}`;
+                const response = await fetch(targetUrl);
                 const data = await response.json();
-                if (data.authUrl) window.location.href = data.authUrl;
+                if (data.authUrl) {
+                    window.location.href = data.authUrl;
+                } else {
+                    alert("Unable to generate authorization tracking token from Zernio dashboard node.");
+                }
             } catch (err) {
                 alert(`Handshake Fault: ${err.message}`);
+            }
+        }
+
+        async function disconnectPlatform(platform) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+
+            if (!confirm(`Are you sure you want to disconnect this ${platform} profile link?`)) return;
+
+            let clearData = { user_id: session.user.id };
+            if (platform === 'facebook') clearData.zernio_facebook_id = null;
+            if (platform === 'instagram') clearData.zernio_instagram_id = null;
+
+            const { error } = await supabaseClient.from('user_settings').upsert(clearData);
+            if (!error) {
+                await loadSettings();
+            } else {
+                alert(`Database mutation fault: ${error.message}`);
             }
         }
 
@@ -414,7 +464,7 @@
             const staticDisclaimer = document.getElementById('generation-disclaimer');
             
             try {
-                // 🚀 FIXED: Appending the dynamic timestamp forces the browser to fetch live code patterns
+                // 🚀 Added explicit timestamp version tracking to bust cache layers cleanly
                 const response = await fetch(`${backendBaseUrl}/generate-draft?t=${Date.now()}`, {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${accessToken}` },
@@ -463,8 +513,18 @@
         async function publishToSocials() {
             const caption = document.getElementById('finalCaption').value;
             const btnPub = document.getElementById('btn-publish');
+            
+            // 🚀 Evaluates runtime checkbox input selections
+            const targetFB = document.getElementById('publish-to-fb').checked;
+            const targetIG = document.getElementById('publish-to-ig').checked;
+
             if (!caption.trim()) {
-                alert("Please select or edit a caption variant first.");
+                alert("Please select or edit a caption variation first.");
+                return;
+            }
+
+            if (!targetFB && !targetIG) {
+                alert("Aborted: Please select at least one social channel checkbox target before publishing.");
                 return;
             }
 
@@ -477,11 +537,16 @@
                 .eq('user_id', session.user.id)
                 .maybeSingle();
 
-            const fbId = settings ? settings.zernio_facebook_id : null;
-            const igId = settings ? settings.zernio_instagram_id : null;
+            // Maps account IDs dynamically depending on which check boxes remain active
+            const fbId = (targetFB && settings) ? settings.zernio_facebook_id : null;
+            const igId = (targetIG && settings) ? settings.zernio_instagram_id : null;
 
-            if (!fbId && !igId) {
-                alert("Aborted: No active channel accounts connected under settings.");
+            if (targetFB && !fbId) {
+                alert("Aborted: Facebook checkbox is selected, but no active Facebook account link was found under settings.");
+                return;
+            }
+            if (targetIG && !igId) {
+                alert("Aborted: Instagram checkbox is selected, but no active Instagram account link was found under settings.");
                 return;
             }
 
@@ -489,7 +554,7 @@
             btnPub.innerText = "Publishing Content... Please Wait...";
 
             try {
-                // 🚀 FIXED: Guarantees the social push clears any stubborn browser proxy cache layers
+                // 🚀 Appends dynamic timestamps to the publish network endpoints
                 const response = await fetch(`${backendBaseUrl}/publish-post?t=${Date.now()}`, {
                     method: "POST",
                     headers: {
@@ -501,13 +566,13 @@
                         caption: caption,
                         fb_account_id: fbId || "",
                         ig_account_id: igId || "",
-                        profile_id: session.user.id // 🚀 Send active workspace context to clear account checks
+                        profile_id: session.user.id
                     })
                 });
 
                 const data = await response.json();
                 if (data.status === "success") {
-                    alert("🚀 Post successfully published to your active social feeds!");
+                    alert("🚀 Post successfully published to your selected social feeds!");
                 } else {
                     alert(`Delivery Mismatch: ${data.detail || 'Review connections profile statuses.'}`);
                 }
