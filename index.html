@@ -70,10 +70,14 @@
         .view-grid-active { display: grid !important; }
 
         /* Login Portal Wrapper Styles */
+        /* VIEW 1: AUTHENTICATION PORTAL PANEL (PERFECTLY CENTERED) */
         .login-wrapper {
-            max-width: 420px;
-            margin: 6rem auto padding: 0 1rem;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 80px); /* Fills screen height minus header */
+            padding: 0 1rem;
+            width: 100%;
         }
 
         .login-panel {
@@ -82,6 +86,8 @@
             border-radius: 12px;
             padding: 2.5rem 2rem;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 420px; /* Keeps the card sharp and uniform */
         }
 
         .input-group {
