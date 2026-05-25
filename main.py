@@ -1,4 +1,4 @@
-# TavaPost Studio Backend API Node // Ver 1.8.0
+# TavaPost Studio Backend API Node // Ver 1.9.0
 import os
 import httpx
 import base64
@@ -21,6 +21,7 @@ class PostRequest(BaseModel):
     caption: str
     fb_account_id: str = None
     ig_account_id: str = None
+    profile_id: str = None  # 🚀 Dynamic workspace tracking field
 
 @app.get("/")
 async def root_check():
@@ -32,8 +33,10 @@ async def get_connect_url(platform: str, profile_id: str = None):
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
+    # Fallback to hardcoded workspace ID if dynamic context isn't passed from frontend session
+    active_profile = profile_id if profile_id else "6a1350634beb548c15895d64"
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
-    zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId=6a1350634beb548c15895d64&redirect_url=https://studio.tavaone.com/index.html"
+    zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={active_profile}&redirect_url=https://studio.tavaone.com/index.html"
     
     headers = {"Authorization": f"Bearer {clean_key}"}
 
@@ -132,8 +135,11 @@ async def publish_post(payload: PostRequest):
     if not target_platforms:
         raise HTTPException(status_code=400, detail="No connected platform account IDs found.")
 
+    # 🚀 FIXED: Dynamic fallback targets active context string to clear account mismatch walls
+    active_profile = payload.profile_id if payload.profile_id else "6a1350634beb548c15895d64"
+
     body = {
-        "profileId": "6a1350634beb548c15895d64",
+        "profileId": active_profile,
         "content": payload.caption,
         "platforms": target_platforms
     }
