@@ -553,26 +553,31 @@
 
         async function connectPlatform(platform) {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
+            if (!session) {
+                alert("Session expired. Please log in again.");
+                return;
+            }
 
             localStorage.setItem('connecting_platform', platform);
             
             try {
-                // 🚀 Fetch the active integration endpoint payload from your live backend
+                // 1. Fetch the raw payload string from your backend in the background
                 const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=${session.user.id}`);
                 
-                // If the server returns a raw text payload response block, parse the destination URL
+                if (!response.ok) throw new Error("Backend connection handshake failed.");
+                
+                // 2. Parse the text block into a usable JSON object
                 const data = await response.json();
+                
+                // 3. Extract the inner authUrl destination and force the window hop
                 if (data.authUrl) {
-                    // Push the window straight into the official Meta Authorization gate!
                     window.location.href = data.authUrl;
                 } else {
-                    // Fallback proxy catcher if your server responds with a direct redirect route
-                    window.location.href = response.url;
+                    throw new Error("Invalid response format received from Zernio gateway.");
                 }
             } catch (err) {
-                console.error("Connection Node Handshake Error: ", err);
-                alert("Failed to negotiate initialization link with your backend service channel.");
+                console.error("Connection Node Error: ", err);
+                alert(`Handshake Fault: ${err.message}`);
             }
         }
 
