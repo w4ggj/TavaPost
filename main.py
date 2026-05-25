@@ -94,17 +94,27 @@ async def generate_draft(file: UploadFile = File(...), authorization: str = Head
         raise HTTPException(status_code=500, detail=str(e))
 
 # New Secure Zernio OAuth Link Proxy with Automatic Redirect Parameter
+from fastapi.responses import RedirectResponse
+
 @app.get("/api/get-connect-url")
-async def get_connect_url(platform: str):
-    profile_id = "6a1350634beb548c15895d64"
+async def get_connect_url(platform: str, profile_id: str):
+    # 1. Check for the Zernio API key first
     zernio_key = os.environ.get("ZERNIO_API_KEY")
-    
     if not zernio_key:
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail="Backend configuration missing ZERNIO_API_KEY environment variable."
         )
 
+    try:
+        # 2. Build the live target integration endpoint
+        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profile_id}&redirect_url=https://studio.tavaone.com/index.html"
+        
+        # 3. Securely force the browser to jump directly to the authentication link
+        return RedirectResponse(url=zernio_endpoint)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     clean_key = zernio_key.strip().replace('"', '').replace("'", "")
 
     try:
