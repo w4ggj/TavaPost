@@ -594,7 +594,8 @@
                 const data = await response.json();
                 window.currentPostImageUrl = data.image_url;
 
-                const options = data.draft_text.split(/Option\s+\d+:?/i).filter(txt => txt.trim().length > 0);
+                // 🚀 FIXED: Splits by "Option 1", "Variation 1", OR standard numbers like "1." and "2."
+                const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(txt => txt.trim().length > 0);
                 
                 options.forEach((optionText, index) => {
                     const card = document.createElement('div');
