@@ -59,22 +59,21 @@
         }
 
         .container {
-            max-width: 900px; /* Centered narrow column layout for an elegant look */
+            max-width: 900px;
             margin: 2rem auto;
             padding: 0 1.5rem;
         }
 
-        /* Strict View Toggle Handlers */
+        /* Fixed Visibility Layout Engine Rules */
         .view-section { display: none !important; }
         .view-active-flex { display: flex !important; }
         .view-active-block { display: block !important; }
 
-        /* Login Portal Wrapper (Stable Top-Centered) */
+        /* VIEW 1: Centered Authentication Frame Layout */
         .login-wrapper {
-            display: none;
+            width: 100%;
             justify-content: center;
             padding: 6rem 1rem 0 1rem;
-            width: 100%;
         }
 
         .login-panel {
@@ -129,7 +128,7 @@
             padding-left: 0.75rem;
         }
 
-        /* Unified Master Settings Accordion Container */
+        /* Unified Collapsible Settings Accordion */
         .interactive-accordion {
             background: rgba(30, 41, 59, 0.7);
             border: 1px solid var(--border-color);
@@ -162,7 +161,7 @@
             content: '－';
         }
 
-        /* Horizontal Side-by-Side Channel Layout */
+        /* Side-by-Side Channels Setup Layout grid */
         .connection-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -293,13 +292,11 @@
             border-radius: 8px;
             padding: 1.25rem;
             cursor: pointer;
-            border: 1px solid var(--border-color);
         }
 
         .draft-card:hover { border-color: var(--accent-green); }
         .draft-card header { background: none; border: none; padding: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--accent-green); font-weight: 700; text-transform: uppercase; }
 
-        .hidden { display: none !important; }
         .text-green { color: var(--accent-green) !important; }
         .text-red { color: #f87171 !important; }
     </style>
@@ -314,29 +311,27 @@
     <div id="system-crash-alert" class="view-section container">
         <div class="panel" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.05);">
             <h2 class="text-red" style="font-size: 1.25rem; margin-bottom: 0.5rem;">⚠️ System Handshake Failure</h2>
-            <p id="crash-diagnostic-text" style="color: var(--text-muted); font-size: 0.9rem;">Your client failed to connect to Supabase backend pools.</p>
+            <p id="crash-diagnostic-text" style="color: var(--text-muted); font-size: 0.9rem;">Your client failed to build a handshake connection with your tracking database.</p>
         </div>
     </div>
 
-    <div id="view-login" class="view-section">
-        <div class="login-wrapper">
-            <div class="login-panel">
-                <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 700;">Welcome to Studio</h2>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your brand and social content</p>
-                
-                <div class="input-group">
-                    <label>Email Address</label>
-                    <input type="email" id="login-email" placeholder="you@yourbrand.com">
-                </div>
-                
-                <div class="input-group" style="margin-bottom: 2rem;">
-                    <label>Password</label>
-                    <input type="password" id="login-password" placeholder="••••••••••••">
-                </div>
-                
-                <button class="btn btn-primary" onclick="signInUser()">Log In</button>
-                <p id="login-error" class="text-red view-section" style="margin-top: 1rem; font-size: 0.8rem;"></p>
+    <div id="view-login" class="view-section login-wrapper">
+        <div class="login-panel">
+            <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 700;">Welcome to Studio</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your brand and social content</p>
+            
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="login-email" placeholder="you@yourbrand.com">
             </div>
+            
+            <div class="input-group" style="margin-bottom: 2rem;">
+                <label>Password</label>
+                <input type="password" id="login-password" placeholder="••••••••••••">
+            </div>
+            
+            <button class="btn btn-primary" onclick="signInUser()">Log In</button>
+            <p id="login-error" class="text-red view-section" style="margin-top: 1rem; font-size: 0.8rem;"></p>
         </div>
     </div>
 
@@ -345,10 +340,10 @@
         <details class="guide-box">
             <summary>✨ Quick Start Guide</summary>
             <ul>
-                <li><strong>1. Connect Channels:</strong> Expand <em>Studio Settings</em> below to link your target Facebook and Instagram business pages.</li>
-                <li><strong>2. Set Custom Brand Rules:</strong> Use the Custom Instructions box inside settings to map your unique writing voice guidelines, then save.</li>
-                <li><strong>3. Upload Media Asset:</strong> Choose an image file below. The AI visual engine evaluates your photo directly against your brand rules.</li>
-                <li><strong>4. Final Review & Publish:</strong> Select a text variation to load it into the editor box, tweak any copy variables manually, and sync live to feeds.</li>
+                <li><strong>1. Connect Channels:</strong> Expand <em>Studio Settings</em> below to link your target Facebook and Instagram profiles.</li>
+                <li><strong>2. Map Voice Guidelines:</strong> Drop your customized prompt structure inside your settings box, then click save.</li>
+                <li><strong>3. Process Assets:</strong> Load an image file into the content pipeline space below to run visual interpretation routines.</li>
+                <li><strong>4. Polish & Sync:</strong> Tap on your preferred variant card to drop it directly into the editor pane, adjust any manual variables, and push live.</li>
             </ul>
         </details>
 
@@ -410,7 +405,7 @@
         let supabaseClient;
         const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
         
-        // 🚀 PASTE YOUR SUPABASE ANON KEY HERE BEFORE SAVING:
+        // 🚀 PASTE YOUR SUPABASE ANON KEY HERE:
         const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
 
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
@@ -425,7 +420,6 @@
             } catch (err) {
                 console.error("Core Engine Init Error: ", err.message);
                 document.getElementById('system-crash-alert').className = "container view-active-block";
-                document.getElementById('crash-diagnostic-text').innerText = `Initialization Error details: ${err.message}`;
             }
         }
 
@@ -443,6 +437,7 @@
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 
                 if (!session) {
+                    // Strips 'view-section' to force the visibility initialization
                     document.getElementById('view-login').className = "login-wrapper view-active-flex";
                     document.getElementById('view-dashboard').className = "view-section";
                     document.getElementById('header-logout').className = "view-section";
@@ -455,7 +450,7 @@
                     await loadSettings();
                 }
             } catch (err) {
-                console.error("Session check crashed: ", err.message);
+                console.error("Session routine exception caught: ", err.message);
             }
         }
 
@@ -553,30 +548,22 @@
 
         async function connectPlatform(platform) {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) {
-                alert("Session expired. Please log in again.");
-                return;
-            }
+            if (!session) return;
 
             localStorage.setItem('connecting_platform', platform);
             
             try {
-                // 1. Fetch the raw payload string from your backend in the background
                 const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=${session.user.id}`);
-                
                 if (!response.ok) throw new Error("Backend connection handshake failed.");
                 
-                // 2. Parse the text block into a usable JSON object
                 const data = await response.json();
-                
-                // 3. Extract the inner authUrl destination and force the window hop
                 if (data.authUrl) {
                     window.location.href = data.authUrl;
                 } else {
-                    throw new Error("Invalid response format received from Zernio gateway.");
+                    throw new Error("Invalid response token mapping layout.");
                 }
             } catch (err) {
-                console.error("Connection Node Error: ", err);
+                console.error("Connection Error: ", err);
                 alert(`Handshake Fault: ${err.message}`);
             }
         }
@@ -596,7 +583,7 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) return;
 
-            loadingLabel.className = "tech-font view-active-block";
+            loadingLabel.className = "view-active-block";
             btnGen.classList.add('btn-disabled');
             selectionArea.className = "view-section";
             draftCardsContainer.innerHTML = "";
@@ -616,13 +603,18 @@
                 const data = await response.json();
                 window.currentPostImageUrl = data.image_url;
 
-                // 🚀 FIXED: Splits by "Option 1", "Variation 1", OR standard numbers like "1." and "2."
+                // Robust regex splits numbers cleanly across various model behaviors
                 const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(txt => txt.trim().length > 0);
                 
                 options.forEach((optionText, index) => {
                     const card = document.createElement('div');
                     card.className = "draft-card";
-                    card.innerHTML = `<header>Draft Variation ${index + 1}</header><p style="font-size:0.9rem; white-space: pre-wrap; color:var(--text-main);">${optionText.trim()}</p>`;
+                    card.style.border = "1px solid var(--border-color)";
+                    card.style.borderRadius = "8px";
+                    card.style.padding = "1.25rem";
+                    card.style.marginBottom = "1rem";
+                    card.style.cursor = "pointer";
+                    card.innerHTML = `<header style="color:var(--accent-green); font-size:0.8rem; font-weight:700; margin-bottom:0.5rem;">DRAFT VARIATION ${index + 1}</header><p style="font-size:0.9rem; white-space: pre-wrap; color:var(--text-main);">${optionText.trim()}</p>`;
                     card.onclick = () => {
                         document.getElementById('finalCaption').value = optionText.trim();
                         document.getElementById('finalCaption').scrollIntoView({ behavior: 'smooth' });
