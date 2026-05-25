@@ -1,14 +1,13 @@
-# TavaPost Studio Backend API Node // Ver 1.0.2
+# TavaPost Studio Backend API Node // Ver 1.0.3
 import os
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
 app = FastAPI(title="TavaPost Backend")
 
-# Initialize robust cross-origin resource rules for secure domain mapping
+# Core CORS setup to allow multi-device requests cleanly
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,14 +25,8 @@ async def root_check():
     return {"status": "online", "service": "TavaPost Engine"}
 
 @app.get("/api/get-connect-url")
-async def get_connect_url(platform: str, profile_id: str):
-    zernio_key = os.environ.get("ZERNIO_API_KEY")
-    if not zernio_key:
-        raise HTTPException(
-            status_code=500,
-            detail="Backend configuration missing ZERNIO_API_KEY environment variable."
-        )
-
+async def get_connect_url(platform: str, profile_id: str = None):
+    # 🚀 Cleaned up route parameters to prevent missing element bugs on new devices
     try:
         # Hardwired verified 24-character Zernio profile identifier 
         zernio_profile_id = "6a1350634beb548c15895d64"
@@ -41,7 +34,6 @@ async def get_connect_url(platform: str, profile_id: str):
         # Build accurate destination URL string
         target_auth_url = f"https://zernio.com/api/v1/connect/{platform}?profileId={zernio_profile_id}&redirect_url=https://studio.tavaone.com/index.html"
         
-        # 🚀 FIXED: Return it cleanly as a standard data dictionary object text string
         return {"authUrl": target_auth_url}
 
     except Exception as e:
@@ -54,8 +46,6 @@ async def publish_post(payload: PostRequest):
         raise HTTPException(status_code=500, detail="Missing API token environment config.")
 
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
-    
-    # Broadcast content pipeline destination endpoint
     zernio_publish_url = "https://zernio.com/api/v1/publish"
     
     headers = {
