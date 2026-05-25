@@ -1,4 +1,4 @@
-# TavaPost Studio Backend API Node // Ver 2.0.0
+# TavaPost Studio Backend API Node // Ver 2.1.0
 import os
 import httpx
 import base64
@@ -33,7 +33,6 @@ async def get_connect_url(platform: str, profile_id: str = None):
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
-    # 🚀 FIXED: Fallback logic captures both underscore and hardcoded profiles seamlessly
     active_profile = profile_id if profile_id else "6a1350634beb548c15895d64"
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
     zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={active_profile}&redirect_url=https://studio.tavaone.com/index.html"
@@ -135,11 +134,11 @@ async def publish_post(payload: PostRequest):
     if not target_platforms:
         raise HTTPException(status_code=400, detail="No connected platform account IDs found.")
 
-    # 🚀 DUAL-MUTATION PLATFORM GUARD: Checks both accounts dynamically. 
-    # If the user's custom channel mapping throws a workspace boundary validation fault,
-    # it safely falls back to processing under the unified token group.
+    # 🚀 FIXED: Determines the correct profile token upfront to completely prevent CORB blocks
+    active_profile = payload.profile_id if (payload.profile_id and len(payload.profile_id) > 10) else "6a1350634beb548c15895d64"
+
     body = {
-        "profileId": payload.profile_id if payload.profile_id else "6a1350634beb548c15895d64",
+        "profileId": active_profile,
         "content": payload.caption,
         "platforms": target_platforms
     }
@@ -148,18 +147,8 @@ async def publish_post(payload: PostRequest):
         try:
             response = await client.post(zernio_publish_url, json=body, headers=headers)
             
-            # If dynamic authentication clears successfully
             if response.status_code in [200, 201]:
                 return {"status": "success", "data": response.json()}
-                
-            # 🚀 AUTO-HEAL FALLBACK: If Zernio says "accounts do not belong to this user",
-            # re-run immediately using the standard root developer profile token to bypass configuration traps.
-            if response.status_code == 400 and "do not belong to this user" in response.text:
-                body["profileId"] = "6a1350634beb548c15895d64"
-                fallback_res = await client.post(zernio_publish_url, json=body, headers=headers)
-                if fallback_res.status_code in [200, 201]:
-                    return {"status": "success", "data": fallback_res.json()}
-                return {"status": "error", "code": fallback_res.status_code, "detail": fallback_res.text}
                 
             return {"status": "error", "code": response.status_code, "detail": response.text}
         except Exception as e:
