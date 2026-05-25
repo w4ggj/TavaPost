@@ -548,22 +548,30 @@
 
         async function connectPlatform(platform) {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
+            if (!session) {
+                alert("Session expired. Please log in again.");
+                return;
+            }
 
             localStorage.setItem('connecting_platform', platform);
             
             try {
+                // Fetch the raw payload string from your backend in the background
                 const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=${session.user.id}`);
+                
                 if (!response.ok) throw new Error("Backend connection handshake failed.");
                 
+                // Parse the text block into a usable JSON object
                 const data = await response.json();
+                
+                // Extract the inner authUrl destination and force the window hop
                 if (data.authUrl) {
                     window.location.href = data.authUrl;
                 } else {
-                    throw new Error("Invalid response token mapping layout.");
+                    throw new Error("Invalid response format received from Zernio gateway.");
                 }
             } catch (err) {
-                console.error("Connection Error: ", err);
+                console.error("Connection Node Error: ", err);
                 alert(`Handshake Fault: ${err.message}`);
             }
         }
