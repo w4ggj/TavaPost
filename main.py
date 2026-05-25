@@ -52,8 +52,8 @@ async def generate_draft(file: UploadFile = File(...)):
 
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
     
-    # 🚀 FIXED 1: Clean, raw API endpoint URL without trailing text params
-    zernio_draft_url = "https://zernio.com/api/v1/drafts"
+    # 🚀 FIXED: Switched from the web page path to Zernio's actual AI caption generation endpoint
+    zernio_draft_url = "https://zernio.com/api/v1/ai/captions"
 
     headers = {
         "Authorization": f"Bearer {clean_key}"
@@ -63,7 +63,7 @@ async def generate_draft(file: UploadFile = File(...)):
     file_content = await file.read()
     files = {"file": (file.filename, file_content, file.content_type)}
     
-    # 🚀 FIXED 2: Pass your developer identifier profileId cleanly inside the data block
+    # Pass your account identification variables cleanly in the form data
     payload_data = {
         "profileId": "6a1350634beb548c15895d64"
     }
@@ -81,7 +81,6 @@ async def generate_draft(file: UploadFile = File(...)):
             if response.status_code in [200, 201]:
                 return response.json()
             
-            # Print precise diagnostic tracking lines if Zernio throws an API error
             print(f"!!! ZERNIO API ERROR STATUS: {response.status_code} !!!")
             print(f"!!! ZERNIO API ERROR DETAIL: {response.text} !!!")
             
