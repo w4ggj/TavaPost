@@ -1,13 +1,14 @@
-# TavaPost Studio Backend API Node // Ver 1.1.2
+# TavaPost Studio Backend API Node // Ver 1.2.0
 import os
 import httpx
+import base64
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import google.generativeai as genai  # Matches your active requirements file library
 
 app = FastAPI(title="TavaPost Backend")
 
+# Core CORS setup to allow multi-device requests cleanly
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -53,10 +54,9 @@ async def generate_draft(file: UploadFile = File(...)):
 
     try:
         file_content = await file.read()
-        import base64
         base64_image = base64.b64encode(file_content).decode("utf-8")
         
-        # 🚀 FIXED: Pointing the direct network route to the stable Gemini 2.5 Flash engine
+        # 🚀 TARGET: Direct stable production tracking route for Gemini 2.5 Flash
         google_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
         
         headers = {
@@ -94,28 +94,6 @@ async def generate_draft(file: UploadFile = File(...)):
             
             data = response.json()
             
-            try:
-                raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-            except (KeyError, IndexError):
-                raise HTTPException(status_code=500, detail="Unexpected JSON format received from Google API.")
-
-            return {
-                "image_url": "https://studio.tavaone.com/placeholder.jpg",
-                "draft_text": raw_text
-            }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Gemini Fetch Fault: {str(e)}")
-            
-            if response.status_code != 200:
-                raise HTTPException(
-                    status_code=response.status_code, 
-                    detail=f"Google API Rejected Request: {response.text}"
-                )
-            
-            data = response.json()
-            
-            # Extract the generated text cleanly from Google's native JSON tree
             try:
                 raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
             except (KeyError, IndexError):
