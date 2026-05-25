@@ -96,9 +96,11 @@ async def generate_draft(file: UploadFile = File(...), authorization: str = Head
 # New Secure Zernio OAuth Link Proxy with Automatic Redirect Parameter
 from fastapi.responses import RedirectResponse
 
+# New Secure Zernio OAuth Link Proxy with Automatic Redirect Parameter
+from fastapi.responses import RedirectResponse
+
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str, profile_id: str):
-    # 1. Check for the Zernio API key first
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
         raise HTTPException(
@@ -106,15 +108,9 @@ async def get_connect_url(platform: str, profile_id: str):
             detail="Backend configuration missing ZERNIO_API_KEY environment variable."
         )
 
-    # Clean the key of any hidden whitespace or formatting artifacts
-    clean_key = zernio_key.strip().replace("'", "").replace('"', "")
-
     try:
-        # 🚀 Hardwire the exact, verified 24-character Zernio Developer Profile ID
-        zernio_profile_id = "6a1350634beb548c15895d64"
-
-        # Build the accurate endpoint destination string
-        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={zernio_profile_id}&redirect_url=https://studio.tavaone.com/index.html"
+        # Build the accurate endpoint destination string with the hardwired Zernio profile ID
+        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId=6a1350634beb548c15895d64&redirect_url=https://studio.tavaone.com/index.html"
         
         # Securely bounce the browser out to the live Meta authentication screens
         return RedirectResponse(url=zernio_endpoint)
