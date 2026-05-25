@@ -35,10 +35,10 @@ async def get_connect_url(platform: str, profile_id: str):
         )
 
     try:
-        # Hardwired verified 24-character hex developer pattern profile ID
+        # Hardwired verified 24-character Zernio profile identifier 
         zernio_profile_id = "6a1350634beb548c15895d64"
 
-        # Build accurate endpoint mapping back to your live custom domain address location
+        # 🚀 THE FIX: We build the URL and let FastAPI handle a clean browser redirection
         zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={zernio_profile_id}&redirect_url=https://studio.tavaone.com/index.html"
         
         return RedirectResponse(url=zernio_endpoint)
