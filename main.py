@@ -114,12 +114,18 @@ async def publish_post(payload: PostRequest):
         "Content-Type": "application/json"
     }
     
-    # 🚀 FIXED: Structured correctly as an explicit account array payload for Zernio's channel parser
+    # 🚀 FIXED: Realigned payload body structure to explicitly pass targeted account identifiers
     body = {
         "content": payload.caption,
         "platforms": [
-            {"platform": "facebook", "accountId": "6a1350634beb548c15895d64"},
-            {"platform": "instagram", "accountId": "6a1350634beb548c15895d64"}
+            {
+                "platform": "facebook",
+                "profileId": "6a1350634beb548c15895d64"
+            },
+            {
+                "platform": "instagram",
+                "profileId": "6a1350634beb548c15895d64"
+            }
         ]
     }
     
@@ -129,6 +135,8 @@ async def publish_post(payload: PostRequest):
             if response.status_code in [200, 201]:
                 return {"status": "success", "data": response.json()}
             else:
+                # Print the exact response if Zernio rejects the handshake parameter mapping
+                print(f"!!! ZERNIO PUBLISH REJECTION: {response.status_code} - {response.text} !!!")
                 return {"status": "error", "code": response.status_code, "detail": response.text}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
