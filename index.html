@@ -372,8 +372,14 @@
 
             localStorage.setItem('connecting_platform', platform);
             try {
-                const targetUrl = `${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=6a1350634beb548c15895d64&t=${Date.now()}`;
+                // 🚀 FIXED: Passes your active session user ID cleanly to let the backend safely handle routing contexts
+                const targetUrl = `${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=${session.user.id}&t=${Date.now()}`;
+                
                 const response = await fetch(targetUrl);
+                if (!response.ok) {
+                    throw new Error(`Server responded with status code ${response.status}`);
+                }
+                
                 const data = await response.json();
                 if (data.authUrl) {
                     window.location.href = data.authUrl;
@@ -381,6 +387,7 @@
                     alert("Unable to generate authorization tracking token from Zernio dashboard node.");
                 }
             } catch (err) {
+                console.error(err);
                 alert(`Handshake Fault: ${err.message}`);
             }
         }
