@@ -556,7 +556,24 @@
             if (!session) return;
 
             localStorage.setItem('connecting_platform', platform);
-            window.location.href = `${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=${session.user.id}`;
+            
+            try {
+                // 🚀 Fetch the active integration endpoint payload from your live backend
+                const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=${session.user.id}`);
+                
+                // If the server returns a raw text payload response block, parse the destination URL
+                const data = await response.json();
+                if (data.authUrl) {
+                    // Push the window straight into the official Meta Authorization gate!
+                    window.location.href = data.authUrl;
+                } else {
+                    // Fallback proxy catcher if your server responds with a direct redirect route
+                    window.location.href = response.url;
+                }
+            } catch (err) {
+                console.error("Connection Node Handshake Error: ", err);
+                alert("Failed to negotiate initialization link with your backend service channel.");
+            }
         }
 
         async function generateDraft() {
