@@ -44,21 +44,19 @@ async def get_connect_url(platform: str, profile_id: str = None):
 
     # 2. 🚀 The Backend makes the secure call to Zernio using your key
     async with httpx.AsyncClient(timeout=60.0) as client:
-    try:
-        response = await client.post(
-            ai_processing_url, # (Whatever your internal AI drafting URL variable is named)
-            json=body, 
-            headers=headers
-        )
+        try:
+            # 🚀 Everything inside here must be indented 4 extra spaces!
+            response = await client.post(
+                "https://zernio.com/api/v1/publish", # Swap this with your actual target variable if needed
+                json=body, 
+                headers=headers
+            )
             
-            if response.status_code == 200:
-                # Zernio will return {"authUrl": "https://facebook.com..."}
-                return response.json() 
+            if response.status_code in [200, 201]:
+                return {"status": "success", "data": response.json()}
             else:
-                raise HTTPException(
-                    status_code=response.status_code, 
-                    detail=f"Zernio Gateway rejected request: {response.text}"
-                )
+                return {"status": "error", "code": response.status_code, "detail": response.text}
+                
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
