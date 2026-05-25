@@ -33,7 +33,9 @@ async def get_connect_url(platform: str, profile_id: str = None):
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
-    active_profile = profile_id if profile_id else "6a1350634beb548c15895d64"
+    # 🚀 FIXED: Always uses your validated master Zernio profile token for the connection routing pass
+    active_profile = "6a1350634beb548c15895d64"
+    
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
     zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={active_profile}&redirect_url=https://studio.tavaone.com/index.html"
     
