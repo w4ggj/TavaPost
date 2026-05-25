@@ -51,7 +51,9 @@ async def generate_draft(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
-    zernio_draft_url = "https://zernio.com/api/v1/drafts"
+    
+    # 🚀 FIXED: Added your developer profileId directly to the drafts URL parameter
+    zernio_draft_url = "https://zernio.com/api/v1/drafts?profileId=6a1350634beb548c15895d64"
 
     headers = {
         "Authorization": f"Bearer {clean_key}"
@@ -66,7 +68,6 @@ async def generate_draft(file: UploadFile = File(...)):
             if response.status_code in [200, 201]:
                 return response.json()
             else:
-                # Returns the descriptive JSON error payload from Zernio if parameters clear with layout errors
                 try:
                     return response.json()
                 except:
