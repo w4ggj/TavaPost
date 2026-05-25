@@ -59,19 +59,19 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 900px; /* Centered narrow column layout for an elegant look */
             margin: 2rem auto;
             padding: 0 1.5rem;
         }
 
-        /* View Toggle Controllers (Fixed Hierarchy) */
+        /* Strict View Toggle Handlers */
         .view-section { display: none !important; }
         .view-active-flex { display: flex !important; }
         .view-active-block { display: block !important; }
 
-        /* VIEW 1: AUTHENTICATION PORTAL PANEL (STABLE TOP-CENTERED) */
+        /* Login Portal Wrapper (Stable Top-Centered) */
         .login-wrapper {
-            display: none; /* Controlled explicitly by script flex injection */
+            display: none;
             justify-content: center;
             padding: 6rem 1rem 0 1rem;
             width: 100%;
@@ -114,19 +114,6 @@
 
         input:focus { outline: none; border-color: var(--accent-green); }
 
-        /* Branded Dashboard Grid Layout (Swapped Sides) */
-        .grid-layout {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 2rem;
-        }
-
-        @media (min-width: 968px) {
-            .grid-layout { 
-                grid-template-columns: 0.8fr 1.2fr; 
-            }
-        }
-
         .panel {
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -142,7 +129,7 @@
             padding-left: 0.75rem;
         }
 
-        /* Collapsible Accordion Element Boxes */
+        /* Unified Master Settings Accordion Container */
         .interactive-accordion {
             background: rgba(30, 41, 59, 0.7);
             border: 1px solid var(--border-color);
@@ -175,37 +162,16 @@
             content: '－';
         }
 
-        .guide-box {
-            background: rgba(51, 65, 85, 0.2);
-            border: 1px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .guide-box summary {
-            font-weight: 600;
-            cursor: pointer;
-            color: var(--accent-green);
-        }
-
-        .guide-box ul {
-            margin-top: 0.75rem;
-            padding-left: 1.25rem;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        .guide-box li { margin-bottom: 0.5rem; }
-
+        /* Horizontal Side-by-Side Channel Layout */
         .connection-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
             margin-bottom: 1.5rem;
+            margin-top: 1rem;
         }
 
-        @media (min-width: 968px) {
+        @media (max-width: 568px) {
             .connection-grid { grid-template-columns: 1fr; }
         }
 
@@ -229,6 +195,29 @@
 
         .badge-red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
         .badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+
+        .guide-box {
+            background: rgba(51, 65, 85, 0.2);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .guide-box summary {
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--accent-green);
+        }
+
+        .guide-box ul {
+            margin-top: 0.75rem;
+            padding-left: 1.25rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .guide-box li { margin-bottom: 0.5rem; }
 
         textarea {
             width: 100%;
@@ -324,97 +313,96 @@
     <div id="system-crash-alert" class="view-section container">
         <div class="panel" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.05);">
             <h2 class="text-red" style="font-size: 1.25rem; margin-bottom: 0.5rem;">⚠️ System Handshake Failure</h2>
-            <p id="crash-diagnostic-text" style="color: var(--text-muted); font-size: 0.9rem;">Your client failed to connect to Supabase backend pools. Ensure your unique encryption Anon Key is active inside your index repository file.</p>
+            <p id="crash-diagnostic-text" style="color: var(--text-muted); font-size: 0.9rem;">Your client failed to connect to Supabase backend pools.</p>
         </div>
     </div>
 
-    <div id="view-login" class="view-section login-wrapper">
-        <div class="login-panel">
-            <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 700;">Welcome to Studio</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your brand and social content</p>
-            
-            <div class="input-group">
-                <label>Email Address</label>
-                <input type="email" id="login-email" placeholder="you@yourbrand.com">
+    <div id="view-login" class="view-section">
+        <div class="login-wrapper">
+            <div class="login-panel">
+                <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 700;">Welcome to Studio</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your brand and social content</p>
+                
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="login-email" placeholder="you@yourbrand.com">
+                </div>
+                
+                <div class="input-group" style="margin-bottom: 2rem;">
+                    <label>Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••••••">
+                </div>
+                
+                <button class="btn btn-primary" onclick="signInUser()">Log In</button>
+                <p id="login-error" class="text-red view-section" style="margin-top: 1rem; font-size: 0.8rem;"></p>
             </div>
-            
-            <div class="input-group" style="margin-bottom: 2rem;">
-                <label>Password</label>
-                <input type="password" id="login-password" placeholder="••••••••••••">
-            </div>
-            
-            <button class="btn btn-primary" onclick="signInUser()">Log In</button>
-            <p id="login-error" class="text-red view-section" style="margin-top: 1rem; font-size: 0.8rem;"></p>
         </div>
     </div>
 
     <div id="view-dashboard" class="view-section container">
-        <details class="guide-box">
-            <summary>✨ Quick Start Guide</summary>
-            <ul>
-                <li><strong>1. Connect Channels:</strong> Verify your target Facebook and Instagram profiles show green status indicators. Click to link new accounts.</li>
-                <li><strong>2. Set Custom Brand Rules:</strong> Use the Custom Instructions box below to define your specific brand voice, strict copy guidelines, formatting rules, or layout criteria. Click "Save Settings".</li>
-                <li><strong>3. Upload Media Asset:</strong> Select an image file to process. The AI engine will analyze the visual assets and automatically draft custom marketing variations adhering to your rules.</li>
-                <li><strong>4. Final Review & Publish:</strong> Click on your preferred draft variation to copy it into the editor. Polish the text manually, then seamlessly broadcast it out live to your feeds.</li>
-            </ul>
-        </details>
-
-        <div class="grid-layout">
-            
-            <aside class="panel" style="height: fit-content;">
-                <h2 class="panel-title">Social Profiles</h2>
+        
+        <details class="interactive-accordion">
+            <summary>⚙️ Studio Settings</summary>
+            <div>
                 <div class="connection-grid">
                     <div class="conn-card">
                         <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
                         <div id="fb-status" class="badge badge-red">Not Connected</div>
                         <button class="btn btn-fb" onclick="connectPlatform('facebook')">Connect Page</button>
                     </div>
-                    <div class="conn-card" style="margin-top: 0.5rem;">
+                    <div class="conn-card">
                         <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
                         <div id="ig-status" class="badge badge-red">Not Connected</div>
                         <button class="btn btn-ig" onclick="connectPlatform('instagram')">Connect IG</button>
                     </div>
                 </div>
-            </aside>
 
-            <main class="panel">
-                <details class="interactive-accordion">
-                    <summary>⚙️ Brand Alignment Instructions</summary>
-                    <div style="margin-top: 1.25rem;">
-                        <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules, or target audience rules here..."></textarea>
-                        <button class="btn btn-primary" onclick="saveSettings()">Save Instructions Settings</button>
-                        <span id="save-status" class="text-green view-section" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
-                    </div>
-                </details>
-
-                <h2 class="panel-title">Content Pipeline</h2>
-                <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
-                    <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
-                    <input type="file" id="imageInput" class="view-section" accept="image/*" onchange="updateFileInputLabel()">
+                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                    <h4 style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;">Custom Brand Instructions</h4>
+                    <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules, or target audience rules here..."></textarea>
+                    <button class="btn btn-primary" onclick="saveSettings()">Save Instructions Settings</button>
+                    <span id="save-status" class="text-green view-section" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
                 </div>
+            </div>
+        </details>
+
+        <details class="guide-box">
+            <summary>✨ Quick Start Guide</summary>
+            <ul>
+                <li><strong>1. Connect Channels:</strong> Expand <em>Studio Settings</em> above to link your target Facebook and Instagram business pages.</li>
+                <li><strong>2. Set Custom Brand Rules:</strong> Use the Custom Instructions box inside settings to map your unique writing voice guidelines, then save.</li>
+                <li><strong>3. Upload Media Asset:</strong> Choose an image file below. The AI visual engine evaluates your photo directly against your brand rules.</li>
+                <li><strong>4. Final Review & Publish:</strong> Select a text variation to load it into the editor box, tweak any copy variables manually, and sync live to feeds.</li>
+            </ul>
+        </details>
+
+        <main class="panel">
+            <h2 class="panel-title">Content Pipeline</h2>
+            <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
+                <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
+                <input type="file" id="imageInput" class="view-section" accept="image/*" onchange="updateFileInputLabel()">
+            </div>
+            
+            <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
+            <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Running visual analysis and drafting layout options... Please wait...</div>
+
+            <div id="selection-area" class="view-section" style="margin-top:2rem;">
+                <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
+                <div id="draft-cards" class="draft-container"></div>
                 
-                <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
-                <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Running visual analysis and drafting layout options... Please wait...</div>
-
-                <div id="selection-area" class="view-section" style="margin-top:2rem;">
-                    <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
-                    <div id="draft-cards" class="draft-container"></div>
-                    
-                    <h3 style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL EDITING & POLISH ]</h3>
-                    <textarea id="finalCaption" style="min-height:200px; margin-top:1rem;"></textarea>
-                    
-                    <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber);" onclick="publishToSocials()">🚀 Publish Directly to Social Channels</button>
-                    
-                    <div class="pipeline-warning">
-                        <span>⚠️</span>
-                        <div>
-                            <strong>Social Media Processing Window:</strong> Media integration loops typically require between <strong>30 seconds to 3 minutes</strong> while third-party networks finalize network data processing. Do not close this tab or double click publish.
-                        </div>
+                <h3 style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL EDITING & POLISH ]</h3>
+                <textarea id="finalCaption" style="min-height:200px; margin-top:1rem;"></textarea>
+                
+                <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber);" onclick="publishToSocials()">🚀 Publish Directly to Social Channels</button>
+                
+                <div class="pipeline-warning">
+                    <span>⚠️</span>
+                    <div>
+                        <strong>Social Media Processing Window:</strong> Media integration loops typically require between <strong>30 seconds to 3 minutes</strong> while third-party networks finalize network data processing. Do not close this tab or double click publish.
                     </div>
                 </div>
-            </main>
-
-        </div>
+            </div>
+        </main>
     </div>
 
     <script>
@@ -426,7 +414,6 @@
 
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
 
-        // Initializer block with strict error handling feedback loop
         function initializeApp() {
             try {
                 if (!supabaseKey || supabaseKey.includes("YOUR_SUPABASE")) {
@@ -678,7 +665,6 @@
             await checkSession();
         }
 
-        // Fire application loop via safety check launcher
         window.onload = initializeApp;
     </script>
 </body>
