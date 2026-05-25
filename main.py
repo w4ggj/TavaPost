@@ -43,9 +43,13 @@ async def get_connect_url(platform: str, profile_id: str = None):
     }
 
     # 2. 🚀 The Backend makes the secure call to Zernio using your key
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(zernio_endpoint, headers=headers)
+    async with httpx.AsyncClient(timeout=60.0) as client:
+    try:
+        response = await client.post(
+            ai_processing_url, # (Whatever your internal AI drafting URL variable is named)
+            json=body, 
+            headers=headers
+        )
             
             if response.status_code == 200:
                 # Zernio will return {"authUrl": "https://facebook.com..."}
