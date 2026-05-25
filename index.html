@@ -64,14 +64,14 @@
             padding: 0 1.5rem;
         }
 
-        /* Strict View Toggle Handlers (Fixed Overrides) */
-        .view-section { display: none; }
+        /* View Toggle Controllers (Fixed Hierarchy) */
+        .view-section { display: none !important; }
         .view-active-flex { display: flex !important; }
         .view-active-block { display: block !important; }
 
-        /* Login Portal Wrapper (Stable Top-Centered) */
+        /* VIEW 1: AUTHENTICATION PORTAL PANEL (STABLE TOP-CENTERED) */
         .login-wrapper {
-            display: flex;
+            display: none; /* Controlled explicitly by script flex injection */
             justify-content: center;
             padding: 6rem 1rem 0 1rem;
             width: 100%;
@@ -123,7 +123,6 @@
 
         @media (min-width: 968px) {
             .grid-layout { 
-                /* Left side is now the smaller Social Panel, Right side is the Core Tool Pipeline */
                 grid-template-columns: 0.8fr 1.2fr; 
             }
         }
@@ -207,7 +206,6 @@
         }
 
         @media (min-width: 968px) {
-            /* Stacks social components beautifully on desktop grids */
             .connection-grid { grid-template-columns: 1fr; }
         }
 
@@ -312,7 +310,6 @@
         .draft-card:hover { border-color: var(--accent-green); }
         .draft-card header { background: none; border: none; padding: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--accent-green); font-weight: 700; text-transform: uppercase; }
 
-        .hidden { display: none !important; }
         .text-green { color: var(--accent-green) !important; }
         .text-red { color: #f87171 !important; }
     </style>
@@ -321,10 +318,17 @@
 
     <header>
         <div class="brand-title">Tava<span>One</span> // Studio</div>
-        <button id="header-logout" class="btn btn-logout hidden" onclick="signOutUser()">Log Out</button>
+        <button id="header-logout" class="btn btn-logout view-section" onclick="signOutUser()">Log Out</button>
     </header>
 
-    <div id="view-login" class="view-section">
+    <div id="system-crash-alert" class="view-section container">
+        <div class="panel" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.05);">
+            <h2 class="text-red" style="font-size: 1.25rem; margin-bottom: 0.5rem;">⚠️ System Handshake Failure</h2>
+            <p id="crash-diagnostic-text" style="color: var(--text-muted); font-size: 0.9rem;">Your client failed to connect to Supabase backend pools. Ensure your unique encryption Anon Key is active inside your index repository file.</p>
+        </div>
+    </div>
+
+    <div id="view-login" class="view-section login-wrapper">
         <div class="login-panel">
             <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 700;">Welcome to Studio</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your brand and social content</p>
@@ -340,7 +344,7 @@
             </div>
             
             <button class="btn btn-primary" onclick="signInUser()">Log In</button>
-            <p id="login-error" class="text-red hidden" style="margin-top: 1rem; font-size: 0.8rem;"></p>
+            <p id="login-error" class="text-red view-section" style="margin-top: 1rem; font-size: 0.8rem;"></p>
         </div>
     </div>
 
@@ -374,26 +378,25 @@
             </aside>
 
             <main class="panel">
-                
                 <details class="interactive-accordion">
                     <summary>⚙️ Brand Alignment Instructions</summary>
                     <div style="margin-top: 1.25rem;">
                         <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules, or target audience rules here..."></textarea>
                         <button class="btn btn-primary" onclick="saveSettings()">Save Instructions Settings</button>
-                        <span id="save-status" class="text-green hidden" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
+                        <span id="save-status" class="text-green view-section" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
                     </div>
                 </details>
 
                 <h2 class="panel-title">Content Pipeline</h2>
                 <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
                     <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
-                    <input type="file" id="imageInput" class="hidden" accept="image/*" onchange="updateFileInputLabel()">
+                    <input type="file" id="imageInput" class="view-section" accept="image/*" onchange="updateFileInputLabel()">
                 </div>
                 
                 <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
-                <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="hidden">⏳ Running visual analysis and drafting layout options... Please wait...</div>
+                <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Running visual analysis and drafting layout options... Please wait...</div>
 
-                <div id="selection-area" class="hidden" style="margin-top:2rem;">
+                <div id="selection-area" class="view-section" style="margin-top:2rem;">
                     <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
                     <div id="draft-cards" class="draft-container"></div>
                     
@@ -415,11 +418,28 @@
     </div>
 
     <script>
+        let supabaseClient;
         const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
-        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; // Double check your key is in here
-        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
         
+        // 🚀 PASTE YOUR SUPABASE ANON KEY HERE BEFORE SAVING:
+        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
+
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
+
+        // Initializer block with strict error handling feedback loop
+        function initializeApp() {
+            try {
+                if (!supabaseKey || supabaseKey.includes("YOUR_SUPABASE")) {
+                    throw new Error("Missing valid initialization client token credentials.");
+                }
+                supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+                checkSession();
+            } catch (err) {
+                console.error("Core Engine Init Error: ", err.message);
+                document.getElementById('system-crash-alert').className = "container view-active-block";
+                document.getElementById('crash-diagnostic-text').innerText = `Initialization Error details: ${err.message}`;
+            }
+        }
 
         function updateFileInputLabel() {
             const fileInput = document.getElementById('imageInput');
@@ -431,19 +451,23 @@
         }
 
         async function checkSession() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            
-            if (!session) {
-                document.getElementById('view-login').className = "login-wrapper view-active-flex";
-                document.getElementById('view-dashboard').className = "view-section";
-                document.getElementById('header-logout').className = "btn btn-logout hidden";
-            } else {
-                document.getElementById('view-login').className = "view-section";
-                document.getElementById('view-dashboard').className = "container view-active-block";
-                document.getElementById('header-logout').className = "btn btn-logout view-active-block";
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
                 
-                await handleZernioCallback();
-                await loadSettings();
+                if (!session) {
+                    document.getElementById('view-login').className = "login-wrapper view-active-flex";
+                    document.getElementById('view-dashboard').className = "view-section";
+                    document.getElementById('header-logout').className = "view-section";
+                } else {
+                    document.getElementById('view-login').className = "view-section";
+                    document.getElementById('view-dashboard').className = "container view-active-block";
+                    document.getElementById('header-logout').className = "btn btn-logout view-active-block";
+                    
+                    await handleZernioCallback();
+                    await loadSettings();
+                }
+            } catch (err) {
+                console.error("Session check crashed: ", err.message);
             }
         }
 
@@ -452,7 +476,7 @@
             const password = document.getElementById('login-password').value;
             const errorLabel = document.getElementById('login-error');
             
-            errorLabel.classList.add('hidden');
+            errorLabel.className = "view-section";
 
             const { data, error } = await supabaseClient.auth.signInWithPassword({
                 email: email,
@@ -461,7 +485,7 @@
 
             if (error) {
                 errorLabel.innerText = `Login Failed: ${error.message}`;
-                errorLabel.classList.remove('hidden');
+                errorLabel.className = "text-red view-active-block";
             } else {
                 await checkSession();
             }
@@ -534,8 +558,8 @@
                 .upsert({ user_id: session.user.id, custom_prompt: customPrompt });
 
             if (!error) {
-                statusLabel.classList.remove('hidden');
-                setTimeout(() => statusLabel.classList.add('hidden'), 3000);
+                statusLabel.className = "text-green view-active-block";
+                setTimeout(() => statusLabel.className = "view-section", 3000);
             }
         }
 
@@ -562,9 +586,9 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) return;
 
-            loadingLabel.classList.remove('hidden');
+            loadingLabel.className = "tech-font view-active-block";
             btnGen.classList.add('btn-disabled');
-            selectionArea.classList.add('hidden');
+            selectionArea.className = "view-section";
             draftCardsContainer.innerHTML = "";
 
             const formData = new FormData();
@@ -595,5 +619,67 @@
                     draftCardsContainer.appendChild(card);
                 });
 
-                loadingLabel.classList.add('hidden');
-                btnGen.classList.remove('btn
+                loadingLabel.className = "view-section";
+                btnGen.classList.remove('btn-disabled');
+                selectionArea.className = "view-active-block";
+
+            } catch (err) {
+                console.error(err);
+                alert(`Pipeline Error: ${err.message}`);
+                loadingLabel.className = "view-section";
+                btnGen.classList.remove('btn-disabled');
+            }
+        }
+
+        async function publishToSocials() {
+            const caption = document.getElementById('finalCaption').value;
+            const btnPub = document.getElementById('btn-publish');
+            if (!caption.trim()) {
+                alert("Please select or edit a caption variant first.");
+                return;
+            }
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+
+            btnPub.classList.add('btn-disabled');
+            btnPub.innerText = "Publishing Content... Please Wait...";
+
+            try {
+                const response = await fetch(`${backendBaseUrl}/publish-post`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({
+                        image_url: window.currentPostImageUrl || "",
+                        caption: caption
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === "success") {
+                    alert("🚀 Post successfully published to your active social feeds!");
+                } else {
+                    alert("Delivery mismatch. Review connection profile statuses.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error communicating with background content server.");
+            } finally {
+                btnPub.classList.remove('btn-disabled');
+                btnPub.innerText = "🚀 Publish Directly to Social Channels";
+            }
+        }
+
+        async function signOutUser() {
+            await supabaseClient.auth.signOut();
+            await checkSession();
+        }
+
+        // Fire application loop via safety check launcher
+        window.onload = initializeApp;
+    </script>
+</body>
+</html>
