@@ -56,8 +56,8 @@ async def generate_draft(file: UploadFile = File(...)):
         import base64
         base64_image = base64.b64encode(file_content).decode("utf-8")
         
-        # 🚀 UNIVERSAL ENDPOINT: Bypasses library version mismatches entirely
-        google_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+        # 🚀 FIXED: Pointing the direct network route to the stable Gemini 2.5 Flash engine
+        google_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
         
         headers = {
             "Content-Type": "application/json"
@@ -69,7 +69,6 @@ async def generate_draft(file: UploadFile = File(...)):
         Keep the voice engaging, relevant to the scene, and clean.
         """
 
-        # Format the precise JSON payload structure Google expects natively
         body = {
             "contents": [{
                 "parts": [
@@ -86,6 +85,27 @@ async def generate_draft(file: UploadFile = File(...)):
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(google_url, json=body, headers=headers)
+            
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=response.status_code, 
+                    detail=f"Google API Rejected Request: {response.text}"
+                )
+            
+            data = response.json()
+            
+            try:
+                raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+            except (KeyError, IndexError):
+                raise HTTPException(status_code=500, detail="Unexpected JSON format received from Google API.")
+
+            return {
+                "image_url": "https://studio.tavaone.com/placeholder.jpg",
+                "draft_text": raw_text
+            }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gemini Fetch Fault: {str(e)}")
             
             if response.status_code != 200:
                 raise HTTPException(
