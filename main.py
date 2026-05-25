@@ -51,24 +51,37 @@ async def generate_draft(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
-    zernio_draft_url = "https://zernio.com/api/v1/drafts?profileId=6a1350634beb548c15895d64"
+    
+    # 🚀 FIXED 1: Clean, raw API endpoint URL without trailing text params
+    zernio_draft_url = "https://zernio.com/api/v1/drafts"
 
     headers = {
         "Authorization": f"Bearer {clean_key}"
     }
 
+    # Extract the binary file content stream
     file_content = await file.read()
     files = {"file": (file.filename, file_content, file.content_type)}
+    
+    # 🚀 FIXED 2: Pass your developer identifier profileId cleanly inside the data block
+    payload_data = {
+        "profileId": "6a1350634beb548c15895d64"
+    }
 
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
-            response = await client.post(zernio_draft_url, files=files, headers=headers)
+            # Send both the multipart data payload and the file array parameters
+            response = await client.post(
+                zernio_draft_url, 
+                data=payload_data, 
+                files=files, 
+                headers=headers
+            )
             
-            # If everything goes perfectly
             if response.status_code in [200, 201]:
                 return response.json()
             
-            # 🚀 DIAGNOSTIC ADDITION: Print out exactly what Zernio is complaining about
+            # Print precise diagnostic tracking lines if Zernio throws an API error
             print(f"!!! ZERNIO API ERROR STATUS: {response.status_code} !!!")
             print(f"!!! ZERNIO API ERROR DETAIL: {response.text} !!!")
             
@@ -78,10 +91,8 @@ async def generate_draft(file: UploadFile = File(...)):
             )
             
         except httpx.RequestError as req_err:
-            print(f"!!! HTTPX Network Transport Error: {str(req_err)} !!!")
             raise HTTPException(status_code=500, detail=f"Transport Fault: {str(req_err)}")
         except Exception as e:
-            print(f"!!! General Exception Caught: {str(e)} !!!")
             raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/publish-post")
