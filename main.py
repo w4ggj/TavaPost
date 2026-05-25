@@ -26,18 +26,37 @@ async def root_check():
 
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str, profile_id: str = None):
-    # 🚀 Cleaned up route parameters to prevent missing element bugs on new devices
-    try:
-        # Hardwired verified 24-character Zernio profile identifier 
-        zernio_profile_id = "6a1350634beb548c15895d64"
+    zernio_key = os.environ.get("ZERNIO_API_KEY")
+    if not zernio_key:
+        raise HTTPException(
+            status_code=500,
+            detail="Backend configuration missing ZERNIO_API_KEY environment variable."
+        )
 
-        # Build accurate destination URL string
-        target_auth_url = f"https://zernio.com/api/v1/connect/{platform}?profileId={zernio_profile_id}&redirect_url=https://studio.tavaone.com/index.html"
-        
-        return {"authUrl": target_auth_url}
+    clean_key = zernio_key.strip().replace("'", "").replace('"', "")
+    
+    # 1. This is the endpoint our backend will quietly call 
+    zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId=6a1350634beb548c15895d64&redirect_url=https://studio.tavaone.com/index.html"
+    
+    headers = {
+        "Authorization": f"Bearer {clean_key}"
+    }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # 2. 🚀 The Backend makes the secure call to Zernio using your key
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(zernio_endpoint, headers=headers)
+            
+            if response.status_code == 200:
+                # Zernio will return {"authUrl": "https://facebook.com..."}
+                return response.json() 
+            else:
+                raise HTTPException(
+                    status_code=response.status_code, 
+                    detail=f"Zernio Gateway rejected request: {response.text}"
+                )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
