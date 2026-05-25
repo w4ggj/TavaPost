@@ -134,8 +134,8 @@ async def publish_post(payload: PostRequest):
     if not target_platforms:
         raise HTTPException(status_code=400, detail="No connected platform account IDs found.")
 
-    # 🚀 FIXED: Determines the correct profile token upfront to completely prevent CORB blocks
-    active_profile = payload.profile_id if (payload.profile_id and len(payload.profile_id) > 10) else "6a1350634beb548c15895d64"
+    # 🚀 FIXED: Hard-coded directly to your verified, connected Zernio master profile tracking space context
+    active_profile = "6a1350634beb548c15895d64"
 
     body = {
         "profileId": active_profile,
