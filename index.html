@@ -64,12 +64,10 @@
             padding: 0 1.5rem;
         }
 
-        /* Fixed Visibility Layout Engine Rules */
         .view-section { display: none !important; }
         .view-active-flex { display: flex !important; }
         .view-active-block { display: block !important; }
 
-        /* VIEW 1: Centered Authentication Frame Layout */
         .login-wrapper {
             width: 100%;
             justify-content: center;
@@ -128,7 +126,6 @@
             padding-left: 0.75rem;
         }
 
-        /* Unified Collapsible Settings Accordion */
         .interactive-accordion {
             background: rgba(30, 41, 59, 0.7);
             border: 1px solid var(--border-color);
@@ -161,7 +158,6 @@
             content: '－';
         }
 
-        /* Side-by-Side Channels Setup Layout grid */
         .connection-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -350,18 +346,18 @@
         <details class="interactive-accordion">
             <summary>⚙️ Studio Settings</summary>
             <div>
-        <div class="connection-grid">
-            <div class="conn-card">
-                <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
-                <div id="fb-status" class="badge badge-red">Not Connected</div>
-                <button type="button" class="btn btn-fb" onclick="connectPlatform('facebook'); return false;">Connect Page</button>
-            </div>
-            <div class="conn-card">
-                <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
-                <div id="ig-status" class="badge badge-red">Not Connected</div>
-                <button type="button" class="btn btn-ig" onclick="connectPlatform('instagram'); return false;">Connect IG</button>
-            </div>
-        </div>
+                <div class="connection-grid">
+                    <div class="conn-card">
+                        <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
+                        <div id="fb-status" class="badge badge-red">Not Connected</div>
+                        <button type="button" class="btn btn-fb" onclick="connectPlatform('facebook'); return false;">Connect Page</button>
+                    </div>
+                    <div class="conn-card">
+                        <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
+                        <div id="ig-status" class="badge badge-red">Not Connected</div>
+                        <button type="button" class="btn btn-ig" onclick="connectPlatform('instagram'); return false;">Connect IG</button>
+                    </div>
+                </div>
 
                 <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
                     <h4 style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;">Custom Brand Instructions</h4>
@@ -404,10 +400,7 @@
     <script>
         let supabaseClient;
         const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
-        
-        // 🚀 PASTE YOUR SUPABASE ANON KEY HERE:
         const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
-
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
 
         function initializeApp() {
@@ -437,7 +430,6 @@
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 
                 if (!session) {
-                    // Strips 'view-section' to force the visibility initialization
                     document.getElementById('view-login').className = "login-wrapper view-active-flex";
                     document.getElementById('view-dashboard').className = "view-section";
                     document.getElementById('header-logout').className = "view-section";
@@ -547,7 +539,6 @@
         }
 
         async function connectPlatform(platform) {
-            // 🚀 Add this line to prevent the browser from jumping to the raw URL screen:
             if (window.event) window.event.preventDefault(); 
 
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -559,15 +550,10 @@
             localStorage.setItem('connecting_platform', platform);
             
             try {
-                // Fetch the raw payload string from your backend in the background
                 const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=${session.user.id}`);
-                
                 if (!response.ok) throw new Error("Backend connection handshake failed.");
                 
-                // Parse the text block into a usable JSON object
                 const data = await response.json();
-                
-                // Extract the inner authUrl destination and force the window hop
                 if (data.authUrl) {
                     window.location.href = data.authUrl;
                 } else {
@@ -594,17 +580,13 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) return;
 
-            // ... beginning of generateDraft() remains unchanged ...
-
             loadingLabel.className = "view-active-block";
             btnGen.classList.add('btn-disabled');
             selectionArea.className = "view-section";
             draftCardsContainer.innerHTML = "";
 
             const rawFile = fileInput.files[0];
-
-            // 🚀 NEW: Dynamic Canvas Image Downscaling Layout Routine
-            const maxFileSizeInBytes = 4 * 1024 * 1024; // 4MB Strict Threshold Guard
+            const maxFileSizeInBytes = 4 * 1024 * 1024; // 4MB Guard
             
             if (rawFile.size > maxFileSizeInBytes) {
                 const img = new Image();
@@ -614,7 +596,6 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     
-                    // Maintain standard landscape aspect ratios while downscaling max bounding boxes
                     let width = img.width;
                     let height = img.height;
                     const max_size = 1920; 
@@ -629,7 +610,6 @@
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // Compress down to web-friendly JPEG at 80% compression quality rules
                     canvas.toBlob(async function(blob) {
                         const formData = new FormData();
                         formData.append("file", blob, "compressed_upload.jpg");
@@ -637,14 +617,12 @@
                     }, "image/jpeg", 0.8);
                 };
             } else {
-                // If the file size is safe under 4MB, send it immediately
                 const formData = new FormData();
                 formData.append("file", rawFile);
                 await executeDraftUpload(formData, session.access_token);
             }
         }
 
-        // 🚀 SUB-ROUTINE HANDSHAKE: Separates the network delivery logic cleanly
         async function executeDraftUpload(formData, accessToken) {
             const loadingLabel = document.getElementById('loading');
             const selectionArea = document.getElementById('selection-area');
@@ -666,48 +644,6 @@
                 const data = await response.json();
                 window.currentPostImageUrl = data.image_url;
 
-                const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(txt => txt.trim().length > 0);
-                
-                options.forEach((optionText, index) => {
-                    const card = document.createElement('div');
-                    card.className = "draft-card";
-                    card.innerHTML = `<header style="color:var(--accent-green); font-size:0.8rem; font-weight:700; margin-bottom:0.5rem;">DRAFT VARIATION ${index + 1}</header><p style="font-size:0.9rem; white-space: pre-wrap; color:var(--text-main);">${optionText.trim()}</p>`;
-                    card.onclick = () => {
-                        document.getElementById('finalCaption').value = optionText.trim();
-                        document.getElementById('finalCaption').scrollIntoView({ behavior: 'smooth' });
-                    };
-                    draftCardsContainer.appendChild(card);
-                });
-
-                loadingLabel.className = "view-section";
-                btnGen.classList.remove('btn-disabled');
-                selectionArea.className = "view-active-block";
-
-            } catch (err) {
-                console.error(err);
-                alert(`Pipeline Error: ${err.message}`);
-                loadingLabel.className = "view-section";
-                btnGen.classList.remove('btn-disabled');
-            }
-        }
-
-            try {
-                const response = await fetch(`${backendBaseUrl}/generate-draft`, {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${session.access_token}` },
-                    body: formData
-                });
-
-                // 🚀 FIXED: Instead of assuming a timeout, read the actual server response status!
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.detail || `Server returned status code ${response.status}`);
-                }
-                
-                const data = await response.json();
-                window.currentPostImageUrl = data.image_url;
-
-                // Robust regex splits numbers cleanly across various model behaviors
                 const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(txt => txt.trim().length > 0);
                 
                 options.forEach((optionText, index) => {
