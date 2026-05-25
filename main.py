@@ -52,15 +52,15 @@ async def generate_draft(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Backend missing GEMINI_API_KEY environment variable.")
 
     try:
-        # Initialize your existing generativeai package rules configuration
-        genai.configure(api_key=gemini_key)
-        
         file_content = await file.read()
+        import base64
+        base64_image = base64.b64encode(file_content).decode("utf-8")
         
-        # Package raw media blob stream variables securely
-        image_part = {
-            "mime_type": file.content_type,
-            "data": file_content
+        # 🚀 UNIVERSAL ENDPOINT: Bypasses library version mismatches entirely
+        google_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+        
+        headers = {
+            "Content-Type": "application/json"
         }
         
         prompt = """
@@ -69,17 +69,45 @@ async def generate_draft(file: UploadFile = File(...)):
         Keep the voice engaging, relevant to the scene, and clean.
         """
 
-        # 🚀 FIXED: Switched string target to 1.5-flash to perfectly match your library environment
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        response = model.generate_content([prompt, image_part])
-
-        return {
-            "image_url": "https://studio.tavaone.com/placeholder.jpg",
-            "draft_text": response.text
+        # Format the precise JSON payload structure Google expects natively
+        body = {
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
+                    {
+                        "inlineData": {
+                            "mimeType": file.content_type,
+                            "data": base64_image
+                        }
+                    }
+                ]
+            }]
         }
 
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(google_url, json=body, headers=headers)
+            
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=response.status_code, 
+                    detail=f"Google API Rejected Request: {response.text}"
+                )
+            
+            data = response.json()
+            
+            # Extract the generated text cleanly from Google's native JSON tree
+            try:
+                raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+            except (KeyError, IndexError):
+                raise HTTPException(status_code=500, detail="Unexpected JSON format received from Google API.")
+
+            return {
+                "image_url": "https://studio.tavaone.com/placeholder.jpg",
+                "draft_text": raw_text
+            }
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Gemini Engine Fault: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Gemini Fetch Fault: {str(e)}")
 
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
