@@ -609,7 +609,11 @@
                     body: formData
                 });
 
-                if (!response.ok) throw new Error("Draft processing timed out.");
+                // 🚀 FIXED: Instead of assuming a timeout, read the actual server response status!
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `Server returned status code ${response.status}`);
+                }
                 
                 const data = await response.json();
                 window.currentPostImageUrl = data.image_url;
