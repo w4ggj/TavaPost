@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TavaPost // Field Operations Studio</title>
+    <title>TavaPost // Social Media Content Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -14,7 +14,7 @@
             --border-color: #334155;   /* Crisp Muted Border */
             --text-main: #f8fafc;      /* Crisp White Text */
             --text-muted: #94a3b8;     /* Ash Gray Secondary Text */
-            --accent-green: #10b981;   /* Transmit Green Accent */
+            --accent-green: #10b981;   /* Emerald Green Brand Accent */
             --accent-purple: #a855f7;  /* Instagram Purple Accent */
             --accent-blue: #3b82f6;    /* Facebook Blue Accent */
             --warning-amber: #f59e0b;  /* Queue/Processing Amber */
@@ -64,19 +64,16 @@
             padding: 0 1.5rem;
         }
 
-        /* Views Toggle */
-        .view-section { display: none; }
-        .view-active { display: block !important; }
-        .view-grid-active { display: grid !important; }
+        /* Strict View Toggle Handlers */
+        .view-section { display: none !important; }
+        .view-active-flex { display: flex !important; }
+        .view-active-block { display: block !important; }
 
-        /* Login Portal Wrapper Styles */
-        /* VIEW 1: AUTHENTICATION PORTAL PANEL (PERFECTLY CENTERED) */
+        /* VIEW 1: AUTHENTICATION PORTAL PANEL (STABLE TOP-CENTERED) */
         .login-wrapper {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: calc(100vh - 80px); /* Fills screen height minus header */
-            padding: 0 1rem;
+            justify-content: center;    /* Centers horizontally */
+            padding: 6rem 1rem 0 1rem;  /* Smooth padding anchor from top header */
             width: 100%;
         }
 
@@ -87,7 +84,7 @@
             padding: 2.5rem 2rem;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
             width: 100%;
-            max-width: 420px; /* Keeps the card sharp and uniform */
+            max-width: 420px;
         }
 
         .input-group {
@@ -120,7 +117,7 @@
             border-color: var(--accent-green);
         }
 
-        /* Main Dashboard Grid Controls */
+        /* Dashboard Grid Layout */
         .grid-layout {
             display: grid;
             grid-template-columns: 1fr;
@@ -146,6 +143,7 @@
             padding-left: 0.75rem;
         }
 
+        /* Universal Instructions Guide Box */
         .guide-box {
             background: rgba(51, 65, 85, 0.3);
             border: 1px dashed var(--border-color);
@@ -271,10 +269,11 @@
             border-radius: 8px;
             padding: 1.25rem;
             cursor: pointer;
+            border: 1px solid var(--border-color);
         }
 
         .draft-card:hover { border-color: var(--accent-green); }
-        .draft-card header { background: none; border: none; padding: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--accent-green); font-weight: 700; text-transform: uppercase; font-family: 'JetBrains Mono'; }
+        .draft-card header { background: none; border: none; padding: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--accent-green); font-weight: 700; text-transform: uppercase; }
 
         .hidden { display: none !important; }
         .text-green { color: var(--accent-green) !important; }
@@ -285,88 +284,88 @@
 
     <header>
         <div class="brand-title">Tava<span>One</span> // Studio</div>
-        <button id="header-logout" class="btn btn-logout hidden" onclick="signOutUser()">Disconnect Link</button>
+        <button id="header-logout" class="btn btn-logout hidden" onclick="signOutUser()">Log Out</button>
     </header>
 
-    <div id="view-login" class="view-section login-wrapper">
+    <div id="view-login" class="view-section">
         <div class="login-panel">
-            <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 700;">Operator Login</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Initialize secure link session</p>
+            <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 700;">Welcome to Studio</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your brand and social content</p>
             
             <div class="input-group">
-                <label>Station Email</label>
-                <input type="email" id="login-email" placeholder="email@tavaone.com">
+                <label>Email Address</label>
+                <input type="email" id="login-email" placeholder="you@yourbrand.com">
             </div>
             
             <div class="input-group" style="margin-bottom: 2rem;">
-                <label>Security Keyphrase</label>
+                <label>Password</label>
                 <input type="password" id="login-password" placeholder="••••••••••••">
             </div>
             
-            <button class="btn btn-primary" onclick="signInUser()">Initialize Session</button>
-            <p id="login-error" class="tech-font text-red hidden" style="margin-top: 1rem; font-size: 0.8rem;"></p>
+            <button class="btn btn-primary" onclick="signInUser()">Log In</button>
+            <p id="login-error" class="text-red hidden" style="margin-top: 1rem; font-size: 0.8rem;"></p>
         </div>
     </div>
 
     <div id="view-dashboard" class="view-section container">
         <details class="guide-box" open>
-            <summary>⚡ Field Operator's Workflow Guide</summary>
+            <summary>✨ Quick Start Guide</summary>
             <ul>
-                <li><strong>1. Confirm Grid Access:</strong> Ensure Facebook Page and Instagram Business node badges show green. Click connection buttons if tokens require initialization.</li>
-                <li><strong>2. Align Standing Rules:</strong> Verify your parsing instructions in the editor block below. This shapes how visual arrays are evaluated against your active field gear constraints.</li>
-                <li><strong>3. Ingest Visual Data:</strong> Select your field photography array and initialize draft generations. The processing pipeline will automatically separate multi-paragraph narratives.</li>
-                <li><strong>4. Radiate Text:</strong> Review output options. Clicking a card loads it straight to the final editor. Verify constraints, then sync directly to your live feeds.</li>
+                <li><strong>1. Connect Channels:</strong> Verify your target Facebook and Instagram profiles show green status indicators. Click to link new accounts.</li>
+                <li><strong>2. Set Custom Brand Rules:</strong> Use the Custom Instructions box below to define your specific brand voice, strict copy guidelines, formatting rules, or layout criteria. Click "Save Settings".</li>
+                <li><strong>3. Upload Media Asset:</strong> Select an image file to process. The AI engine will analyze the visual assets and automatically draft custom marketing variations adhering to your rules.</li>
+                <li><strong>4. Final Review & Publish:</strong> Click on your preferred draft variation to copy it into the editor. Polish the text manually, then seamlessly broadcast it out live to your feeds.</li>
             </ul>
         </details>
 
         <div class="grid-layout">
             <main class="panel">
-                <h2 class="panel-title">Station Configuration & Rules</h2>
-                <textarea id="customPrompt" placeholder="Inject master image processing constraints here..."></textarea>
-                <button class="btn btn-primary" onclick="saveSettings()">Commit Rules Configuration</button>
-                <span id="save-status" class="tech-font text-green hidden" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Configuration written to core tables successfully.</span>
+                <h2 class="panel-title">Custom Brand Instructions</h2>
+                <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules, or target audience rules here..."></textarea>
+                <button class="btn btn-primary" onclick="saveSettings()">Save Instructions Settings</button>
+                <span id="save-status" class="text-green hidden" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
 
                 <hr style="border:none; border-top:1px solid var(--border-color); margin:2rem 0;">
 
-                <h2 class="panel-title">Media Processing Pipeline</h2>
+                <h2 class="panel-title">Content Generator Pipeline</h2>
                 <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
-                    <span id="file-label" style="color: var(--text-muted);">📁 Click to load field photo into visualizer channel</span>
+                    <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
                     <input type="file" id="imageInput" class="hidden" accept="image/*" onchange="updateFileInputLabel()">
                 </div>
                 
-                <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Fire Image Analysis & Draft Generation</button>
-                <div id="loading" class="tech-font hidden" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;">⏳ Transmitting image vector packet to visualizer... Please wait...</div>
+                <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
+                <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="hidden">⏳ Running visual analysis and drafting layout options... Please wait...</div>
 
                 <div id="selection-area" class="hidden" style="margin-top:2rem;">
-                    <h3 class="tech-font" style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT PARSED ARRAY CARD ]</h3>
+                    <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
                     <div id="draft-cards" class="draft-container"></div>
                     
-                    <h3 class="tech-font" style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL POLISH & FREQUENCY CHECK ]</h3>
+                    <h3 style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL EDITING & POLISH ]</h3>
                     <textarea id="finalCaption" style="min-height:200px; margin-top:1rem;"></textarea>
                     
-                    <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber);" onclick="publishToSocials()">🚀 Sync to Live Social Media Feeds</button>
+                    <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber);" onclick="publishToSocials()">🚀 Publish Directly to Social Channels</button>
                     
                     <div class="pipeline-warning">
                         <span>⚠️</span>
                         <div>
-                            <strong>Meta Propagation Delay:</strong> Syncing media pipelines out to social channels typically takes <strong>30 seconds to 3 minutes</strong> while Meta processes image asset ingestion. Do not clear the page layout array.
+                            <strong>Social Media Processing Window:</strong> Media integration loops typically require between <strong>30 seconds to 3 minutes</strong> while third-party networks finalize network data processing. Do not close this tab or double click publish.
                         </div>
                     </div>
                 </div>
             </main>
 
             <aside class="panel" style="height: fit-content;">
-                <h2 class="panel-title">Social Grid Nodes</h2>
+                <h2 class="panel-title">Connected Social Channels</h2>
                 <div class="connection-grid">
                     <div class="conn-card">
-                        <div style="font-size:0.9rem; font-weight:600;">Facebook Node</div>
+                        <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
                         <div id="fb-status" class="badge badge-red">Not Connected</div>
-                        <button class="btn btn-fb" onclick="connectPlatform('facebook')">Link Node</button>
+                        <button class="btn btn-fb" onclick="connectPlatform('facebook')">Connect Page</button>
                     </div>
                     <div class="conn-card">
-                        <div style="font-size:0.9rem; font-weight:600;">Instagram Node</div>
+                        <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
                         <div id="ig-status" class="badge badge-red">Not Connected</div>
-                        <button class="btn btn-ig" onclick="connectPlatform('instagram')">Link Node</button>
+                        <button class="btn btn-ig" onclick="connectPlatform('instagram')">Connect IG</button>
                     </div>
                 </div>
             </aside>
@@ -375,7 +374,8 @@
 
     <script>
         const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
-        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; // Ensure this matches your dashboard key
+        // 🚀 QUICK RE-REMINDER: Paste your real Supabase Client Anon Key right below!
+        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
         
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
@@ -384,7 +384,7 @@
             const fileInput = document.getElementById('imageInput');
             const label = document.getElementById('file-label');
             if(fileInput.files.length > 0) {
-                label.innerText = `✅ Asset Staged: ${fileInput.files[0].name}`;
+                label.innerText = `✅ File Selected: ${fileInput.files[0].name}`;
                 label.style.color = "var(--accent-green)";
             }
         }
@@ -393,15 +393,15 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             
             if (!session) {
-                // Show Login Form View
-                document.getElementById('view-login').classList.add('view-active');
-                document.getElementById('view-dashboard').classList.remove('view-active');
-                document.getElementById('header-logout').classList.add('hidden');
+                // Maintained flex-alignment parameters prevent corner jumping completely
+                document.getElementById('view-login').className = "login-wrapper view-active-flex";
+                document.getElementById('view-dashboard').className = "view-section";
+                document.getElementById('header-logout').className = "btn btn-logout hidden";
             } else {
-                // Show Dashboard View
-                document.getElementById('view-login').classList.remove('view-active');
-                document.getElementById('view-dashboard').classList.add('view-active');
-                document.getElementById('header-logout').classList.remove('hidden');
+                // Shift dashboard grid up and hide credentials form panel cleanly
+                document.getElementById('view-login').className = "view-section";
+                document.getElementById('view-dashboard').className = "container view-active-block";
+                document.getElementById('header-logout').className = "btn btn-logout view-active-block";
                 
                 await handleZernioCallback();
                 await loadSettings();
@@ -421,7 +421,7 @@
             });
 
             if (error) {
-                errorLabel.innerText = `Authentication Failed: ${error.message}`;
+                errorLabel.innerText = `Login Failed: ${error.message}`;
                 errorLabel.classList.remove('hidden');
             } else {
                 await checkSession();
@@ -467,12 +467,18 @@
                 if (data.zernio_facebook_id) {
                     fbStatus.innerText = "Connected ✅";
                     fbStatus.className = "badge badge-green";
+                } else {
+                    fbStatus.innerText = "Not Connected";
+                    fbStatus.className = "badge badge-red";
                 }
                 
                 const igStatus = document.getElementById('ig-status');
                 if (data.zernio_instagram_id) {
                     igStatus.innerText = "Connected ✅";
                     igStatus.className = "badge badge-green";
+                } else {
+                    igStatus.innerText = "Not Connected";
+                    igStatus.className = "badge badge-red";
                 }
             }
         }
@@ -542,7 +548,7 @@
                 options.forEach((optionText, index) => {
                     const card = document.createElement('div');
                     card.className = "draft-card";
-                    card.innerHTML = `<header>[ Option ${index + 1} ]</header><p style="font-size:0.9rem; white-space: pre-wrap; color:var(--text-main);">${optionText.trim()}</p>`;
+                    card.innerHTML = `<header>Draft Variation ${index + 1}</header><p style="font-size:0.9rem; white-space: pre-wrap; color:var(--text-main);">${optionText.trim()}</p>`;
                     card.onclick = () => {
                         document.getElementById('finalCaption').value = optionText.trim();
                         document.getElementById('finalCaption').scrollIntoView({ behavior: 'smooth' });
@@ -566,7 +572,7 @@
             const caption = document.getElementById('finalCaption').value;
             const btnPub = document.getElementById('btn-publish');
             if (!caption.trim()) {
-                alert("Please pick or type a caption variant first.");
+                alert("Please select or edit a caption variant first.");
                 return;
             }
 
@@ -574,7 +580,7 @@
             if (!session) return;
 
             btnPub.classList.add('btn-disabled');
-            btnPub.innerText = "CNXT // Spreading the Signal... Please Wait...";
+            btnPub.innerText = "Publishing Content... Please Wait...";
 
             try {
                 const response = await fetch(`${backendBaseUrl}/publish-post`, {
@@ -591,16 +597,16 @@
 
                 const data = await response.json();
                 if (data.status === "success") {
-                    alert("🚀 Post successfully queued and sent to your social feeds!");
+                    alert("🚀 Post successfully published to your active social feeds!");
                 } else {
-                    alert("Delivery mismatch. Review connection profiles.");
+                    alert("Delivery mismatch. Review connection profile statuses.");
                 }
             } catch (err) {
                 console.error(err);
-                alert("Error communicating with background delivery system.");
+                alert("Error communicating with background content server.");
             } finally {
                 btnPub.classList.remove('btn-disabled');
-                btnPub.innerText = "🚀 Sync to Live Social Media Feeds";
+                btnPub.innerText = "🚀 Publish Directly to Social Channels";
             }
         }
 
