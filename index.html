@@ -34,10 +34,6 @@
             line-height: 1.5;
         }
 
-        code, pre, .tech-font {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
         header {
             border-bottom: 1px solid var(--border-color);
             padding: 1.5rem 2rem;
@@ -68,6 +64,57 @@
             padding: 0 1.5rem;
         }
 
+        /* Views Toggle */
+        .view-section { display: none; }
+        .view-active { display: block !important; }
+        .view-grid-active { display: grid !important; }
+
+        /* Login Portal Wrapper Styles */
+        .login-wrapper {
+            max-width: 420px;
+            margin: 6rem auto padding: 0 1rem;
+            text-align: center;
+        }
+
+        .login-panel {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 1.25rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="email"], input[type="password"] {
+            width: 100%;
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            font-family: inherit;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+        }
+
+        /* Main Dashboard Grid Controls */
         .grid-layout {
             display: grid;
             grid-template-columns: 1fr;
@@ -75,9 +122,7 @@
         }
 
         @media (min-width: 968px) {
-            .grid-layout {
-                grid-template-columns: 1.2fr 0.8fr;
-            }
+            .grid-layout { grid-template-columns: 1.2fr 0.8fr; }
         }
 
         .panel {
@@ -95,7 +140,6 @@
             padding-left: 0.75rem;
         }
 
-        /* Instructions Accordion Box */
         .guide-box {
             background: rgba(51, 65, 85, 0.3);
             border: 1px dashed var(--border-color);
@@ -108,7 +152,6 @@
             font-weight: 600;
             cursor: pointer;
             color: var(--accent-green);
-            user-select: none;
         }
 
         .guide-box ul {
@@ -118,11 +161,8 @@
             font-size: 0.9rem;
         }
 
-        .guide-box li {
-            margin-bottom: 0.5rem;
-        }
+        .guide-box li { margin-bottom: 0.5rem; }
 
-        /* Status Badge Configurations */
         .connection-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -151,7 +191,6 @@
         .badge-red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
         .badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
 
-        /* Forms & Interactive Fields */
         textarea {
             width: 100%;
             background-color: var(--bg-main);
@@ -165,12 +204,8 @@
             margin-bottom: 1rem;
         }
 
-        textarea:focus {
-            outline: none;
-            border-color: var(--accent-green);
-        }
+        textarea:focus { outline: none; border-color: var(--accent-green); }
 
-        /* File Upload Styling */
         .file-dropzone {
             border: 2px dashed var(--border-color);
             border-radius: 8px;
@@ -181,7 +216,6 @@
             cursor: pointer;
         }
 
-        /* Tactical Button Schemes */
         .btn {
             width: 100%;
             padding: 0.75rem 1.5rem;
@@ -205,7 +239,6 @@
         .btn-logout:hover { color: var(--text-main); border-color: var(--text-main); }
         .btn-disabled { background-color: var(--border-color) !important; color: var(--text-muted) !important; cursor: not-allowed; }
 
-        /* Processing Warning Banner */
         .pipeline-warning {
             background: rgba(245, 158, 11, 0.1);
             border: 1px solid rgba(245, 158, 11, 0.3);
@@ -219,7 +252,6 @@
             gap: 0.5rem;
         }
 
-        /* Media Card Outputs */
         .draft-container {
             display: grid;
             grid-template-columns: 1fr;
@@ -233,7 +265,6 @@
             border-radius: 8px;
             padding: 1.25rem;
             cursor: pointer;
-            transition: border-color 0.2s;
         }
 
         .draft-card:hover { border-color: var(--accent-green); }
@@ -241,16 +272,37 @@
 
         .hidden { display: none !important; }
         .text-green { color: var(--accent-green) !important; }
+        .text-red { color: #f87171 !important; }
     </style>
 </head>
 <body>
 
     <header>
         <div class="brand-title">Tava<span>One</span> // Studio</div>
-        <button class="btn btn-logout" onclick="signOutUser()">Disconnect Link</button>
+        <button id="header-logout" class="btn btn-logout hidden" onclick="signOutUser()">Disconnect Link</button>
     </header>
 
-    <div class="container">
+    <div id="view-login" class="view-section login-wrapper">
+        <div class="login-panel">
+            <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 700;">Operator Login</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Initialize secure link session</p>
+            
+            <div class="input-group">
+                <label>Station Email</label>
+                <input type="email" id="login-email" placeholder="email@tavaone.com">
+            </div>
+            
+            <div class="input-group" style="margin-bottom: 2rem;">
+                <label>Security Keyphrase</label>
+                <input type="password" id="login-password" placeholder="••••••••••••">
+            </div>
+            
+            <button class="btn btn-primary" onclick="signInUser()">Initialize Session</button>
+            <p id="login-error" class="tech-font text-red hidden" style="margin-top: 1rem; font-size: 0.8rem;"></p>
+        </div>
+    </div>
+
+    <div id="view-dashboard" class="view-section container">
         <details class="guide-box" open>
             <summary>⚡ Field Operator's Workflow Guide</summary>
             <ul>
@@ -316,9 +368,8 @@
     </div>
 
     <script>
-        // Initialize your exact Supabase client
         const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
-        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; // Ensure this matches your project profile
+        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; // Ensure this matches your dashboard key
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
         
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
@@ -334,12 +385,40 @@
 
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
+            
             if (!session) {
-                // If user auth drops, drop them back to authentication base
-                window.location.href = "login.html"; 
+                // Show Login Form View
+                document.getElementById('view-login').classList.add('view-active');
+                document.getElementById('view-dashboard').classList.remove('view-active');
+                document.getElementById('header-logout').classList.add('hidden');
             } else {
+                // Show Dashboard View
+                document.getElementById('view-login').classList.remove('view-active');
+                document.getElementById('view-dashboard').classList.add('view-active');
+                document.getElementById('header-logout').classList.remove('hidden');
+                
                 await handleZernioCallback();
                 await loadSettings();
+            }
+        }
+
+        async function signInUser() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorLabel = document.getElementById('login-error');
+            
+            errorLabel.classList.add('hidden');
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                errorLabel.innerText = `Authentication Failed: ${error.message}`;
+                errorLabel.classList.remove('hidden');
+            } else {
+                await checkSession();
             }
         }
 
@@ -452,7 +531,6 @@
                 const data = await response.json();
                 window.currentPostImageUrl = data.image_url;
 
-                // Split by Option patterns cleanly
                 const options = data.draft_text.split(/Option\s+\d+:?/i).filter(txt => txt.trim().length > 0);
                 
                 options.forEach((optionText, index) => {
@@ -489,9 +567,8 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) return;
 
-            // Block button immediately to avoid double clicks
             btnPub.classList.add('btn-disabled');
-            btnPub.innerText = "📡 Spreading the Signal... Please Wait...";
+            btnPub.innerText = "CNXT // Spreading the Signal... Please Wait...";
 
             try {
                 const response = await fetch(`${backendBaseUrl}/publish-post`, {
@@ -523,7 +600,7 @@
 
         async function signOutUser() {
             await supabaseClient.auth.signOut();
-            window.location.href = "login.html";
+            await checkSession();
         }
 
         window.onload = checkSession;
