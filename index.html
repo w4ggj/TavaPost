@@ -171,7 +171,7 @@
 
 async function handleZernioCallback() {
     const urlParams = new URLSearchParams(window.location.search);
-    const accountId = urlParams.get('accountId');
+    const accountId = urlParams.get('profileId');
     const platform = localStorage.getItem('connecting_platform');
 
     if (accountId && platform) {
