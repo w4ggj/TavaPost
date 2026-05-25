@@ -497,7 +497,8 @@
                         image_url: window.currentPostImageUrl || "",
                         caption: caption,
                         fb_account_id: fbId || "",
-                        ig_account_id: igId || ""
+                        ig_account_id: igId || "",
+                        profile_id: session.user.id // 🚀 Send active workspace context to clear account checks
                     })
                 });
 
