@@ -38,10 +38,11 @@ async def get_connect_url(platform: str, profile_id: str):
         # Hardwired verified 24-character Zernio profile identifier 
         zernio_profile_id = "6a1350634beb548c15895d64"
 
-        # 🚀 THE FIX: We build the URL and let FastAPI handle a clean browser redirection
-        zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={zernio_profile_id}&redirect_url=https://studio.tavaone.com/index.html"
+        # Build accurate destination URL string
+        target_auth_url = f"https://zernio.com/api/v1/connect/{platform}?profileId={zernio_profile_id}&redirect_url=https://studio.tavaone.com/index.html"
         
-        return RedirectResponse(url=zernio_endpoint)
+        # 🚀 FIXED: Return it cleanly as a standard data dictionary object text string
+        return {"authUrl": target_auth_url}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
