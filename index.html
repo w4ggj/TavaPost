@@ -1,527 +1,155 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TavaPost // Social Media Content Studio</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+# TavaPost Studio Backend API Node // Ver 1.9.0
+import os
+import httpx
+import base64
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+app = FastAPI(title="TavaPost Backend")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class PostRequest(BaseModel):
+    image_url: str
+    caption: str
+    fb_account_id: str = None
+    ig_account_id: str = None
+    profile_id: str = None  # 🚀 Dynamic workspace tracking field
+
+@app.get("/")
+async def root_check():
+    return {"status": "online", "service": "TavaPost Engine"}
+
+@app.get("/api/get-connect-url")
+async def get_connect_url(platform: str, profile_id: str = None):
+    zernio_key = os.environ.get("ZERNIO_API_KEY")
+    if not zernio_key:
+        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
+
+    # Fallback to hardcoded workspace ID if dynamic context isn't passed from frontend session
+    active_profile = profile_id if profile_id else "6a1350634beb548c15895d64"
+    clean_key = zernio_key.strip().replace("'", "").replace('"', "")
+    zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={active_profile}&redirect_url=https://studio.tavaone.com/index.html"
     
-    <style>
-        :root {
-            --bg-main: #0f172a;
-            --bg-card: #1e293b;
-            --border-color: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-green: #10b981;
-            --accent-purple: #a855f7;
-            --accent-blue: #3b82f6;
-            --warning-amber: #f59e0b;
-        }
+    headers = {"Authorization": f"Bearer {clean_key}"}
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(zernio_endpoint, headers=headers)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            min-height: 100vh;
-            line-height: 1.5;
-        }
+@app.post("/generate-draft")
+async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form(None)):
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    if not gemini_key:
+        raise HTTPException(status_code=500, detail="Backend missing GEMINI_API_KEY environment variable.")
 
-        header {
-            border-bottom: 1px solid var(--border-color);
-            padding: 1.5rem 2rem;
-            background-color: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(8px);
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .brand-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.05em; text-transform: uppercase; }
-        .brand-title span { color: var(--accent-green); }
-        .container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
-        .view-section { display: none !important; }
-        .view-active-flex { display: flex !important; }
-        .view-active-block { display: block !important; }
-
-        .login-wrapper { width: 100%; justify-content: center; padding: 6rem 1rem 0 1rem; }
-        .login-panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2.5rem 2rem; width: 100%; max-width: 420px; }
-        .input-group { text-align: left; margin-bottom: 1.25rem; }
-        .input-group label { display: block; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
-        input[type="email"], input[type="password"] { width: 100%; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 0.75rem 1rem; }
-        input:focus { outline: none; border-color: var(--accent-green); }
-
-        .panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; }
-        .panel-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-left: 3px solid var(--accent-green); padding-left: 0.75rem; }
-        .interactive-accordion { background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; }
-        .interactive-accordion summary { font-weight: 600; cursor: pointer; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; }
-        .interactive-accordion summary::-webkit-details-marker { display: none; }
-        .interactive-accordion summary::after { content: '＋'; color: var(--accent-green); font-weight: 700; }
-        .interactive-accordion[open] summary::after { content: '－'; }
-
-        .connection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
-        @media (max-width: 568px) { .connection-grid { grid-template-columns: 1fr; } }
-        .conn-card { background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; text-align: center; }
+    try:
+        file_content = await file.read()
+        base64_image = base64.b64encode(file_content).decode("utf-8")
         
-        .badge { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.5rem; border-radius: 4px; text-transform: uppercase; margin-top: 0.5rem; }
-        .badge-red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-        .badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-
-        .guide-box { background: rgba(51, 65, 85, 0.2); border: 1px dashed var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
-        .guide-box summary { font-weight: 600; cursor: pointer; color: var(--accent-green); }
-        .guide-box ul { margin-top: 0.75rem; padding-left: 1.25rem; color: var(--text-muted); font-size: 0.9rem; }
-        .guide-box li { margin-bottom: 0.5rem; }
-
-        textarea { width: 100%; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 1rem; resize: vertical; min-height: 150px; margin-bottom: 1rem; }
-        textarea:focus { outline: none; border-color: var(--accent-green); }
-
-        .file-dropzone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 1.5rem; text-align: center; background: rgba(15, 23, 42, 0.2); margin-bottom: 1rem; cursor: pointer; }
+        google_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
         
-        .btn { width: 100%; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s ease; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em; }
-        .btn-primary { background-color: var(--accent-green); color: var(--bg-main); }
-        .btn-primary:hover { opacity: 0.9; }
-        .btn-fb { background-color: transparent; border: 1px solid var(--accent-blue); color: var(--text-main); margin-top: 0.5rem;}
-        .btn-fb:hover { background: rgba(59, 130, 246, 0.1); }
-        .btn-ig { background-color: transparent; border: 1px solid var(--accent-purple); color: var(--text-main); margin-top: 0.5rem;}
-        .btn-ig:hover { background: rgba(168, 85, 247, 0.1); }
-        .btn-logout { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: auto; }
-        .btn-disabled { background-color: var(--border-color) !important; color: var(--text-muted) !important; cursor: not-allowed; }
+        headers = {"Content-Type": "application/json"}
+        
+        system_rules = "CRITICAL: Output ONLY the requested caption options. Do not include introductory conversational filler text, headers, or markdown block code text backticks."
+        if custom_prompt and custom_prompt.strip():
+            system_rules += f"\nStrict Voice and Content Guidelines:\n{custom_prompt.strip()}"
 
-        .pipeline-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.85rem; color: #fbbf24; margin-top: 1rem; display: flex; gap: 0.5rem; }
-        .draft-container { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem; }
-        .draft-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; cursor: pointer; }
-        .draft-card:hover { border-color: var(--accent-green); }
-        .draft-card header { background: none; border: none; padding: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--accent-green); font-weight: 700; text-transform: uppercase; }
+        user_instruction = """
+        Analyze this image and provide 3 distinct social media caption variations optimized for Facebook and Instagram. 
+        Separate them explicitly using 'Variation 1.', 'Variation 2.', and 'Variation 3.' labels.
+        """
 
-        .text-green { color: var(--accent-green) !important; }
-        .text-red { color: #f87171 !important; }
-    </style>
-</head>
-<body>
+        body = {
+            "contents": [{
+                "parts": [
+                    {"text": f"{system_rules}\n\nTask Instructions:\n{user_instruction}"},
+                    {
+                        "inlineData": {
+                            "mimeType": file.content_type,
+                            "data": base64_image
+                        }
+                    }
+                ]
+            }]
+        }
 
-    <header>
-        <div class="brand-title">Tava<span>One</span> // Studio</div>
-        <button id="header-logout" class="btn btn-logout view-section" onclick="signOutUser()">Log Out</button>
-    </header>
-
-    <div id="system-crash-alert" class="view-section container">
-        <div class="panel" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.05);">
-            <h2 class="text-red">⚠️ System Handshake Failure</h2>
-            <p id="crash-diagnostic-text" style="color: var(--text-muted); font-size: 0.9rem;">Your client failed to connect with your database.</p>
-        </div>
-    </div>
-
-    <div id="view-login" class="view-section login-wrapper">
-        <div class="login-panel">
-            <h2 style="margin-bottom: 0.5rem;">Welcome to Studio</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your brand content</p>
-            <div class="input-group">
-                <label>Email Address</label>
-                <input type="email" id="login-email" placeholder="you@yourbrand.com">
-            </div>
-            <div class="input-group" style="margin-bottom: 2rem;">
-                <label>Password</label>
-                <input type="password" id="login-password" placeholder="••••••••••••">
-            </div>
-            <button class="btn btn-primary" onclick="signInUser()">Log In</button>
-            <p id="login-error" class="text-red view-section" style="margin-top: 1rem; font-size: 0.8rem;"></p>
-        </div>
-    </div>
-
-    <div id="view-dashboard" class="view-section container">
-        <details class="guide-box">
-            <summary>✨ Quick Start Guide</summary>
-            <ul>
-                <li><strong>1. Connect Channels:</strong> Link your Facebook and Instagram profiles below under settings.</li>
-                <li><strong>2. Map Voice Guidelines:</strong> Save your custom instructions inside your prompt box.</li>
-                <li><strong>3. Process Assets:</strong> Load an image file to run Gemini visual analysis routines.</li>
-                <li><strong>4. Polish & Sync:</strong> Select a card to fill the text pane and push directly live.</li>
-            </ul>
-        </details>
-
-        <details class="interactive-accordion">
-            <summary>⚙️ Studio Settings</summary>
-            <div>
-                <div class="connection-grid">
-                    <div class="conn-card">
-                        <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
-                        <div id="fb-status" class="badge badge-red">Not Connected</div>
-                        <button type="button" class="btn btn-fb" onclick="connectPlatform('facebook'); return false;">Connect Page</button>
-                    </div>
-                    <div class="conn-card">
-                        <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
-                        <div id="ig-status" class="badge badge-red">Not Connected</div>
-                        <button type="button" class="btn btn-ig" onclick="connectPlatform('instagram'); return false;">Connect IG</button>
-                    </div>
-                </div>
-                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                    <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase;">Custom Brand Instructions</h4>
-                    <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules here..."></textarea>
-                    <button class="btn btn-primary" onclick="saveSettings()">Save Instructions Settings</button>
-                    <span id="save-status" class="text-green view-section" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
-                </div>
-            </div>
-        </details>
-
-        <main class="panel">
-            <h2 class="panel-title">Content Pipeline</h2>
-            <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
-                <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
-                <input type="file" id="imageInput" class="view-section" accept="image/*" onchange="updateFileInputLabel()">
-            </div>
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(google_url, json=body, headers=headers)
             
-            <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail=f"Google API Error: {response.text}")
             
-            <p id="generation-disclaimer" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 0.6rem; letter-spacing: 0.01em;">
-                ℹ️ Image canvas downscaling and Gemini AI visual analysis typically finish within <strong>15 to 45 seconds</strong>.
-            </p>
+            data = response.json()
+            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
 
-            <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Running deep image matrix interpretation and generating caption variants... Please wait...</div>
-
-            <div id="selection-area" class="view-section" style="margin-top:2rem;">
-                <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
-                <div id="draft-cards" class="draft-container"></div>
-                
-                <h3 style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL EDITING & POLISH ]</h3>
-                <textarea id="finalCaption" style="min-height:200px; margin-top:1rem;"></textarea>
-                
-                <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber);" onclick="publishToSocials()">🚀 Publish Directly to Social Channels</button>
-                
-                <div class="pipeline-warning">
-                    <span>⚠️</span>
-                    <div>
-                        <strong>Social Media Processing Window:</strong> Media integrations typically take <strong>30 seconds to 3 minutes</strong> while networks process metrics. Do not close this tab or duplicate clicks.
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script>
-        let supabaseClient;
-        const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
-        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
-        const backendBaseUrl = "https://tavapost-backend.onrender.com";
-
-        function initializeApp() {
-            try {
-                if (!supabaseKey || supabaseKey.includes("YOUR_SUPABASE")) {
-                    throw new Error("Missing valid initialization client token credentials.");
-                }
-                supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-                checkSession();
-            } catch (err) {
-                console.error("Core Engine Init Error: ", err.message);
-                document.getElementById('system-crash-alert').className = "container view-active-block";
-            }
-        }
-
-        function updateFileInputLabel() {
-            const fileInput = document.getElementById('imageInput');
-            const label = document.getElementById('file-label');
-            if(fileInput.files.length > 0) {
-                label.innerText = `✅ File Selected: ${fileInput.files[0].name}`;
-                label.style.color = "var(--accent-green)";
-            }
-        }
-
-        async function checkSession() {
-            try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (!session) {
-                    document.getElementById('view-login').className = "login-wrapper view-active-flex";
-                    document.getElementById('view-dashboard').className = "view-section";
-                    document.getElementById('header-logout').className = "view-section";
-                } else {
-                    document.getElementById('view-login').className = "view-section";
-                    document.getElementById('view-dashboard').className = "container view-active-block";
-                    document.getElementById('header-logout').className = "btn btn-logout view-active-block";
-                    await handleZernioCallback();
-                    await loadSettings();
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        async function signInUser() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const errorLabel = document.getElementById('login-error');
-            errorLabel.className = "view-section";
-
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) {
-                errorLabel.innerText = `Login Failed: ${error.message}`;
-                errorLabel.className = "text-red view-active-block";
-            } else {
-                await checkSession();
-            }
-        }
-
-        async function handleZernioCallback() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const accountId = urlParams.get('profileId');
-            const platform = localStorage.getItem('connecting_platform') || urlParams.get('connected');
-
-            if (accountId && platform) {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (!session) return;
-
-                let updateData = { user_id: session.user.id };
-                if (platform === 'facebook') updateData.zernio_facebook_id = accountId;
-                if (platform === 'instagram') updateData.zernio_instagram_id = accountId;
-
-                const { error } = await supabaseClient.from('user_settings').upsert(updateData);
-                if (!error) {
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    localStorage.removeItem('connecting_platform');
-                    await loadSettings();
-                }
-            }
-        }
-
-        async function loadSettings() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
-
-            const { data, error } = await supabaseClient
-                .from('user_settings')
-                .select('custom_prompt, zernio_facebook_id, zernio_instagram_id')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
-
-            if (data) {
-                if (data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
-                
-                const fbStatus = document.getElementById('fb-status');
-                if (data.zernio_facebook_id) {
-                    fbStatus.innerText = "Connected ✅";
-                    fbStatus.className = "badge badge-green";
-                } else {
-                    fbStatus.innerText = "Not Connected";
-                    fbStatus.className = "badge badge-red";
-                }
-                
-                const igStatus = document.getElementById('ig-status');
-                if (data.zernio_instagram_id) {
-                    igStatus.innerText = "Connected ✅";
-                    igStatus.className = "badge badge-green";
-                } else {
-                    igStatus.innerText = "Not Connected";
-                    igStatus.className = "badge badge-red";
-                }
-            }
-        }
-
-        async function saveSettings() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
-
-            const customPrompt = document.getElementById('customPrompt').value;
-            const statusLabel = document.getElementById('save-status');
-
-            const { error } = await supabaseClient
-                .from('user_settings')
-                .upsert({ user_id: session.user.id, custom_prompt: customPrompt });
-
-            if (!error) {
-                statusLabel.className = "text-green view-active-block";
-                setTimeout(() => statusLabel.className = "view-section", 3000);
-            }
-        }
-
-        async function connectPlatform(platform) {
-            if (window.event) window.event.preventDefault(); 
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
-
-            localStorage.setItem('connecting_platform', platform);
-            try {
-                const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=${session.user.id}`);
-                const data = await response.json();
-                if (data.authUrl) window.location.href = data.authUrl;
-            } catch (err) {
-                alert(`Handshake Fault: ${err.message}`);
-            }
-        }
-
-        async function generateDraft() {
-            const fileInput = document.getElementById('imageInput');
-            const loadingLabel = document.getElementById('loading');
-            const selectionArea = document.getElementById('selection-area');
-            const draftCardsContainer = document.getElementById('draft-cards');
-            const btnGen = document.getElementById('btn-generate');
-            const customPromptInput = document.getElementById('customPrompt');
-            const staticDisclaimer = document.getElementById('generation-disclaimer');
-
-            if (!fileInput.files || fileInput.files.length === 0) {
-                alert("Please select an image file first.");
-                return;
+            return {
+                "image_url": "https://studio.tavaone.com/placeholder.jpg",
+                "draft_text": raw_text
             }
 
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gemini Fetch Fault: {str(e)}")
 
-            loadingLabel.className = "view-active-block";
-            btnGen.classList.add('btn-disabled');
-            selectionArea.className = "view-section";
-            if (staticDisclaimer) staticDisclaimer.className = "view-section";
-            draftCardsContainer.innerHTML = "";
+@app.post("/publish-post")
+async def publish_post(payload: PostRequest):
+    zernio_key = os.environ.get("ZERNIO_API_KEY")
+    if not zernio_key:
+        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
-            const rawFile = fileInput.files[0];
-            const customPromptValue = customPromptInput ? customPromptInput.value : "";
-            const maxFileSizeInBytes = 4 * 1024 * 1024; 
-            
-            if (rawFile.size > maxFileSizeInBytes) {
-                const img = new Image();
-                img.src = URL.createObjectURL(rawFile);
-                img.onload = async function() {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    let width = img.width; let height = img.height; const max_size = 1920; 
-                    if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } }
-                    else { if (height > max_size) { width *= max_size / height; height = max_size; } }
-                    canvas.width = width; canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
-                    canvas.toBlob(async function(blob) {
-                        const formData = new FormData();
-                        formData.append("file", blob, "compressed_upload.jpg");
-                        formData.append("custom_prompt", customPromptValue);
-                        await executeDraftUpload(formData, session.access_token);
-                    }, "image/jpeg", 0.8);
-                };
-            } else {
-                const formData = new FormData();
-                formData.append("file", rawFile);
-                formData.append("custom_prompt", customPromptValue);
-                await executeDraftUpload(formData, session.access_token);
-            }
-        }
+    clean_key = zernio_key.strip().replace("'", "").replace('"', "")
+    zernio_publish_url = "https://zernio.com/api/v1/posts"
+    
+    headers = {
+        "Authorization": f"Bearer {clean_key}",
+        "Content-Type": "application/json"
+    }
+    
+    target_platforms = []
+    
+    if payload.fb_account_id and payload.fb_account_id.strip():
+        target_platforms.append({
+            "platform": "facebook",
+            "accountId": payload.fb_account_id.strip()
+        })
+        
+    if payload.ig_account_id and payload.ig_account_id.strip():
+        target_platforms.append({
+            "platform": "instagram",
+            "accountId": payload.ig_account_id.strip()
+        })
 
-        async function executeDraftUpload(formData, accessToken) {
-            const loadingLabel = document.getElementById('loading');
-            const selectionArea = document.getElementById('selection-area');
-            const draftCardsContainer = document.getElementById('draft-cards');
-            const btnGen = document.getElementById('btn-generate');
-            const staticDisclaimer = document.getElementById('generation-disclaimer');
-            
-            try {
-                const response = await fetch(`${backendBaseUrl}/generate-draft`, {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${accessToken}` },
-                    body: formData
-                });
+    if not target_platforms:
+        raise HTTPException(status_code=400, detail="No connected platform account IDs found.")
 
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.detail || `Server error status ${response.status}`);
-                }
-                
-                const data = await response.json();
-                window.currentPostImageUrl = data.image_url;
+    # 🚀 FIXED: Dynamic fallback targets active context string to clear account mismatch walls
+    active_profile = payload.profile_id if payload.profile_id else "6a1350634beb548c15895d64"
 
-                const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(txt => txt.trim().length > 0);
-                
-                options.forEach((optionText, index) => {
-                    const card = document.createElement('div');
-                    card.className = "draft-card";
-                    card.style.border = "1px solid var(--border-color)";
-                    card.style.borderRadius = "8px";
-                    card.style.padding = "1.25rem";
-                    card.style.marginBottom = "1rem";
-                    card.style.cursor = "pointer";
-                    card.innerHTML = `<header style="color:var(--accent-green); font-size:0.8rem; font-weight:700; margin-bottom:0.5rem;">DRAFT VARIATION ${index + 1}</header><p style="font-size:0.9rem; white-space: pre-wrap; color:var(--text-main);">${optionText.trim()}</p>`;
-                    card.onclick = () => {
-                        document.getElementById('finalCaption').value = optionText.trim();
-                        document.getElementById('finalCaption').scrollIntoView({ behavior: 'smooth' });
-                    };
-                    draftCardsContainer.appendChild(card);
-                });
-
-                loadingLabel.className = "view-section";
-                btnGen.classList.remove('btn-disabled');
-                selectionArea.className = "view-active-block";
-
-            } catch (err) {
-                console.error(err);
-                alert(`Pipeline Error: ${err.message}`);
-                loadingLabel.className = "view-section";
-                btnGen.classList.remove('btn-disabled');
-                if (staticDisclaimer) staticDisclaimer.className = "view-active-block";
-            }
-        }
-
-        async function publishToSocials() {
-            const caption = document.getElementById('finalCaption').value;
-            const btnPub = document.getElementById('btn-publish');
-            if (!caption.trim()) {
-                alert("Please select or edit a caption variant first.");
-                return;
-            }
-
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
-
-            const { data: settings } = await supabaseClient
-                .from('user_settings')
-                .select('zernio_facebook_id, zernio_instagram_id')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
-
-            const fbId = settings ? settings.zernio_facebook_id : null;
-            const igId = settings ? settings.zernio_instagram_id : null;
-
-            if (!fbId && !igId) {
-                alert("Aborted: No active channel accounts connected under settings.");
-                return;
-            }
-
-            btnPub.classList.add('btn-disabled');
-            btnPub.innerText = "Publishing Content... Please Wait...";
-
-            try {
-                const response = await fetch(`${backendBaseUrl}/publish-post`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${session.access_token}`
-                    },
-                    body: JSON.stringify({
-                        image_url: window.currentPostImageUrl || "",
-                        caption: caption,
-                        fb_account_id: fbId || "",
-                        ig_account_id: igId || ""
-                    })
-                });
-
-                const data = await response.json();
-                if (data.status === "success") {
-                    alert("🚀 Post successfully published to your active social feeds!");
-                } else {
-                    alert(`Delivery Mismatch: ${data.detail || 'Review connections profile statuses.'}`);
-                }
-            } catch (err) {
-                console.error(err);
-                alert("Error communicating with background content server.");
-            } finally {
-                btnPub.classList.remove('btn-disabled');
-                btnPub.innerText = "🚀 Publish Directly to Social Channels";
-            }
-        }
-
-        async function signOutUser() {
-            await supabaseClient.auth.signOut();
-            await checkSession();
-        }
-
-        window.onload = initializeApp;
-    </script>
-</body>
-</html>
+    body = {
+        "profileId": active_profile,
+        "content": payload.caption,
+        "platforms": target_platforms
+    }
+    
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        try:
+            response = await client.post(zernio_publish_url, json=body, headers=headers)
+            if response.status_code in [200, 201]:
+                return {"status": "success", "data": response.json()}
+            else:
+                return {"status": "error", "code": response.status_code, "detail": response.text}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
