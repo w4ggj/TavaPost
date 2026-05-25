@@ -342,7 +342,7 @@ async function handleZernioCallback() {
 
             try {
                 // ⚠️ Ensure this matches your live Render API URL!
-                const response = await fetch("https://tavapost-api.onrender.com/publish-post", {
+                const response = await fetch("https://tavapost-backend.onrender.com/publish-post", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
