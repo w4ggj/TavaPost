@@ -1,4 +1,4 @@
-# TavaPost Studio Backend API Node // Ver 1.0.4
+# TavaPost Studio Backend API Node // Ver 1.0.5
 import os
 import httpx
 from fastapi import FastAPI, HTTPException, UploadFile, File
@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 app = FastAPI(title="TavaPost Backend")
 
-# Initialize robust cross-origin resource rules for secure domain mapping
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,10 +27,7 @@ async def root_check():
 async def get_connect_url(platform: str, profile_id: str = None):
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
-        raise HTTPException(
-            status_code=500,
-            detail="Backend configuration missing ZERNIO_API_KEY environment variable."
-        )
+        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
     zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId=6a1350634beb548c15895d64&redirect_url=https://studio.tavaone.com/index.html"
@@ -52,31 +48,29 @@ async def get_connect_url(platform: str, profile_id: str = None):
 async def generate_draft(file: UploadFile = File(...)):
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
-        raise HTTPException(status_code=500, detail="Backend configuration missing ZERNIO_API_KEY.")
+        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
-    
-    # 🚀 FIXED: Switched endpoint destination path to the correct draft asset node!
-    zernio_draft_url = "https://zernio.com/api/v1/drafts" 
+    zernio_draft_url = "https://zernio.com/api/v1/drafts"
 
     headers = {
         "Authorization": f"Bearer {clean_key}"
     }
 
-    # Prepare file payload binary stream for image transfer block routing
     file_content = await file.read()
     files = {"file": (file.filename, file_content, file.content_type)}
 
-    # 60-second breathing room timeout context allocation
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
-            # We send a background POST request to the engine node layout map
             response = await client.post(zernio_draft_url, files=files, headers=headers)
-            
             if response.status_code in [200, 201]:
                 return response.json()
             else:
-                raise HTTPException(status_code=response.status_code, detail=response.text)
+                # Returns the descriptive JSON error payload from Zernio if parameters clear with layout errors
+                try:
+                    return response.json()
+                except:
+                    raise HTTPException(status_code=response.status_code, detail=response.text)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -84,7 +78,7 @@ async def generate_draft(file: UploadFile = File(...)):
 async def publish_post(payload: PostRequest):
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
-        raise HTTPException(status_code=500, detail="Missing API token environment config.")
+        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
     clean_key = zernio_key.strip().replace("'", "").replace('"', "")
     zernio_publish_url = "https://zernio.com/api/v1/publish"
