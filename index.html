@@ -341,9 +341,19 @@
         }
 
         async function connectPlatform(platform) {
-            localStorage.setItem('connecting_platform', platform);
-            window.location.href = `${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=6a1350634beb548c15895d64&t=${Date.now()}`;
-        }
+    localStorage.setItem('connecting_platform', platform);
+    
+    // Call your backend to get the authUrl
+    const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=6a1350634beb548c15895d64&t=${Date.now()}`);
+    const data = await response.json();
+    
+    if (data.authUrl) {
+        // Redirect the user to Facebook's OAuth page
+        window.location.href = data.authUrl;
+    } else {
+        alert("Failed to retrieve authorization URL.");
+    }
+}
 
         async function disconnectPlatform(platform) {
             const { data: { session } } = await supabaseClient.auth.getSession();
