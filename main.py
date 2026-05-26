@@ -309,7 +309,7 @@ async def admin_list_users(x_admin_secret: str = Header(...)):
 @app.post("/create-checkout-session")
 async def create_checkout_session(request: CheckoutRequest):
     try:
-       # Create a secure Stripe checkout session
+        # Create a secure Stripe checkout session
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[
@@ -319,20 +319,17 @@ async def create_checkout_session(request: CheckoutRequest):
                 },
             ],
             mode='subscription',
-            # THIS IS THE MISSING PIECE:
-            client_reference_id=user_id, 
+            # USE THIS ONE:
+            client_reference_id=request.user_id, 
             success_url='https://studio.tavaone.com/success',
             cancel_url='https://studio.tavaone.com/cancel',
-            
-            # THE SECRET SAUCE: We pass the Supabase User ID to Stripe.
-            # When Stripe tells us the payment worked, it hands this ID back to us!
-            client_reference_id=request.user_id, 
         )
         
         # Return the secure Stripe URL to the frontend
         return {"url": checkout_session.url}
         
     except Exception as e:
+        print(f"Checkout Error: {e}") # This will show the error in Render logs!
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/webhook")
