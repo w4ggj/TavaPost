@@ -277,24 +277,29 @@
         }
 
         async function handleZernioCallback() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const accountId = urlParams.get('profileId');
-            const platform = localStorage.getItem('connecting_platform') || urlParams.get('connected');
+    const urlParams = new URLSearchParams(window.location.search);
+    const accountId = urlParams.get('profileId');
+    const platform = localStorage.getItem('connecting_platform');
 
-            if (accountId && platform) {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (!session) return;
-                
-                let updateData = { user_id: session.user.id };
-                if (platform === 'facebook') updateData.zernio_facebook_id = accountId;
-                if (platform === 'instagram') updateData.zernio_instagram_id = accountId;
+    if (accountId && platform) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        let updateData = { user_id: session.user.id };
+        if (platform === 'facebook') updateData.zernio_facebook_id = accountId;
+        if (platform === 'instagram') updateData.zernio_instagram_id = accountId;
 
-                await supabaseClient.from('user_settings').upsert(updateData);
-                window.history.replaceState({}, document.title, window.location.pathname);
-                localStorage.removeItem('connecting_platform');
-                await loadSettings();
-            }
+        // Ensure this write finishes before loading settings
+        const { error } = await supabaseClient.from('user_settings').upsert(updateData);
+        
+        if (!error) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+            localStorage.removeItem('connecting_platform');
+            await loadSettings(); // Only refresh UI after successful write
+        } else {
+            console.error("Database write failed:", error);
         }
+    }
+}
 
         async function loadSettings() {
             const { data: { session } } = await supabaseClient.auth.getSession();
