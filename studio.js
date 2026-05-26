@@ -1,6 +1,6 @@
         let supabaseClient;
         const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co"; // Keep your URL
-        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; // Use the NEW Publishable key
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZudHN0aGp1cG9wdmJ3dm1mc216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NjYzMjksImV4cCI6MjA5NTE0MjMyOX0.RI6wg9Dwnxar-i9crZnYf87u7ISPxuiu47xeqzwfW-0"; // Use the NEW Publishable key
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
 
 async function initializeApp() {
