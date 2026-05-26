@@ -389,11 +389,12 @@ async function loadUsageStats() {
 
         const counterElement = document.getElementById('usage-counter');
         
-        if (profile.subscription_tier === 'starter') {
-            counterElement.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 50 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 50 Drafts</span> <a href="#" onclick="startUpgrade(event)" style="color: var(--accent-green); text-decoration: none; margin-left: 10px; font-weight: bold;">(Upgrade to Pro)</a>`;
-        } else {
-            counterElement.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Unlimited (Pro)</span>`;
-        }
+        // Inside loadUsageStats
+if (profile.subscription_tier === 'starter') {
+    counterElement.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 25 Drafts</span> <a href="#" onclick="startUpgrade(event)" style="color: var(--accent-green); text-decoration: none; margin-left: 10px; font-weight: bold;">(Upgrade to Founders)</a>`;
+} else {
+    counterElement.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Unlimited (Founders)</span>`;
+}
     } catch (err) {
         console.error("Failed to load usage stats:", err);
     }
@@ -433,9 +434,9 @@ async function startUpgrade(event) {
     }
 }
 
-async function upgradeToPro(userId) {
+async function upgradeToFounders(userId) {
     try {
-        // Use the global 'backendBaseUrl' constant instead of a hardcoded string
+        // Points to the same endpoint, but clearly identifies the plan
         const response = await fetch(`${backendBaseUrl}/create-checkout-session`, {
             method: 'POST',
             headers: {
@@ -450,8 +451,10 @@ async function upgradeToPro(userId) {
             window.location.href = data.url;
         } else {
             console.error("No URL returned from backend");
+            alert("Could not start checkout. Please try again.");
         }
     } catch (error) {
         console.error("Error starting checkout:", error);
+        alert("System error. Please contact support.");
     }
 }
