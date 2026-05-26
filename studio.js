@@ -3,25 +3,43 @@
         const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
 
-       function initializeApp() {
+async function initializeApp() {
+    console.log("App initializing...");
     try {
         supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-        
-        // Add this "Success" check:
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('status') === 'success') {
-            alert("Payment successful! Your Pro features are being unlocked now.");
-            // Clean the URL so the alert doesn't pop up on every page refresh
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-
-        checkSession();
+        await checkSession();
     } catch (err) {
-    console.error("Core Engine Init Error: ", err);
-    // Explicitly show the crash alert
-    document.getElementById('system-crash-alert').className = "container view-active-block";
-    document.getElementById('crash-diagnostic-text').innerText = "Database connection failed: " + err.message;
+        console.error("Initialization error:", err);
+        const crashAlert = document.getElementById('system-crash-alert');
+        if (crashAlert) {
+            crashAlert.className = "container view-active-block";
+        }
+    }
 }
+
+async function checkSession() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    // Helper to safely set class names only if elements exist
+    const setView = (id, className) => {
+        const el = document.getElementById(id);
+        if (el) el.className = className;
+    };
+
+    if (!session) {
+        setView('view-login', "landing-wrapper view-active-block");
+        setView('view-dashboard', "view-section");
+        setView('header-logout', "view-section");
+    } else {
+        setView('view-login', "view-section");
+        setView('view-dashboard', "container view-active-block");
+        setView('header-logout', "btn btn-logout view-active-block");
+        
+        // Only call these if they are defined
+        if (typeof handleZernioCallback === 'function') await handleZernioCallback();
+        if (typeof loadSettings === 'function') await loadSettings();
+        if (typeof loadUsageStats === 'function') await loadUsageStats();
+    }
 }
 
         function updateFileInputLabel() {
