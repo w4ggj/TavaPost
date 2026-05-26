@@ -393,22 +393,43 @@
         }
 
         async function disconnectPlatform(platform) {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
 
-            if (!confirm(`Are you sure you want to disconnect this ${platform} profile link?`)) return;
+    if (!confirm(`Are you sure you want to disconnect this ${platform} profile link?`)) return;
 
-            let clearData = { user_id: session.user.id };
-            if (platform === 'facebook') clearData.zernio_facebook_id = null;
-            if (platform === 'instagram') clearData.zernio_instagram_id = null;
+    // Get the account ID from Supabase first
+    const { data: settings } = await supabaseClient
+        .from('user_settings')
+        .select('zernio_facebook_id, zernio_instagram_id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
 
-            const { error } = await supabaseClient.from('user_settings').upsert(clearData);
-            if (!error) {
-                await loadSettings();
-            } else {
-                alert(`Database mutation fault: ${error.message}`);
-            }
-        }
+    const accountId = platform === 'facebook' 
+        ? settings?.zernio_facebook_id 
+        : settings?.zernio_instagram_id;
+
+    // Disconnect from Zernio first
+    if (accountId) {
+        await fetch(`${backendBaseUrl}/disconnect-platform`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ platform, account_id: accountId })
+        });
+    }
+
+    // Then clean up Supabase
+    let clearData = { user_id: session.user.id };
+    if (platform === 'facebook') clearData.zernio_facebook_id = null;
+    if (platform === 'instagram') clearData.zernio_instagram_id = null;
+
+    const { error } = await supabaseClient.from('user_settings').upsert(clearData);
+    if (!error) {
+        await loadSettings();
+    } else {
+        alert(`Database mutation fault: ${error.message}`);
+    }
+}
 
         async function generateDraft() {
             const fileInput = document.getElementById('imageInput');
