@@ -98,12 +98,57 @@ async function loadUsageStats() {
 async function loadSettings() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return;
-    const { data } = await supabaseClient
+
+    console.log("Loading settings for user:", session.user.id);
+
+    const { data, error } = await supabaseClient
         .from('user_settings')
         .select('custom_prompt, zernio_facebook_id, zernio_instagram_id')
         .eq('user_id', session.user.id)
         .maybeSingle();
-    if (data && data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
+
+    if (error) {
+        console.error("Database Fetch Error:", error);
+        return;
+    }
+
+    if (data) {
+        console.log("Data retrieved from DB:", data);
+        
+        if (data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
+        
+        // --- FACEBOOK CHECK ---
+        const fbStatus = document.getElementById('fb-status');
+        const fbAction = document.getElementById('fb-action-area');
+        console.log("FB Status Element Found:", !!fbStatus);
+
+        if (data.zernio_facebook_id) {
+            console.log("Setting FB status to CONNECTED");
+            if (fbStatus) {
+                fbStatus.innerText = "Connected ✅";
+                fbStatus.className = "badge badge-green";
+            }
+            if (fbAction) {
+                fbAction.innerHTML = `<button type="button" class="btn btn-disconnect" onclick="disconnectPlatform('facebook')">Disconnect</button>`;
+            }
+        }
+        
+        // --- INSTAGRAM CHECK ---
+        const igStatus = document.getElementById('ig-status');
+        const igAction = document.getElementById('ig-action-area');
+        if (data.zernio_instagram_id) {
+            console.log("Setting IG status to CONNECTED");
+            if (igStatus) {
+                igStatus.innerText = "Connected ✅";
+                igStatus.className = "badge badge-green";
+            }
+            if (igAction) {
+                igAction.innerHTML = `<button type="button" class="btn btn-disconnect" onclick="disconnectPlatform('instagram')">Disconnect</button>`;
+            }
+        }
+    } else {
+        console.warn("No settings row found for this user in user_settings table!");
+    }
 }
 
 async function generateDraft() {
