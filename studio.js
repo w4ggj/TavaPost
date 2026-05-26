@@ -424,3 +424,26 @@ async function startUpgrade(event) {
         event.target.innerText = "(Upgrade to Pro)"; // Reset the button if it fails
     }
 }
+
+async function upgradeToPro(userId) {
+    try {
+        const response = await fetch('https://tava-backend.onrender.com/create-checkout-session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ user_id: userId }),
+        });
+
+        const data = await response.json();
+        
+        if (data.url) {
+            // Redirect the user to Stripe
+            window.location.href = data.url;
+        } else {
+            console.error("No URL returned from backend");
+        }
+    } catch (error) {
+        console.error("Error starting checkout:", error);
+    }
+}
