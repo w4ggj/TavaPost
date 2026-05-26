@@ -1,1 +1,94 @@
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --warning-amber: #f59e0b;
+            --danger-red: #ef4444;
+        }
 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            background-color: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.05em; text-transform: uppercase; }
+        .brand-title span { color: var(--accent-green); }
+        .container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+        .view-section { display: none !important; }
+        .view-active-flex { display: flex !important; }
+        .view-active-block { display: block !important; }
+
+        .login-wrapper { width: 100%; justify-content: center; padding: 6rem 1rem 0 1rem; }
+        .login-panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2.5rem 2rem; width: 100%; max-width: 420px; }
+        .input-group { text-align: left; margin-bottom: 1.25rem; }
+        .input-group label { display: block; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
+        input[type="email"], input[type="password"] { width: 100%; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 0.75rem 1rem; }
+        input:focus { outline: none; border-color: var(--accent-green); }
+
+        .panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; }
+        .panel-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-left: 3px solid var(--accent-green); padding-left: 0.75rem; }
+        .interactive-accordion { background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; }
+        .interactive-accordion summary { font-weight: 600; cursor: pointer; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; }
+        .interactive-accordion summary::-webkit-details-marker { display: none; }
+        .interactive-accordion summary::after { content: '＋'; color: var(--accent-green); font-weight: 700; }
+        .interactive-accordion[open] summary::after { content: '－'; }
+
+        .connection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+        @media (max-width: 568px) { .connection-grid { grid-template-columns: 1fr; } }
+        .conn-card { background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; text-align: center; display: flex; flex-direction: column; justify-content: space-between; min-height: 160px; }
+        
+        .badge { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.5rem; border-radius: 4px; text-transform: uppercase; margin-top: 0.5rem; align-self: center; }
+        .badge-red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+
+        .guide-box { background: rgba(51, 65, 85, 0.2); border: 1px dashed var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+        .guide-box summary { font-weight: 600; cursor: pointer; color: var(--accent-green); }
+        .guide-box ul { margin-top: 0.75rem; padding-left: 1.25rem; color: var(--text-muted); font-size: 0.9rem; }
+        .guide-box li { margin-bottom: 0.5rem; }
+
+        textarea { width: 100%; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 1rem; resize: vertical; min-height: 150px; margin-bottom: 1rem; }
+        textarea:focus { outline: none; border-color: var(--accent-green); }
+
+        .file-dropzone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 1.5rem; text-align: center; background: rgba(15, 23, 42, 0.2); margin-bottom: 1rem; cursor: pointer; }
+        
+        .btn { width: 100%; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s ease; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em; }
+        .btn-primary { background-color: var(--accent-green); color: var(--bg-main); }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-fb { background-color: var(--accent-blue); color: #fff; margin-top: 0.75rem; }
+        .btn-ig { background-color: var(--accent-purple); color: #fff; margin-top: 0.75rem; }
+        .btn-disconnect { background-color: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger-red); color: #f87171; margin-top: 0.75rem; }
+        .btn-disconnect:hover { background-color: var(--danger-red); color: var(--bg-main); }
+        .btn-logout { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: auto; }
+        .btn-disabled { background-color: var(--border-color) !important; color: var(--text-muted) !important; cursor: not-allowed; }
+
+        .pipeline-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.85rem; color: #fbbf24; margin-top: 1rem; display: flex; gap: 0.5rem; }
+        .draft-container { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem; }
+        .draft-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; cursor: pointer; }
+        .draft-card:hover { border-color: var(--accent-green); }
+        .draft-card header { background: none; border: none; padding: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--accent-green); font-weight: 700; text-transform: uppercase; }
+
+        .text-green { color: var(--accent-green) !important; }
+        .text-red { color: #f87171 !important; }
