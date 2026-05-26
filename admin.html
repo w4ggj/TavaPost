@@ -64,6 +64,48 @@
         const BACKEND_URL = "https://tavapost-backend.onrender.com"; // Your Render URL
         const ADMIN_SECRET = "super-secret-tava-key-123"; // Must match what is in main.py
 
+        async function loadUsers() {
+            const tableBody = document.getElementById('admin-user-list');
+            tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Loading users from database...</td></tr>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/admin/users`, {
+                    method: 'GET',
+                    headers: {
+                        'x-admin-secret': ADMIN_SECRET
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) throw new Error(result.detail || "Failed to load users");
+                
+                if (result.data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No users found.</td></tr>';
+                    return;
+                }
+                
+                // Build the table rows dynamically based on the database response
+                tableBody.innerHTML = result.data.map(user => `
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">${user.email}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">ID: ${user.id.substring(0, 8)}...</div>
+                        </td>
+                        <td><span class="badge active">Registered</span></td>
+                        <td><span class="badge">Check DB</span></td>
+                        <td>
+                            <button class="btn-small" onclick="disconnectSocial('${user.id}')">Disconnect Meta</button>
+                            <button class="btn-small btn-danger" onclick="deleteUser('${user.id}')" style="margin-left: 0.5rem;">Wipe Data</button>
+                        </td>
+                    </tr>
+                `).join('');
+                
+            } catch (error) {
+                console.error(error);
+                tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #ef4444;">Error: ${error.message}</td></tr>`;
+            }
+        }
         async function disconnectSocial(userId) {
             if(confirm("Are you sure you want to revoke this user's Meta tokens?")) {
                 const response = await fetch(`${BACKEND_URL}/admin/disconnect`, {
