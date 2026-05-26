@@ -3,15 +3,23 @@
         const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
 
-        function initializeApp() {
-            try {
-                supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-                checkSession();
-            } catch (err) {
-                console.error("Core Engine Init Error: ", err.message);
-                document.getElementById('system-crash-alert').className = "container view-active-block";
-            }
+       function initializeApp() {
+    try {
+        supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // Add this "Success" check:
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('status') === 'success') {
+            alert("Payment successful! Your Pro features are being unlocked now.");
+            // Clean the URL so the alert doesn't pop up on every page refresh
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
+
+        checkSession();
+    } catch (err) {
+        // ... rest of your code
+    }
+}
 
         function updateFileInputLabel() {
             const fileInput = document.getElementById('imageInput');
@@ -427,7 +435,8 @@ async function startUpgrade(event) {
 
 async function upgradeToPro(userId) {
     try {
-        const response = await fetch('https://tava-backend.onrender.com/create-checkout-session', {
+        // Use the global 'backendBaseUrl' constant instead of a hardcoded string
+        const response = await fetch(`${backendBaseUrl}/create-checkout-session`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -438,7 +447,6 @@ async function upgradeToPro(userId) {
         const data = await response.json();
         
         if (data.url) {
-            // Redirect the user to Stripe
             window.location.href = data.url;
         } else {
             console.error("No URL returned from backend");
