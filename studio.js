@@ -25,8 +25,9 @@
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) {
-                document.getElementById('view-login').className = "login-wrapper view-active-flex";
-                document.getElementById('view-dashboard').className = "view-section";
+            document.getElementById('view-login').className = "landing-wrapper view-active-block"; 
+            document.getElementById('view-dashboard').className = "view-section";
+            // ...
                 document.getElementById('header-logout').className = "view-section";
             } else {
                 document.getElementById('view-login').className = "view-section";
