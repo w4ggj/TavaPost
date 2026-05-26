@@ -166,3 +166,59 @@ async function generateDraft() {
         if (btnGen) btnGen.disabled = false;
     }
 }
+
+async function connectPlatform(platform) {
+    // Save which platform we are connecting so we know after redirect
+    localStorage.setItem('connecting_platform', platform);
+    
+    try {
+        const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}`);
+        const data = await response.json();
+        
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            console.error("No redirect URL returned from Zernio");
+            alert("Could not start connection flow. Check console.");
+        }
+    } catch (err) {
+        console.error("Connection error:", err);
+        alert("Failed to connect: " + err.message);
+    }
+}
+
+async function disconnectPlatform(platform) {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    // Get the correct ID from our settings
+    const { data: settings } = await supabaseClient
+        .from('user_settings')
+        .select('zernio_facebook_id, zernio_instagram_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+    const accountId = platform === 'facebook' ? settings.zernio_facebook_id : settings.zernio_instagram_id;
+
+    if (!confirm(`Are you sure you want to disconnect your ${platform} account?`)) return;
+
+    try {
+        const response = await fetch(`${backendBaseUrl}/disconnect-platform`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ account_id: accountId })
+        });
+
+        if (response.ok) {
+            // Clear from database
+            let update = {};
+            update[platform === 'facebook' ? 'zernio_facebook_id' : 'zernio_instagram_id'] = null;
+            await supabaseClient.from('user_settings').update(update).eq('user_id', session.user.id);
+            
+            location.reload(); // Refresh to update UI
+        } else {
+            alert("Failed to disconnect from Zernio.");
+        }
+    } catch (err) {
+        console.error("Disconnect Error:", err);
+    }
+}
