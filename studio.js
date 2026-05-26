@@ -99,31 +99,22 @@ async function loadSettings() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return;
 
-    console.log("Loading settings for user:", session.user.id);
-
     const { data, error } = await supabaseClient
         .from('user_settings')
         .select('custom_prompt, zernio_facebook_id, zernio_instagram_id')
         .eq('user_id', session.user.id)
         .maybeSingle();
 
-    if (error) {
-        console.error("Database Fetch Error:", error);
-        return;
-    }
+    if (error) return;
 
     if (data) {
-        console.log("Data retrieved from DB:", data);
-        
         if (data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
         
-        // --- FACEBOOK CHECK ---
-        const fbStatus = document.getElementById('fb-status');
-        const fbAction = document.getElementById('fb-action-area');
-        console.log("FB Status Element Found:", !!fbStatus);
-
+        // --- FACEBOOK: Set global ID and update UI ---
         if (data.zernio_facebook_id) {
-            console.log("Setting FB status to CONNECTED");
+            window.currentFbId = data.zernio_facebook_id; // <--- ADD THIS
+            const fbStatus = document.getElementById('fb-status');
+            const fbAction = document.getElementById('fb-action-area');
             if (fbStatus) {
                 fbStatus.innerText = "Connected ✅";
                 fbStatus.className = "badge badge-green";
@@ -133,11 +124,11 @@ async function loadSettings() {
             }
         }
         
-        // --- INSTAGRAM CHECK ---
-        const igStatus = document.getElementById('ig-status');
-        const igAction = document.getElementById('ig-action-area');
+        // --- INSTAGRAM: Set global ID and update UI ---
         if (data.zernio_instagram_id) {
-            console.log("Setting IG status to CONNECTED");
+            window.currentIgId = data.zernio_instagram_id; // <--- ADD THIS
+            const igStatus = document.getElementById('ig-status');
+            const igAction = document.getElementById('ig-action-area');
             if (igStatus) {
                 igStatus.innerText = "Connected ✅";
                 igStatus.className = "badge badge-green";
@@ -146,11 +137,8 @@ async function loadSettings() {
                 igAction.innerHTML = `<button type="button" class="btn btn-disconnect" onclick="disconnectPlatform('instagram')">Disconnect</button>`;
             }
         }
-    } else {
-        console.warn("No settings row found for this user in user_settings table!");
     }
 }
-
 async function generateDraft() {
     // 1. Declare all variables at the top level of the function
     const fileInput = document.getElementById('imageInput');
