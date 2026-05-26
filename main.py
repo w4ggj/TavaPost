@@ -2,6 +2,7 @@
 import os
 import httpx
 import base64
+import stripe
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -15,6 +16,10 @@ from fastapi import Header, HTTPException
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+
+class CheckoutRequest(BaseModel):
+    user_id: str
 
 # ADD THIS NEW ADMIN SETUP:
 # This uses the master key to bypass normal security rules for admin tasks
@@ -298,5 +303,34 @@ async def admin_list_users(x_admin_secret: str = Header(...)):
             })
             
         return {"status": "success", "data": user_list}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/create-checkout-session")
+async def create_checkout_session(request: CheckoutRequest):
+    try:
+        # Create a secure Stripe checkout session
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[
+                {
+                    # REPLACE THIS with your actual Price ID from Stripe
+                    'price': 'price_1TbMC2B4jnTQeHqCSznEjs01', 
+                    'quantity': 1,
+                },
+            ],
+            mode='subscription',
+            # Stripe will redirect users back here after they pay (or cancel)
+            success_url='https://studio.tavaone.com/?upgrade=success',
+            cancel_url='https://studio.tavaone.com/?upgrade=canceled',
+            
+            # THE SECRET SAUCE: We pass the Supabase User ID to Stripe.
+            # When Stripe tells us the payment worked, it hands this ID back to us!
+            client_reference_id=request.user_id, 
+        )
+        
+        # Return the secure Stripe URL to the frontend
+        return {"url": checkout_session.url}
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
