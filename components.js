@@ -1,20 +1,37 @@
 // components.js
 document.addEventListener("DOMContentLoaded", () => {
-    // Look for the placeholder div
-    const footerPlaceholder = document.getElementById("footer-placeholder");
     
-    if (footerPlaceholder) {
-        fetch("footer.html")
-            .then(response => {
-                if (!response.ok) throw new Error("Could not load footer.");
-                return response.text();
-            })
-            .then(html => {
-                // Inject the HTML
+    // 1. Fetch and inject the Header
+    const loadHeader = fetch("header.html")
+        .then(response => response.text())
+        .then(html => {
+            const headerPlaceholder = document.getElementById("header-placeholder");
+            if (headerPlaceholder) {
+                headerPlaceholder.outerHTML = html; // Replaces the placeholder with the actual header
+                
+                // Show the "Return" button if we are on a legal/support page
+                const currentPath = window.location.pathname.toLowerCase();
+                if (currentPath.includes("privacy") || currentPath.includes("terms") || currentPath.includes("support")) {
+                    document.getElementById("header-return").className = "btn btn-logout view-active-block";
+                }
+            }
+        });
+
+    // 2. Fetch and inject the Footer
+    const loadFooter = fetch("footer.html")
+        .then(response => response.text())
+        .then(html => {
+            const footerPlaceholder = document.getElementById("footer-placeholder");
+            if (footerPlaceholder) {
                 footerPlaceholder.innerHTML = html;
-                // Automatically set the current year
                 document.getElementById("current-year").textContent = new Date().getFullYear();
-            })
-            .catch(error => console.error("Error loading components:", error));
-    }
+            }
+        });
+
+    // 3. Broadcast that the UI is ready
+    Promise.all([loadHeader, loadFooter])
+        .then(() => {
+            document.dispatchEvent(new Event("componentsLoaded"));
+        })
+        .catch(error => console.error("Error loading components:", error));
 });
