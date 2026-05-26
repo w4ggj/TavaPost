@@ -334,3 +334,29 @@ async def create_checkout_session(request: CheckoutRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/webhook")
+async def stripe_webhook(request: Request):
+    payload = await request.body()
+    sig_header = request.headers.get('stripe-signature')
+    
+    try:
+        # Verify the message really came from Stripe
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, os.environ.get("STRIPE_WEBHOOK_SECRET")
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Webhook signature verification failed")
+
+    # Only process successful payments
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        user_id = session.get('client_reference_id')
+        
+        if user_id:
+            # Upgrade their account in Supabase
+            supabase_admin.table('user_profiles').update({
+                'subscription_tier': 'pro'
+            }).eq('id', user_id).execute()
+            
+    return {"status": "success"}
