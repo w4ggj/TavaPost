@@ -150,3 +150,33 @@ async def disconnect_platform(payload: dict):
                 raise HTTPException(status_code=response.status_code, detail=response.text)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/publish-post")
+async def publish_post(payload: PostRequest):
+    zernio_key = os.environ.get("ZERNIO_API_KEY")
+    if not zernio_key:
+        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
+
+    if not payload.platforms:
+        raise HTTPException(status_code=400, detail="No platforms selected.")
+
+    headers = {
+        "Authorization": f"Bearer {zernio_key.strip()}",
+        "Content-Type": "application/json"
+    }
+    
+    body = {
+        "profileId": "6a1350634beb548c15895d64",
+        "content": payload.caption,
+        "publishNow": True,
+        "platforms": [p.dict() for p in payload.platforms]
+    }
+    
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        try:
+            response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
+            if response.status_code in [200, 201]:
+                return {"status": "success", "data": response.json()}
+            return {"status": "error", "detail": response.text}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
