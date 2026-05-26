@@ -84,13 +84,17 @@ async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form
             ]}]
         }
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        try: # <--- Correct: This is indented inside the 'with' block
-            response = await client.delete(zernio_disconnect_url, headers=headers)
-            # The rest of your logic must also be indented here
-            return {"status": "success", "code": response.status_code}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(google_url, json=body, headers=headers)
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail=f"Google API Error: {response.text}")
+            
+            data = response.json()
+            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+            return {"image_url": "https://studio.tavaone.com/placeholder.jpg", "draft_text": raw_text}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
