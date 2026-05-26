@@ -98,9 +98,9 @@ async def generate_draft(
         tier = profile.get('subscription_tier', 'starter')
         usage_count = profile.get('monthly_draft_count', 0)
         
-        # Enforce the 50-post limit for the Starter tier
-        if tier == 'starter' and usage_count >= 50:
-            raise HTTPException(status_code=403, detail="Monthly limit reached. Please upgrade to Pro.")
+        # Enforce the new 25-post limit for the Starter tier
+        if tier == 'starter' and usage_count >= 25:
+            raise HTTPException(status_code=403, detail="Monthly limit reached. Please upgrade to Founders.")
             
     except HTTPException:
         raise
@@ -315,7 +315,7 @@ async def create_checkout_session(request: CheckoutRequest):
             payment_method_types=['card'],
             line_items=[
                 {
-                    'price': 'price_1TbMC2B4jnTQeHqCSznEjs01', 
+                    'price': 'price_1TbOZMB4jnTQeHqCDFritU3D', 
                     'quantity': 1,
                 },
             ],
