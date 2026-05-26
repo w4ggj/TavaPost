@@ -337,29 +337,28 @@ async def create_checkout_session(request: CheckoutRequest):
 
 @app.post("/webhook")
 async def stripe_webhook(request: Request):
-    # Read the raw body as bytes
     payload = await request.body()
     sig_header = request.headers.get('stripe-signature')
-    endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
     
     try:
-        # Construct the event using the raw payload and header
         event = stripe.Webhook.construct_event(
-            payload, sig_header, endpoint_secret
+            payload, sig_header, os.environ.get("STRIPE_WEBHOOK_SECRET")
         )
     except Exception as e:
-        print(f"Signature verification failed: {e}")
-        raise HTTPException(status_code=400, detail="Invalid signature")
+        print(f"Auth failed: {e}")
+        raise HTTPException(status_code=400)
 
-    # If we get here, the signature is valid!
+    # Debug: Print every event type we receive to the logs
+    print(f"Received event type: {event['type']}")
+
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
+        # Check if the client_reference_id is actually there
         user_id = session.get('client_reference_id')
+        print(f"Processing checkout.session.completed for user: {user_id}")
         
         if user_id:
-            supabase_admin.table('user_profiles').update({
-                'subscription_tier': 'pro'
-            }).eq('id', user_id).execute()
-            print(f"Successfully upgraded user: {user_id}")
-    
+            supabase_admin.table('user_profiles').update({'subscription_tier': 'pro'}).eq('id', user_id).execute()
+            print("Database updated to pro")
+            
     return {"status": "success"}
