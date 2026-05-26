@@ -110,6 +110,8 @@ async function generateDraft() {
     const fileInput = document.getElementById('imageInput');
     const loadingLabel = document.getElementById('loading');
     const btnGen = document.getElementById('btn-generate');
+    const customPromptValue = document.getElementById('customPrompt').value || ""; // Get the value
+
     if (!fileInput.files || fileInput.files.length === 0) return alert("Select an image.");
     
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -120,14 +122,22 @@ async function generateDraft() {
         let formData = new FormData();
         formData.append("file", fileInput.files[0]);
         formData.append("user_id", session.user.id);
+        formData.append("custom_prompt", customPromptValue); // ADD THIS LINE
+
         const response = await fetch(`${backendBaseUrl}/generate-draft`, {
             method: "POST",
             headers: { "Authorization": `Bearer ${session.access_token}` },
             body: formData
         });
-        if (!response.ok) throw new Error("Backend rejected request.");
+
+        // Use response.text() to see the actual error if it fails
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Backend Error:", errorText);
+            throw new Error("Backend rejected request: " + errorText);
+        }
+        
         const data = await response.json();
-        // ... (display logic)
-    } catch (err) { alert(err.message); } 
+        // ... (display logic remains the same)
     finally { loadingLabel.className = "view-section"; btnGen.disabled = false; }
 }
