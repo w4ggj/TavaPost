@@ -382,11 +382,45 @@ async function loadUsageStats() {
         const counterElement = document.getElementById('usage-counter');
         
         if (profile.subscription_tier === 'starter') {
-            counterElement.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 50 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 50 Drafts</span> <a href="#" style="color: var(--accent-purple); text-decoration: none; margin-left: 10px;">(Upgrade)</a>`;
+            counterElement.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 50 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 50 Drafts</span> <a href="#" onclick="startUpgrade(event)" style="color: var(--accent-green); text-decoration: none; margin-left: 10px; font-weight: bold;">(Upgrade to Pro)</a>`;
         } else {
             counterElement.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Unlimited (Pro)</span>`;
         }
     } catch (err) {
         console.error("Failed to load usage stats:", err);
+    }
+}
+
+async function startUpgrade(event) {
+    event.preventDefault(); // Prevent the link from jumping to the top of the page
+    
+    // Change the text so the user knows it's loading
+    event.target.innerText = "(Opening Secure Checkout...)";
+    event.target.style.color = "var(--text-muted)";
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return alert("Session expired. Please log in again.");
+
+    try {
+        const response = await fetch(`${backendBaseUrl}/create-checkout-session`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ user_id: session.user.id }) // Send their Supabase ID
+        });
+
+        const data = await response.json();
+        
+        if (data.url) {
+            // Redirect the user's browser straight to Stripe's secure payment page
+            window.location.href = data.url; 
+        } else {
+            throw new Error(data.detail || "Failed to generate checkout link.");
+        }
+    } catch (err) {
+        console.error("Checkout error:", err);
+        alert("Could not start checkout: " + err.message);
+        event.target.innerText = "(Upgrade to Pro)"; // Reset the button if it fails
     }
 }
