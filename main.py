@@ -21,7 +21,7 @@ class PostRequest(BaseModel):
     caption: str
     fb_account_id: str = None
     ig_account_id: str = None
-    profile_id: str = None 
+    profile_id: str = None
 
 @app.get("/")
 async def root_check():
