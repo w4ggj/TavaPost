@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TavaPost // Social Media Content Studio</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
     
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -23,21 +23,71 @@
         </div>
     </div>
 
-    <div id="view-login" class="view-section login-wrapper">
-        <div class="login-panel">
-            <h2 style="margin-bottom: 0.5rem;">Welcome to Studio</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your brand content</p>
-            <div class="input-group">
-                <label>Email Address</label>
-                <input type="email" id="login-email" placeholder="you@yourbrand.com">
+    <div id="view-login" class="view-section landing-wrapper">
+        
+        <div class="hero-section">
+            <div class="hero-content">
+                <h1>Command Your Brand's <span>Social Presence</span></h1>
+                <p>TavaPost Studio is the ultimate workflow engine for creators. Upload your media, establish your unique brand voice, and let our system automatically craft and publish high-converting content directly to your channels.</p>
+                
+                <ul class="feature-list">
+                    <li>Intelligent visual analysis of your media assets</li>
+                    <li>Strict adherence to your custom brand voice instructions</li>
+                    <li>Generate multiple distinct caption variations instantly</li>
+                    <li>Direct push publishing to Facebook & Instagram</li>
+                </ul>
             </div>
-            <div class="input-group" style="margin-bottom: 2rem;">
-                <label>Password</label>
-                <input type="password" id="login-password" placeholder="••••••••••••">
+
+            <div class="login-card">
+                <h2 style="margin-bottom: 0.5rem;">Access Studio</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your active workspace.</p>
+                
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="login-email" placeholder="you@yourbrand.com">
+                </div>
+                <div class="input-group" style="margin-bottom: 2rem;">
+                    <label>Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••••••">
+                </div>
+                <button class="btn btn-primary" onclick="signInUser()">Log In to Dashboard</button>
+                <p id="login-error" class="text-red view-section" style="margin-top: 1rem; font-size: 0.8rem;"></p>
             </div>
-            <button class="btn btn-primary" onclick="signInUser()">Log In</button>
-            <p id="login-error" class="text-red view-section" style="margin-top: 1rem; font-size: 0.8rem;"></p>
         </div>
+
+        <div class="pricing-section">
+            <h2>Select Your Plan</h2>
+            <p>Unlock the full potential of your social media workflow.</p>
+            
+            <div class="pricing-grid">
+                <div class="pricing-tier">
+                    <div class="tier-name">Starter</div>
+                    <div class="tier-price">$9<span>/mo</span></div>
+                    <ul class="tier-features">
+                        <li>Connect 1 Facebook Page</li>
+                        <li>Connect 1 Instagram Profile</li>
+                        <li>50 Auto-Draft Generations / mo</li>
+                        <li>Standard Image Processing</li>
+                    </ul>
+                    <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-main);" onclick="alert('Subscription portal coming soon.')">Subscribe Now</button>
+                </div>
+
+                <div class="pricing-tier pro">
+                    <div class="tier-badge">Most Popular</div>
+                    <div class="tier-name">Professional</div>
+                    <div class="tier-price">$24<span>/mo</span></div>
+                    <ul class="tier-features">
+                        <li>Unlimited Social Connections</li>
+                        <li>Unlimited Auto-Draft Generations</li>
+                        <li>Advanced Voice Mapping Instructions</li>
+                        <li>Priority Queue Processing</li>
+                        <li>Early Access to Analytics</li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="alert('Subscription portal coming soon.')">Subscribe Now</button>
+                </div>
+            </div>
+        </div>
+        
     </div>
 
     <div id="view-dashboard" class="view-section container">
@@ -135,7 +185,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <script src="studio.js"></script>
 </body>
 </html>
