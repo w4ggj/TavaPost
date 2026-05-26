@@ -178,11 +178,6 @@ async function generateDraft() {
 
         const data = await response.json();
         const container = document.getElementById('draft-cards');
-        const hiddenUrlField = document.getElementById('finalImageUrl');
-        if (hiddenUrlField && data.image_url) {
-            hiddenUrlField.value = data.image_url;
-        }
-        const container = document.getElementById('draft-cards');
         if (container) {
             container.innerHTML = "";
             const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(t => t.trim().length > 0);
