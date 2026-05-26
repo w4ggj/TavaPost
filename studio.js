@@ -268,3 +268,48 @@ async function disconnectPlatform(platform) {
         console.error("Disconnect Error:", err);
     }
 }
+
+async function publishToSocials() {
+    const caption = document.getElementById('finalCaption').value;
+    if (!caption) return alert("Please select or write a caption first.");
+
+    // Identify which platforms are checked
+    const platforms = [];
+    if (document.getElementById('check-fb')?.checked) platforms.push({ platform: 'facebook', accountId: 'FB_ID_HERE' });
+    if (document.getElementById('check-ig')?.checked) platforms.push({ platform: 'instagram', accountId: 'IG_ID_HERE' });
+
+    if (platforms.length === 0) return alert("Select at least one platform.");
+
+    const btn = document.getElementById('btn-publish');
+    btn.disabled = true;
+    btn.innerText = "Publishing...";
+
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        const response = await fetch(`${backendBaseUrl}/publish-post`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${session.access_token}` 
+            },
+            body: JSON.stringify({
+                caption: caption,
+                platforms: platforms
+            })
+        });
+
+        const result = await response.json();
+        if (result.status === "success") {
+            alert("Successfully published!");
+        } else {
+            throw new Error(result.detail || "Publishing failed");
+        }
+    } catch (err) {
+        console.error("Publish error:", err);
+        alert("Publishing failed: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Publish";
+    }
+}
