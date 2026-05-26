@@ -46,7 +46,7 @@ class PlatformTarget(BaseModel):
     accountId: str
 
 class PostRequest(BaseModel):
-    image_url: Optional[str] = ""
+    image_url: str"
     caption: str
     platforms: List[PlatformTarget]
     profile_id: Optional[str] = None
@@ -193,6 +193,7 @@ async def disconnect_platform(payload: dict):
 
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
+    media_items = [{"type": "image", "url": payload.image_url}]
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
