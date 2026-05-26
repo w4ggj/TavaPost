@@ -4,39 +4,42 @@
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
 
 async function initializeApp() {
-    console.log("App initializing...");
+    console.log("1. initializeApp started");
     try {
         supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-        await checkSession();
-    } catch (err) {
-        console.error("Initialization error:", err);
-        const crashAlert = document.getElementById('system-crash-alert');
-        if (crashAlert) {
-            crashAlert.className = "container view-active-block";
+        
+        // Success check
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('status') === 'success') {
+            alert("Payment successful! Pro features unlocked.");
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
+
+        await checkSession();
+        console.log("3. checkSession finished successfully");
+    } catch (err) {
+        console.error("CRITICAL ERROR: ", err);
+        const crashAlert = document.getElementById('system-crash-alert');
+        if (crashAlert) crashAlert.className = "container view-active-block";
     }
 }
 
 async function checkSession() {
+    console.log("2. checkSession started");
     const { data: { session } } = await supabaseClient.auth.getSession();
     
-    // Safely update elements only if they exist
-    const updateElement = (id, className) => {
-        const el = document.getElementById(id);
-        if (el) el.className = className;
-        else console.warn(`Element not found: ${id}`);
-    };
-
+    // Fallback: Default to showing login if elements don't exist yet
+    const loginView = document.getElementById('view-login');
+    const dashView = document.getElementById('view-dashboard');
+    
     if (!session) {
-        updateElement('view-login', "landing-wrapper view-active-block");
-        updateElement('view-dashboard', "view-section");
-        updateElement('header-logout', "view-section");
+        if (loginView) loginView.className = "landing-wrapper view-active-block";
+        if (dashView) dashView.className = "view-section";
     } else {
-        updateElement('view-login', "view-section");
-        updateElement('view-dashboard', "container view-active-block");
-        updateElement('header-logout', "btn btn-logout view-active-block");
+        if (loginView) loginView.className = "view-section";
+        if (dashView) dashView.className = "container view-active-block";
         
-        // Safely run these only if they are defined
+        // Only run these if the user is logged in
         if (typeof handleZernioCallback === 'function') await handleZernioCallback();
         if (typeof loadSettings === 'function') await loadSettings();
         if (typeof loadUsageStats === 'function') await loadUsageStats();
