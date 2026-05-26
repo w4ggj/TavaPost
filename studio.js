@@ -17,9 +17,11 @@ async function initializeApp() {
 
 async function checkSession() {
     const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    // UI Elements
     const loginView = document.getElementById('view-login');
     const dashView = document.getElementById('view-dashboard');
-    const logoutBtn = document.getElementById('header-logout');
+    const logoutBtn = document.getElementById('header-logout'); // Ensure this ID exists in header.html
 
     if (!session) {
         if (loginView) loginView.className = "landing-wrapper view-active-block";
@@ -27,12 +29,12 @@ async function checkSession() {
     } else {
         if (loginView) loginView.className = "view-section";
         if (dashView) dashView.className = "container view-active-block";
+        
+        // Ensure buttons exist before changing their class
         if (logoutBtn) logoutBtn.className = "btn btn-logout view-active-block";
         
-        // Execute dependencies safely
-        if (typeof handleZernioCallback === 'function') await handleZernioCallback();
-        if (typeof loadSettings === 'function') await loadSettings();
-        if (typeof loadUsageStats === 'function') await loadUsageStats();
+        // Only load data if the dashboard is actually visible
+        await Promise.all([handleZernioCallback(), loadSettings(), loadUsageStats()]);
     }
 }
 
