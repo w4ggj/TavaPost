@@ -1,6 +1,9 @@
         let supabaseClient;
-        const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co"; // Keep your URL
-        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZudHN0aGp1cG9wdmJ3dm1mc216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NjYzMjksImV4cCI6MjA5NTE0MjMyOX0.RI6wg9Dwnxar-i9crZnYf87u7ISPxuiu47xeqzwfW-0"; // Use the NEW Publishable key
+        // Ensure there is NO slash at the end of the URL
+        const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co"; 
+
+        // Ensure there is NO extra space inside the string quotes
+        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS";
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
 
 async function initializeApp() {
@@ -18,9 +21,12 @@ async function initializeApp() {
         await checkSession();
         console.log("3. checkSession finished successfully");
     } catch (err) {
-        console.error("CRITICAL ERROR: ", err);
-        const crashAlert = document.getElementById('system-crash-alert');
-        if (crashAlert) crashAlert.className = "container view-active-block";
+    console.error("CRITICAL ERROR: ", err);
+    const crashAlert = document.getElementById('system-crash-alert');
+    if (crashAlert) {
+        crashAlert.className = "container view-active-block";
+        // This will show the actual reason for the failure
+        document.getElementById('crash-diagnostic-text').innerText = "Actual Error: " + err.message;
     }
 }
 
