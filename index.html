@@ -158,7 +158,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="studio.js"></script>
 <script>
-    window.onload = initializeApp;
+    // Give components.js a chance to render the DOM before checking session
+    window.onload = () => {
+        setTimeout(initializeApp, 500); 
+    };
 </script>
 </body>
 </html>
