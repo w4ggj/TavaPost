@@ -180,3 +180,23 @@ async def publish_post(payload: PostRequest):
             return {"status": "error", "detail": response.text}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/get-accounts")
+async def get_accounts():
+    zernio_key = os.environ.get("ZERNIO_API_KEY")
+    if not zernio_key:
+        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
+
+    headers = {
+        "Authorization": f"Bearer {zernio_key.strip()}",
+        "Content-Type": "application/json"
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            response = await client.get("https://zernio.com/api/v1/accounts", headers=headers)
+            if response.status_code == 200:
+                return response.json()
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
