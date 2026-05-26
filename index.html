@@ -480,30 +480,31 @@
 }
 
         // Add this function to your script in index.html
-async function syncConnections() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    
-    // 1. Fetch live accounts from Zernio
-    const response = await fetch(`${backendBaseUrl}/api/get-accounts`, {
-        headers: { "Authorization": `Bearer ${session.access_token}` }
-    });
-    
-    if (response.ok) {
-        const accounts = await response.json();
-        // 2. Map the live accounts to your settings update
-        let updateData = { user_id: session.user.id };
-        
-        accounts.forEach(acc => {
-            if (acc.platform === 'facebook') updateData.zernio_facebook_id = acc.id;
-            if (acc.platform === 'instagram') updateData.zernio_instagram_id = acc.id;
+async function disconnectPlatform(platform) {
+    // ... existing ID retrieval ...
+
+    try {
+        const response = await fetch(`${backendBaseUrl}/disconnect-platform`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ platform, account_id: accountId })
         });
 
-        // 3. Update Supabase with the correct IDs
-        await supabaseClient.from('user_settings').upsert(updateData);
-        await loadSettings(); // Refresh UI
-        alert("Connections synced with Zernio.");
-    } else {
-        alert("Failed to sync. Ensure Zernio API is reachable.");
+        // UPDATED: If the API says "Account not found", it's already gone from Zernio.
+        // We should proceed to clear it from our database anyway.
+        if (response.ok || response.status === 404) {
+            let update = { user_id: session.user.id };
+            if (platform === 'facebook') update.zernio_facebook_id = null;
+            else update.zernio_instagram_id = null;
+            
+            await supabaseClient.from('user_settings').upsert(update);
+            await loadSettings();
+            alert("Account disconnected and local state cleared.");
+        } else {
+            alert("Zernio API error: " + (await response.json()).detail);
+        }
+    } catch (err) {
+        alert("Network error.");
     }
 }
         
