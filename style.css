@@ -142,3 +142,70 @@ input:focus { outline: none; border-color: var(--accent-green); }
     .login-card { position: static; grid-row: 1; margin-bottom: 1rem; } /* Moves login to the top on mobile */
     .pricing-grid { grid-template-columns: 1fr; }
 }
+/* --- Site Footer --- */
+.site-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 3rem 2rem 1.5rem 2rem;
+    margin-top: 5rem;
+    background-color: rgba(15, 23, 42, 0.4);
+    text-align: center;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1300px;
+    margin: 0 auto 2rem auto;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.footer-brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.05em;
+    color: var(--text-main);
+}
+
+.footer-brand span { color: var(--accent-green); }
+
+.footer-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.footer-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+    color: var(--accent-green);
+}
+
+.footer-copyright {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 1.5rem;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+/* Mobile Responsiveness for the Footer */
+@media (max-width: 600px) {
+    .footer-content { 
+        flex-direction: column; 
+        text-align: center; 
+    }
+    .footer-links { 
+        justify-content: center; 
+        width: 100%; 
+        flex-wrap: wrap; 
+    }
+}
