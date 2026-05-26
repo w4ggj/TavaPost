@@ -132,13 +132,15 @@ async def disconnect_platform(payload: dict):
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
-    clean_key = zernio_key.strip().replace("'", "").replace('"', "")
+    # Clean the key to ensure no whitespace or formatting issues
+    clean_key = zernio_key.strip().replace("'", "").replace('"', "").replace("\n", "").replace("\r", "")
     account_id = payload.get("account_id")
     
     if not account_id:
         raise HTTPException(status_code=400, detail="Missing account_id")
 
     zernio_disconnect_url = f"https://zernio.com/api/v1/accounts/{account_id}"
+    
     headers = {
         "Authorization": f"Bearer {clean_key}",
         "Content-Type": "application/json"
@@ -152,6 +154,7 @@ async def disconnect_platform(payload: dict):
             if response.status_code in [200, 204]:
                 return {"status": "success"}
             else:
+                # Log the error detail from Zernio if it fails
                 print(f"!!! ZERNIO DELETE FAILED: {response.text} !!!")
                 raise HTTPException(status_code=response.status_code, detail=response.text)
                 
