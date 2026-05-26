@@ -406,8 +406,22 @@
     const targetFB = document.getElementById('publish-to-fb').checked;
     const targetIG = document.getElementById('publish-to-ig').checked;
     
-    // Ensure we are fetching the most recent settings
     const { data: settings } = await supabaseClient.from('user_settings').select('*').eq('user_id', session.user.id).single();
+
+    // Create the body dynamically
+    const payload = {
+        image_url: window.currentPostImageUrl || "",
+        caption: caption,
+        profile_id: session.user.id
+    };
+
+    // Only add keys if the checkbox is checked AND the ID exists
+    if (targetFB && settings.zernio_facebook_id) {
+        payload.fb_account_id = settings.zernio_facebook_id;
+    }
+    if (targetIG && settings.zernio_instagram_id) {
+        payload.ig_account_id = settings.zernio_instagram_id;
+    }
 
     try {
         const response = await fetch(`${backendBaseUrl}/publish-post?t=${Date.now()}`, {
@@ -416,22 +430,9 @@
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${session.access_token}`
             },
-            body: JSON.stringify({
-                image_url: window.currentPostImageUrl || "",
-                caption: caption,
-                fb_account_id: targetFB ? settings.zernio_facebook_id : null,
-                ig_account_id: targetIG ? settings.zernio_instagram_id : null,
-                profile_id: session.user.id
-            })
+            body: JSON.stringify(payload)
         });
-        const data = await response.json();
-        
-        // FIXED: JSON.stringify prevents the [object Object] error
-        if (data.status === "success") {
-            alert("🚀 Published!");
-        } else {
-            alert("Delivery Mismatch: " + (typeof data.detail === 'object' ? JSON.stringify(data.detail) : data.detail));
-        }
+        // ... rest of your response handling
     } catch (err) { 
         alert("Delivery Error: Communication failure."); 
     }
