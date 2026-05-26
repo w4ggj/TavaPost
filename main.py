@@ -190,3 +190,19 @@ async def disconnect_platform(payload: dict):
             return {"status": "success", "code": response.status_code}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/get-accounts")
+async def get_accounts():
+    zernio_key = os.environ.get("ZERNIO_API_KEY")
+    clean_key = zernio_key.strip().replace("'", "").replace('"', "")
+    
+    headers = {
+        "Authorization": f"Bearer {clean_key}",
+        "Content-Type": "application/json"
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.get("https://zernio.com/api/v1/accounts", headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        raise HTTPException(status_code=response.status_code, detail=response.text)
