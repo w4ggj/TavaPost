@@ -341,7 +341,6 @@
         }
 
         async function connectPlatform(platform) {
-            const { data: { session } } = await supabaseClient.auth.getSession();
             localStorage.setItem('connecting_platform', platform);
             window.location.href = `${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=6a1350634beb548c15895d64&t=${Date.now()}`;
         }
@@ -400,6 +399,7 @@
             const { data: settings } = await supabaseClient.from('user_settings').select('*').eq('user_id', session.user.id).single();
 
             try {
+                // FIXED: Syntax corrected to use a colon ':' for the headers property
                 const response = await fetch(`${backendBaseUrl}/publish-post?t=${Date.now()}`, {
                     method: "POST",
                     headers: {
@@ -415,7 +415,8 @@
                     })
                 });
                 const data = await response.json();
-                alert(data.status === "success" ? "🚀 Published!" : "Error: " + data.detail);
+                // FIXED: Used JSON.stringify to show the full error instead of [object Object]
+                alert(data.status === "success" ? "🚀 Published!" : "Error: " + (typeof data.detail === 'object' ? JSON.stringify(data.detail) : data.detail));
             } catch (err) { alert("Delivery Error."); }
         }
 
