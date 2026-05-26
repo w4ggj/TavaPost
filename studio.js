@@ -265,26 +265,18 @@ async function disconnectPlatform(platform) {
 
 async function publishToSocials() {
     const caption = document.getElementById('finalCaption').value;
-    const imageUrl = window.cachedImageUrl; // Retrieve the stored URL
+    const imageUrl = window.cachedImageUrl;
 
     if (!caption) return alert("Select a caption first.");
-    if (!imageUrl) return alert("Image URL missing. Please run 'Analyze Image' again.");
+    if (!imageUrl) return alert("Image URL missing. Please generate the draft again.");
 
-    // 1. UPDATED IDs to match your HTML
-    const fbCheck = document.getElementById('publish-to-fb');
-    const igCheck = document.getElementById('publish-to-ig');
+    // --- FIX: Retrieve the session here at the start ---
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return alert("Session expired. Please log in again.");
 
     const platforms = [];
-
-    // 2. Use your stored window variables (assuming you set these in loadSettings)
-    if (fbCheck?.checked) {
-        if (!window.currentFbId) return alert("Facebook ID not loaded. Please refresh.");
-        platforms.push({ platform: 'facebook', accountId: window.currentFbId });
-    }
-    if (igCheck?.checked) {
-        if (!window.currentIgId) return alert("Instagram ID not loaded. Please refresh.");
-        platforms.push({ platform: 'instagram', accountId: window.currentIgId });
-    }
+    if (document.getElementById('publish-to-fb')?.checked) platforms.push({ platform: 'facebook', accountId: window.currentFbId });
+    if (document.getElementById('publish-to-ig')?.checked) platforms.push({ platform: 'instagram', accountId: window.currentIgId });
 
     if (platforms.length === 0) return alert("Select at least one platform.");
 
@@ -299,7 +291,6 @@ async function publishToSocials() {
                 "Content-Type": "application/json", 
                 "Authorization": `Bearer ${session.access_token}` 
             },
-            // Ensure image_url is sent in the JSON body
             body: JSON.stringify({ 
                 caption: caption, 
                 platforms: platforms, 
@@ -313,11 +304,11 @@ async function publishToSocials() {
         } else {
             throw new Error(result.detail || "Publishing failed");
         }
-    } catch (err) {
+    } catch (err) { 
         console.error("Publish error:", err);
-        alert("Publishing failed: " + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "Publish";
+        alert("Publishing failed: " + err.message); 
+    } finally { 
+        btn.disabled = false; 
+        btn.innerText = "🚀 Publish Directly to Social Channels"; 
     }
 }
