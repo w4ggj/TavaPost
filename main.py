@@ -34,12 +34,13 @@ async def get_connect_url(platform: str, profile_id: str = None):
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
-    # Use the active profile ID passed from the frontend or a verified constant
+    # Use the profileId passed from the frontend
     active_profile = profile_id or "6a1350634beb548c15895d64"
     
-    # Use the documented endpoint structure
+    # Target endpoint without parameters in the URL path
     zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}"
     
+    # Explicit query parameters
     params = {
         "profileId": active_profile,
         "redirect_url": "https://studio.tavaone.com/index.html"
@@ -52,14 +53,15 @@ async def get_connect_url(platform: str, profile_id: str = None):
 
     async with httpx.AsyncClient() as client:
         try:
-            # Send params separately for better URL encoding
+            # Send the request with explicitly defined params
             response = await client.get(zernio_endpoint, headers=headers, params=params)
             
             if response.status_code == 200:
                 return response.json()
             else:
-                print(f"!!! ZERNIO CONNECTION HANDSHAKE CRASH: {response.status_code} - {response.text} !!!")
-                raise HTTPException(status_code=response.status_code, detail=f"Zernio Handshake Rejected: {response.text}")
+                # Log the detailed rejection message from Zernio
+                print(f"!!! ZERNIO HANDSHAKE REJECTED: {response.status_code} - {response.text} !!!")
+                raise HTTPException(status_code=response.status_code, detail=f"Zernio Error: {response.text}")
                 
         except Exception as e:
             print(f"!!! BACKEND NETWORK EXCEPTION: {str(e)} !!!")
