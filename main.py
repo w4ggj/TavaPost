@@ -95,11 +95,15 @@ async def generate_draft(
         user_response = supabase.table('user_profiles').select('subscription_tier, monthly_draft_count').eq('id', user_id).single().execute()
         profile = user_response.data
         
+        # Existing logic
         tier = profile.get('subscription_tier', 'starter')
         usage_count = profile.get('monthly_draft_count', 0)
         
-        # Enforce the new 25-post limit for the Starter tier
-        if tier == 'starter' and usage_count >= 25:
+        # New "Hidden Tier" logic
+        if tier == 'complimentary':
+            # They bypass all limits
+            pass 
+        elif tier == 'starter' and usage_count >= 25:
             raise HTTPException(status_code=403, detail="Monthly limit reached. Please upgrade to Founders.")
             
     except HTTPException:
