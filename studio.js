@@ -402,48 +402,18 @@ async function loadUsageStats() {
 }
 
 async function startUpgrade(event) {
-    event.preventDefault(); // Prevent the link from jumping to the top of the page
-    
-    // Change the text so the user knows it's loading
-    event.target.innerText = "(Opening Secure Checkout...)";
-    event.target.style.color = "var(--text-muted)";
-
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) return alert("Session expired. Please log in again.");
-
+async function upgradeToPlan(priceId) {
     try {
-        const response = await fetch(`${backendBaseUrl}/create-checkout-session`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ user_id: session.user.id }) // Send their Supabase ID
-        });
-
-        const data = await response.json();
-        
-        if (data.url) {
-            // Redirect the user's browser straight to Stripe's secure payment page
-            window.location.href = data.url; 
-        } else {
-            throw new Error(data.detail || "Failed to generate checkout link.");
-        }
-    } catch (err) {
-        console.error("Checkout error:", err);
-        alert("Could not start checkout: " + err.message);
-        event.target.innerText = "(Upgrade to Founders)";
-    }
-}
-
-async function upgradeToFounders(userId) {
-    try {
-        // Points to the same endpoint, but clearly identifies the plan
+        // We no longer require the user to be logged in to start the checkout
+        // because we are using Stripe's customer creation flow.
         const response = await fetch(`${backendBaseUrl}/create-checkout-session`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ user_id: userId }),
+            body: JSON.stringify({ 
+                price_id: priceId 
+            }),
         });
 
         const data = await response.json();
