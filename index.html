@@ -406,21 +406,22 @@
     const targetFB = document.getElementById('publish-to-fb').checked;
     const targetIG = document.getElementById('publish-to-ig').checked;
     
+    // Fetch the most recent settings
     const { data: settings } = await supabaseClient.from('user_settings').select('*').eq('user_id', session.user.id).single();
 
-    // Create the body dynamically
-    const payload = {
-        image_url: window.currentPostImageUrl || "",
-        caption: caption,
-        profile_id: session.user.id
-    };
-
-    // Only add keys if the checkbox is checked AND the ID exists
+    // Prepare the list of platforms to post to
+    const platforms = [];
+    
     if (targetFB && settings.zernio_facebook_id) {
-        payload.fb_account_id = settings.zernio_facebook_id;
+        platforms.push({ platform: "facebook", accountId: settings.zernio_facebook_id });
     }
+    
     if (targetIG && settings.zernio_instagram_id) {
-        payload.ig_account_id = settings.zernio_instagram_id;
+        platforms.push({ platform: "instagram", accountId: settings.zernio_instagram_id });
+    }
+
+    if (platforms.length === 0) {
+        return alert("Please select at least one connected platform to publish.");
     }
 
     try {
@@ -430,9 +431,21 @@
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${session.access_token}`
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                image_url: window.currentPostImageUrl || "",
+                caption: caption,
+                platforms: platforms, // Send the array of platform objects
+                profile_id: session.user.id
+            })
         });
-        // ... rest of your response handling
+        
+        const data = await response.json();
+        
+        if (data.status === "success") {
+            alert("🚀 Published!");
+        } else {
+            alert("Delivery Mismatch: " + (typeof data.detail === 'object' ? JSON.stringify(data.detail) : data.detail));
+        }
     } catch (err) { 
         alert("Delivery Error: Communication failure."); 
     }
