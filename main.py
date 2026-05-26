@@ -237,3 +237,19 @@ async def admin_delete_user(request: AdminRequest, x_admin_secret: str = Header(
         return {"status": "success", "message": "User permanently deleted."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/users")
+async def admin_list_users(x_admin_secret: str = Header(...)):
+    if x_admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    try:
+        # Securely fetch all users from the Supabase Authentication system
+        users = supabase_admin.auth.admin.list_users()
+        
+        # Package the IDs and Emails for the frontend table
+        user_list = [{"id": u.id, "email": u.email} for u in users]
+            
+        return {"status": "success", "data": user_list}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
