@@ -534,14 +534,17 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) return;
 
-            const { data: settings } = await supabaseClient
-                .from('user_settings')
-                .select('zernio_facebook_id, zernio_instagram_id')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
+            // Ensure this logic in publishToSocials() is solid:
+const { data: settings } = await supabaseClient
+    .from('user_settings')
+    .select('zernio_facebook_id, zernio_instagram_id')
+    .eq('user_id', session.user.id)
+    .single();
 
-            const fbId = (targetFB && settings) ? settings.zernio_facebook_id : null;
-            const igId = (targetIG && settings) ? settings.zernio_instagram_id : null;
+// If these IDs are wrong, publishing will always fail.
+// You MUST ensure the IDs in Supabase match the IDs Zernio expects.
+const fbId = targetFB ? settings.zernio_facebook_id : null;
+const igId = targetIG ? settings.zernio_instagram_id : null;
 
             if (targetFB && !fbId) {
                 alert("Aborted: Facebook checkbox is selected, but no active Facebook account link was found under settings.");
