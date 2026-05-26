@@ -356,14 +356,40 @@
 }
 
         async function disconnectPlatform(platform) {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!confirm(`Disconnect ${platform}?`)) return;
-            let update = { user_id: session.user.id };
-            if (platform === 'facebook') update.zernio_facebook_id = null;
-            else update.zernio_instagram_id = null;
-            await supabaseClient.from('user_settings').upsert(update);
-            await loadSettings();
-        }
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    // 1. Get the account ID stored in your database
+    const { data: settings } = await supabaseClient
+        .from('user_settings')
+        .select('zernio_facebook_id, zernio_instagram_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+    const accountId = platform === 'facebook' ? settings.zernio_facebook_id : settings.zernio_instagram_id;
+    if (!accountId) return alert("No account ID found to disconnect.");
+
+    if (!confirm(`Are you sure you want to disconnect your ${platform} account?`)) return;
+
+    // 2. Call backend FIRST
+    const response = await fetch(`${backendBaseUrl}/disconnect-platform`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform, account_id: accountId })
+    });
+
+    if (response.ok) {
+        // 3. ONLY clear the database if the API call succeeded
+        let update = { user_id: session.user.id };
+        if (platform === 'facebook') update.zernio_facebook_id = null;
+        else update.zernio_instagram_id = null;
+        
+        await supabaseClient.from('user_settings').upsert(update);
+        await loadSettings();
+        alert("Account disconnected successfully.");
+    } else {
+        const errorData = await response.json();
+        alert("Zernio API failed to disconnect: " + (errorData.detail || "Unknown error"));
+    }
+}
 
         async function generateDraft() {
             const fileInput = document.getElementById('imageInput');
