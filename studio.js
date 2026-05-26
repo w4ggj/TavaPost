@@ -168,18 +168,20 @@ async function generateDraft() {
 }
 
 async function connectPlatform(platform) {
-    // Save which platform we are connecting so we know after redirect
     localStorage.setItem('connecting_platform', platform);
     
     try {
         const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}`);
         const data = await response.json();
         
-        if (data.url) {
+        // ADD THIS DEBUG LINE
+        console.log("Zernio API Response:", data); 
+
+        if (data && data.url) {
             window.location.href = data.url;
         } else {
-            console.error("No redirect URL returned from Zernio");
-            alert("Could not start connection flow. Check console.");
+            // Include the data in the error alert so you can see it
+            throw new Error(JSON.stringify(data));
         }
     } catch (err) {
         console.error("Connection error:", err);
