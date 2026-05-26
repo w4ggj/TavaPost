@@ -219,5 +219,15 @@
         // WITH THIS:
         window.onload = initializeApp;
     </script>
+<script>
+    // If the page is blank after 2 seconds, force show the dashboard
+    setTimeout(() => {
+        const dashboard = document.getElementById('view-dashboard');
+        if (dashboard && dashboard.classList.contains('view-section')) {
+            console.warn("DEBUG: Initialisation failed, forcing view.");
+            dashboard.className = "container view-active-block";
+        }
+    }, 2000);
+</script>
 </body>
 </html>
