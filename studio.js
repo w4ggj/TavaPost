@@ -1,6 +1,5 @@
 let supabaseClient;
 const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
-// NOTE: Use your LONG JWT string (legacy anon key) here if the 'sb_' key fails
 const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
 const backendBaseUrl = "https://tavapost-backend.onrender.com";
 
@@ -17,11 +16,9 @@ async function initializeApp() {
 
 async function checkSession() {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    
-    // UI Elements
     const loginView = document.getElementById('view-login');
     const dashView = document.getElementById('view-dashboard');
-    const logoutBtn = document.getElementById('header-logout'); // Ensure this ID exists in header.html
+    const logoutBtn = document.getElementById('header-logout');
 
     if (!session) {
         if (loginView) loginView.className = "landing-wrapper view-active-block";
@@ -29,12 +26,14 @@ async function checkSession() {
     } else {
         if (loginView) loginView.className = "view-section";
         if (dashView) dashView.className = "container view-active-block";
-        
-        // Ensure buttons exist before changing their class
         if (logoutBtn) logoutBtn.className = "btn btn-logout view-active-block";
         
-        // Only load data if the dashboard is actually visible
-        await Promise.all([handleZernioCallback(), loadSettings(), loadUsageStats()]);
+        // SAFE EXECUTION
+        try {
+            if (typeof handleZernioCallback === 'function') await handleZernioCallback();
+            if (typeof loadSettings === 'function') await loadSettings();
+            if (typeof loadUsageStats === 'function') await loadUsageStats();
+        } catch (err) { console.error("Data load failed:", err); }
     }
 }
 
@@ -57,15 +56,48 @@ async function loadUsageStats() {
     } catch (err) { console.error(err); }
 }
 
-async function upgradeToPlan(priceId) {
-    const response = await fetch(`${backendBaseUrl}/create-checkout-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ price_id: priceId }),
-    });
-    const data = await response.json();
-    if (data.url) window.location.href = data.url;
+async function signInUser() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) {
+        const errLabel = document.getElementById('login-error');
+        errLabel.innerText = error.message;
+        errLabel.className = "text-red view-active-block";
+    } else {
+        location.reload();
+    }
 }
 
-// Start the app when window loads
+async function handleZernioCallback() {
+    const platform = localStorage.getItem('connecting_platform');
+    const urlParams = new URLSearchParams(window.location.search);
+    if (!platform || !urlParams.has('profileId')) return;
+
+    try {
+        const response = await fetch(`${backendBaseUrl}/api/get-accounts`);
+        const data = await response.json();
+        const match = data.accounts?.find(a => a.platform === platform);
+        if (match) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            let update = { user_id: session.user.id };
+            update[platform === 'facebook' ? 'zernio_facebook_id' : 'zernio_instagram_id'] = match._id;
+            await supabaseClient.from('user_settings').upsert(update);
+            localStorage.removeItem('connecting_platform');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    } catch (err) { console.error("Zernio Callback Error:", err); }
+}
+
+async function loadSettings() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+    const { data } = await supabaseClient
+        .from('user_settings')
+        .select('custom_prompt, zernio_facebook_id, zernio_instagram_id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+    if (data && data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
+}
+
 window.addEventListener('load', initializeApp);
