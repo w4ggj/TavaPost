@@ -7,11 +7,6 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <style>
-    /* Force dashboard and login to be visible regardless of JS status */
-    #view-dashboard, #view-login { display: block !important; }
-    .view-section { display: block !important; }
-</style>
 </head>
 <body>
 
@@ -163,30 +158,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="studio.js"></script>
 <script>
-    window.addEventListener('load', () => {
-        console.log("Forcing dashboard visibility...");
-        const dash = document.getElementById('view-dashboard');
-        const login = document.getElementById('view-login');
-        if (dash) dash.className = "container view-active-block";
-        if (login) login.className = "view-section";
-    });
-</script>
-    <script>
-    // Force a direct test of the Supabase connection
-    const testConnection = async () => {
-        try {
-            console.log("TESTING CONNECTION...");
-            const { createClient } = supabase;
-            const client = createClient("https://fntsthjupopvbwvmfsmz.supabase.co", "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS");
-            const { data, error } = await client.auth.getSession();
-            if (error) throw error;
-            console.log("TEST SUCCESS:", data);
-        } catch (e) {
-            console.error("TEST FAILED:", e.message);
-            alert("Connection Test Failed: " + e.message);
-        }
+    // Give components.js a chance to render the DOM before checking session
+    window.onload = () => {
+        setTimeout(initializeApp, 500); 
     };
-    setTimeout(testConnection, 1000);
 </script>
 </body>
 </html>

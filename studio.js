@@ -1,9 +1,6 @@
         let supabaseClient;
-        // Ensure there is NO slash at the end of the URL
-        const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co"; 
-
-        // Ensure there is NO extra space inside the string quotes
-        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS";
+        const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
+        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
 
 async function initializeApp() {
@@ -21,12 +18,9 @@ async function initializeApp() {
         await checkSession();
         console.log("3. checkSession finished successfully");
     } catch (err) {
-    console.error("CRITICAL ERROR: ", err);
-    const crashAlert = document.getElementById('system-crash-alert');
-    if (crashAlert) {
-        crashAlert.className = "container view-active-block";
-        // This will show the actual reason for the failure
-        document.getElementById('crash-diagnostic-text').innerText = "Actual Error: " + err.message;
+        console.error("CRITICAL ERROR: ", err);
+        const crashAlert = document.getElementById('system-crash-alert');
+        if (crashAlert) crashAlert.className = "container view-active-block";
     }
 }
 
@@ -411,48 +405,62 @@ async function publishToSocials() {
             setTimeout(safeInit, 500);
         }
     }
-// --- INITIALIZATION ---
-// This runs once when the page is fully loaded
-window.addEventListener('load', () => {
-    console.log("App initializing...");
-    initializeApp();
-});
+    window.addEventListener('load', safeInit);
+})(); = initializeApp;
+document.addEventListener("componentsLoaded", initializeApp);
 
 async function loadUsageStats() {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) {
-        document.getElementById('usage-counter').innerHTML = "Not logged in";
-        return;
-    }
+    if (!session) return;
 
     try {
-        console.log("Fetching profile for user:", session.user.id);
         const { data: profile, error } = await supabaseClient
             .from('user_profiles')
             .select('subscription_tier, monthly_draft_count')
             .eq('id', session.user.id)
             .single();
 
-        if (error) throw error; // This will trigger the catch block below
+        if (error || !profile) return;
 
         const counterElement = document.getElementById('usage-counter');
-        // ... rest of your existing logic ...
+        
+        if (profile.subscription_tier === 'starter') {
+            counterElement.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 25 Drafts</span> <a href="#" onclick="startUpgrade(event)" style="color: var(--accent-green); text-decoration: none; margin-left: 10px; font-weight: bold;">(Upgrade to Founders)</a>`;
+        } else if (profile.subscription_tier === 'founders') {
+            counterElement.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Unlimited (Founders)</span>`;
+        } else if (profile.subscription_tier === 'complimentary') {
+            counterElement.innerHTML = `<span style="color: var(--accent-blue); font-weight: bold;">System Admin Access</span>`;
+        }
     } catch (err) {
         console.error("Failed to load usage stats:", err);
-        document.getElementById('usage-counter').innerHTML = "Error loading data";
     }
 }
+
+// Remove the broken startUpgrade function entirely 
+// since you are now using upgradeToPlan for both buttons.
 
 async function upgradeToPlan(priceId) {
     try {
         const response = await fetch(`${backendBaseUrl}/create-checkout-session`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ price_id: priceId }),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                price_id: priceId 
+            }),
         });
+
         const data = await response.json();
-        if (data.url) window.location.href = data.url;
+        
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            console.error("No URL returned from backend");
+            alert("Could not start checkout. Please try again.");
+        }
     } catch (error) {
+        console.error("Error starting checkout:", error);
         alert("System error. Please contact support.");
     }
 }
