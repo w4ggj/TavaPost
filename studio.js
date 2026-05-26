@@ -69,6 +69,18 @@ async function signInUser() {
     }
 }
 
+async function signOutUser() {
+    try {
+        await supabaseClient.auth.signOut();
+        // Clear local storage and reload to reset the UI
+        localStorage.clear();
+        location.reload();
+    } catch (err) {
+        console.error("Logout failed:", err);
+        alert("Logout failed. Please refresh the page.");
+    }
+}
+
 async function handleZernioCallback() {
     const platform = localStorage.getItem('connecting_platform');
     const urlParams = new URLSearchParams(window.location.search);
@@ -150,3 +162,12 @@ window.addEventListener('load', () => {
         if (logoutBtn) logoutBtn.className = "btn btn-logout view-active-block";
     }, 1000);
 });
+
+function updateFileInputLabel() {
+    const fileInput = document.getElementById('imageInput');
+    const label = document.getElementById('file-label');
+    if(fileInput && fileInput.files.length > 0) {
+        label.innerText = `✅ File Selected: ${fileInput.files[0].name}`;
+        label.style.color = "var(--accent-green)";
+    }
+}
