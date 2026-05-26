@@ -20,22 +20,23 @@ async function initializeApp() {
 async function checkSession() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     
-    // Helper to safely set class names only if elements exist
-    const setView = (id, className) => {
+    // Safely update elements only if they exist
+    const updateElement = (id, className) => {
         const el = document.getElementById(id);
         if (el) el.className = className;
+        else console.warn(`Element not found: ${id}`);
     };
 
     if (!session) {
-        setView('view-login', "landing-wrapper view-active-block");
-        setView('view-dashboard', "view-section");
-        setView('header-logout', "view-section");
+        updateElement('view-login', "landing-wrapper view-active-block");
+        updateElement('view-dashboard', "view-section");
+        updateElement('header-logout', "view-section");
     } else {
-        setView('view-login', "view-section");
-        setView('view-dashboard', "container view-active-block");
-        setView('header-logout', "btn btn-logout view-active-block");
+        updateElement('view-login', "view-section");
+        updateElement('view-dashboard', "container view-active-block");
+        updateElement('header-logout', "btn btn-logout view-active-block");
         
-        // Only call these if they are defined
+        // Safely run these only if they are defined
         if (typeof handleZernioCallback === 'function') await handleZernioCallback();
         if (typeof loadSettings === 'function') await loadSettings();
         if (typeof loadUsageStats === 'function') await loadUsageStats();
