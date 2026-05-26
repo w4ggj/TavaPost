@@ -139,20 +139,22 @@
             ℹ️ Image processing and draft generation typically finish within <strong>15 to 45 seconds</strong>.
         </p>
         <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Processing visual context... Please wait...</div>
+        
         <div id="selection-area" class="view-section" style="margin-top:2rem;">
             <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
             <div id="draft-cards" class="draft-container"></div>
             <h3 style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL EDITING & POLISH ]</h3>
             <textarea id="finalCaption" style="min-height:200px; margin-top:1rem;"></textarea>
-        <div style="display: flex; gap: 1.5rem; margin-bottom: 1.25rem; ...">
-            <label>
-                <input type="checkbox" id="publish-to-fb" checked> Facebook
-            </label>
-            <label>
-                <input type="checkbox" id="publish-to-ig" checked> Instagram
-            </label>
-        </div>
-        <button id="btn-publish" class="btn btn-primary" onclick="publishToSocials()">🚀 Publish</button>
+            
+            <div style="display: flex; gap: 1.5rem; margin-bottom: 1.25rem; background: rgba(15, 23, 42, 0.3); padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+                    <input type="checkbox" id="publish-to-fb" checked> Facebook
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+                    <input type="checkbox" id="publish-to-ig" checked> Instagram
+                </label>
+            </div>
+            <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber);" onclick="publishToSocials()">🚀 Publish Directly to Social Channels</button>
         </div>
     </main>
 </div>
