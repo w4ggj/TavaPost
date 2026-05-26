@@ -36,7 +36,7 @@ header {
 
 .brand-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.05em; text-transform: uppercase; }
 .brand-title span { color: var(--accent-green); }
-.container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+.container { max-width: 1024px; margin: 2rem auto; padding: 0 1.5rem; }
 .view-section { display: none !important; }
 .view-active-flex { display: flex !important; }
 .view-active-block { display: block !important; }
@@ -104,7 +104,7 @@ input:focus { outline: none; border-color: var(--accent-green); }
 .login-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2.5rem 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); position: sticky; top: 100px; }
 
 /* --- Landing Page & Grid Layout --- */
-.landing-wrapper { width: 100%; max-width: 1300px; margin: 0 auto; padding: 4rem 2rem; }
+.landing-wrapper { width: 100%; max-width: 1024px; margin: 0 auto; padding: 4rem 2rem; }
 .landing-grid { display: grid; grid-template-columns: 1fr 400px; gap: 5rem; align-items: start; }
 
 .left-column { display: flex; flex-direction: column; gap: 4rem; }
@@ -155,7 +155,7 @@ input:focus { outline: none; border-color: var(--accent-green); }
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1300px;
+    max-width: 1024px; /* Updated from 1300px */
     margin: 0 auto 2rem auto;
     flex-wrap: wrap;
     gap: 1.5rem;
@@ -193,7 +193,7 @@ input:focus { outline: none; border-color: var(--accent-green); }
     font-size: 0.8rem;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     padding-top: 1.5rem;
-    max-width: 1300px;
+    max-width: 1024px; /* Updated from 1300px */
     margin: 0 auto;
 }
 
