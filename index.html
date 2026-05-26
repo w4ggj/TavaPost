@@ -479,6 +479,34 @@
     }
 }
 
+        // Add this function to your script in index.html
+async function syncConnections() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    // 1. Fetch live accounts from Zernio
+    const response = await fetch(`${backendBaseUrl}/api/get-accounts`, {
+        headers: { "Authorization": `Bearer ${session.access_token}` }
+    });
+    
+    if (response.ok) {
+        const accounts = await response.json();
+        // 2. Map the live accounts to your settings update
+        let updateData = { user_id: session.user.id };
+        
+        accounts.forEach(acc => {
+            if (acc.platform === 'facebook') updateData.zernio_facebook_id = acc.id;
+            if (acc.platform === 'instagram') updateData.zernio_instagram_id = acc.id;
+        });
+
+        // 3. Update Supabase with the correct IDs
+        await supabaseClient.from('user_settings').upsert(updateData);
+        await loadSettings(); // Refresh UI
+        alert("Connections synced with Zernio.");
+    } else {
+        alert("Failed to sync. Ensure Zernio API is reachable.");
+    }
+}
+        
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
         window.onload = initializeApp;
     </script>
