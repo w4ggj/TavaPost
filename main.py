@@ -314,7 +314,7 @@ async def create_checkout_session(request: CheckoutRequest):
             payment_method_types=['card'],
             line_items=[
                 {
-                    'price': 'price_1TbMkUBBcpXhNPIOADyzL1Xj', 
+                    'price': 'price_1TbMC2B4jnTQeHqCSznEjs01', 
                     'quantity': 1,
                 },
             ],
