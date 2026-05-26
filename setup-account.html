@@ -26,7 +26,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const supabase = supabase.createClient("YOUR_SUPABASE_URL", "YOUR_SUPABASE_KEY");
+        const supabase = supabase.createClient(
+    "https://fntsthjupopvbwvmfsmz.supabase.co", 
+    "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"
+);
 
         // Grab email from URL if you passed it, or just let them type it
         window.onload = () => {
@@ -35,18 +38,40 @@
         };
 
         async function finalizeAccount() {
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
 
-            const { data, error } = await supabase.auth.signUp({ email, password });
+    if (!password) return alert("Please create a password.");
 
-            if (error) {
-                document.getElementById('signup-error').innerText = error.message;
-            } else {
-                alert("Account created! Redirecting to your studio...");
-                window.location.href = "index.html";
-            }
-        }
+    // 1. Sign up the user
+    const { data: authData, error: authError } = await supabase.auth.signUp({ 
+        email, 
+        password 
+    });
+
+    if (authError) {
+        document.getElementById('signup-error').innerText = authError.message;
+        return;
+    }
+
+    // 2. Map the new user to their paid tier
+    // Note: We use the ID returned from the sign-up process
+    const { error: updateError } = await supabase
+        .from('user_profiles')
+        .upsert({ 
+            id: authData.user.id, 
+            subscription_tier: 'founders',
+            monthly_draft_count: 0 // Initialize for new users
+        });
+
+    if (updateError) {
+        console.error("Tier update failed:", updateError);
+        alert("Account created, but there was an issue setting your plan. Contact support.");
+    } else {
+        alert("Account finalized! Welcome to the Founders tier.");
+        window.location.href = "index.html";
+    }
+}
     </script>
 </body>
 </html>
