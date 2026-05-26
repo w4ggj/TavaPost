@@ -6,6 +6,24 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
+import os
+from supabase import create_client, Client
+from pydantic import BaseModel
+from fastapi import Header, HTTPException
+
+# Your existing setup probably looks like this:
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
+
+# ADD THIS NEW ADMIN SETUP:
+# This uses the master key to bypass normal security rules for admin tasks
+service_key: str = os.environ.get("SUPABASE_SERVICE_KEY")
+supabase_admin: Client = create_client(url, service_key)
+
+# A simple Pydantic model to accept the user ID from the frontend
+class AdminRequest(BaseModel):
+    target_user_id: str
 
 app = FastAPI(title="TavaOne Backend")
 
@@ -183,3 +201,39 @@ async def get_accounts():
             raise HTTPException(status_code=response.status_code, detail=response.text)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+# --- ADMIN ENDPOINTS ---
+
+ADMIN_SECRET = os.environ.get("ADMIN_SECRET_KEY", "super-secret-tava-key-123") # Change this in Render later!
+
+@app.post("/admin/disconnect")
+async def admin_disconnect_social(request: AdminRequest, x_admin_secret: str = Header(...)):
+    if x_admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    try:
+        # Example: Update the user's row in your database to wipe their Meta tokens
+        supabase_admin.table('user_profiles').update({
+            'meta_access_token': None,
+            'meta_page_id': None
+        }).eq('id', request.target_user_id).execute()
+        
+        return {"status": "success", "message": "Social accounts disconnected."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/admin/delete")
+async def admin_delete_user(request: AdminRequest, x_admin_secret: str = Header(...)):
+    if x_admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    try:
+        # This completely deletes the user from the Supabase Authentication system
+        supabase_admin.auth.admin.delete_user(request.target_user_id)
+        
+        # Note: If your tables have "ON DELETE CASCADE" set up in Supabase, 
+        # deleting them from Auth will automatically wipe their rows in your other tables!
+        
+        return {"status": "success", "message": "User permanently deleted."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
