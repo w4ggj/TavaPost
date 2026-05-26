@@ -48,17 +48,46 @@
             <h2 class="panel-title">Contact Support</h2>
             <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Need further assistance? Fill out the form below or email us directly at <strong>support@tavaone.com</strong>.</p>
             
-            <form onsubmit="event.preventDefault(); alert('Message sent! Our team will reply shortly.');">
+            <form id="support-form" onsubmit="submitSupportTicket(event)">
                 <div class="input-group">
                     <label>Email Address</label>
-                    <input type="email" required placeholder="you@yourbrand.com">
+                    <input type="email" id="support-email" required placeholder="you@yourbrand.com">
                 </div>
                 <div class="input-group">
                     <label>How can we help?</label>
-                    <textarea required placeholder="Describe your issue or feature request..." style="min-height: 120px;"></textarea>
+                    <textarea id="support-message" required placeholder="Describe your issue or feature request..." style="min-height: 120px;"></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">Send Message</button>
+                <button type="submit" id="btn-support-submit" class="btn btn-primary">Send Message</button>
             </form>
+            
+            <script>
+                async function submitSupportTicket(event) {
+                    event.preventDefault(); // Stop page reload
+                    
+                    const btn = document.getElementById('btn-support-submit');
+                    btn.innerText = "Sending...";
+                    btn.disabled = true;
+
+                    const email = document.getElementById('support-email').value;
+                    const message = document.getElementById('support-message').value;
+
+                    // Push to your existing Supabase setup
+                    const { error } = await supabaseClient
+                        .from('support_tickets')
+                        .insert([{ email: email, message: message }]);
+
+                    if (error) {
+                        alert("Failed to send message: " + error.message);
+                        btn.innerText = "Send Message";
+                        btn.disabled = false;
+                    } else {
+                        alert("Message sent! Our team will reply shortly.");
+                        document.getElementById('support-form').reset();
+                        btn.innerText = "Send Message";
+                        btn.disabled = false;
+                    }
+                }
+            </script>
         </div>
 
     </main>
