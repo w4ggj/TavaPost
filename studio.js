@@ -35,6 +35,7 @@
                 document.getElementById('header-logout').className = "btn btn-logout view-active-block";
                 await handleZernioCallback();
                 await loadSettings();
+                await loadUsageStats();
             }
         }
 
