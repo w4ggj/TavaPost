@@ -51,7 +51,7 @@
         </div>
     </div>
 
-    <div class="pricing-section container" style="margin-top: 4rem;">
+    <div class="pricing-section container" style="margin-top: 4rem; margin-bottom: 4rem;">
         <h2>Select Your Plan</h2>
         <div class="pricing-grid">
             <div class="pricing-tier">
@@ -80,13 +80,69 @@
 </div>
 
 <div id="view-dashboard" class="view-section container">
+    <details class="guide-box">
+        <summary>✨ Quick Start Guide</summary>
+        <ul>
+            <li><strong>1. Connect Channels:</strong> Link your profiles under settings.</li>
+            <li><strong>2. Map Voice Guidelines:</strong> Define your brand's unique personality.</li>
+            <li><strong>3. Process Assets:</strong> Load an image file to generate tailored draft variations.</li>
+            <li><strong>4. Polish & Sync:</strong> Select a card, make final edits, and push live.</li>
+        </ul>
+    </details>
+
     <details class="interactive-accordion" open>
         <summary>⚙️ Studio Settings</summary>
-        </details>
+        <div>
+            <div class="connection-grid">
+                <div class="conn-card">
+                    <div>
+                        <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
+                        <div id="fb-status" class="badge badge-red">Not Connected</div>
+                    </div>
+                    <div id="fb-action-area"><button type="button" class="btn btn-fb" onclick="connectPlatform('facebook')">Connect Page</button></div>
+                </div>
+                <div class="conn-card">
+                    <div>
+                        <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
+                        <div id="ig-status" class="badge badge-red">Not Connected</div>
+                    </div>
+                    <div id="ig-action-area"><button type="button" class="btn btn-ig" onclick="connectPlatform('instagram')">Connect IG</button></div>
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase;">Custom Brand Instructions</h4>
+                <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules here..."></textarea>
+                <button class="btn btn-primary" onclick="saveSettings()">Save Instructions Settings</button>
+                <span id="save-status" class="text-green view-section" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
+            </div>
+        </div>
+    </details>
+
     <main class="panel" style="margin-top: 1.5rem;">
+        <h2 class="panel-title">Content Pipeline</h2>
+        <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
+            <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
+            <input type="file" id="imageInput" class="view-section" accept="image/*" onchange="updateFileInputLabel()">
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 0.75rem 1rem; background: rgba(15, 23, 42, 0.4); border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Draft Quota</span>
+            </div>
+            <div id="usage-counter" style="font-size: 0.9rem;"><span style="color: var(--text-muted);">Checking...</span></div>
+        </div>
         <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
+        <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Processing...</div>
+        <div id="selection-area" class="view-section" style="margin-top:2rem;">
+            <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
+            <div id="draft-cards" class="draft-container"></div>
+            <h3 style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL EDITING & POLISH ]</h3>
+            <textarea id="finalCaption" style="min-height:200px; margin-top:1rem;"></textarea>
+            <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber);" onclick="publishToSocials()">🚀 Publish Directly</button>
+        </div>
     </main>
 </div>
+
+<div id="footer-placeholder"></div>
 
 <script src="components.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
