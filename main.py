@@ -213,8 +213,6 @@ async def publish_post(payload: PostRequest):
             }
         ]
         
-    print("DEBUG - SENDING TO ZERNIO:", body)
-    
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
@@ -319,7 +317,7 @@ async def create_checkout_session(request: CheckoutRequest):
             payment_method_types=['card'],
             line_items=[
                 {
-                    'price': 'price_1TbOZMB4jnTQeHqCDFritU3D', 
+                    'price': 'price_1TbPJaBBcpXhNPIO7BJK7lKj', 
                     'quantity': 1,
                 },
             ],
