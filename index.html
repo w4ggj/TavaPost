@@ -6,32 +6,56 @@
     <title>TavaPost // Social Media Content Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             --bg-main: #0f172a; --bg-card: #1e293b; --border-color: #334155;
             --text-main: #f8fafc; --text-muted: #94a3b8; --accent-green: #10b981;
             --accent-purple: #a855f7; --accent-blue: #3b82f6; --warning-amber: #f59e0b;
+            --danger-red: #ef4444;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; }
+        header { border-bottom: 1px solid var(--border-color); padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; }
         .container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
         .view-section { display: none !important; }
+        .view-active-flex { display: flex !important; }
         .view-active-block { display: block !important; }
         .panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; }
         .btn { padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; }
         .btn-primary { background-color: var(--accent-green); color: var(--bg-main); }
         .btn-disabled { background-color: var(--border-color); color: var(--text-muted); cursor: not-allowed; }
+        textarea { width: 100%; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 1rem; }
     </style>
 </head>
 <body>
-    <div id="view-dashboard" class="container view-active-block">
+    <header>
+        <div style="font-size: 1.5rem; font-weight: 700;">TavaOne // Studio</div>
+        <button id="header-logout" class="btn view-section" onclick="signOutUser()">Log Out</button>
+    </header>
+
+    <div id="view-login" class="container view-active-flex">
+        <div class="panel">
+            <h2>Welcome</h2>
+            <input type="email" id="login-email" placeholder="Email">
+            <input type="password" id="login-password" placeholder="Password">
+            <button class="btn btn-primary" onclick="signInUser()">Log In</button>
+        </div>
+    </div>
+
+    <div id="view-dashboard" class="view-section container">
         <main class="panel">
-            <h2 class="panel-title">Content Pipeline</h2>
+            <h2>Studio Settings</h2>
+            <div id="fb-action-area"><button class="btn" onclick="connectPlatform('facebook')">Connect FB</button></div>
+            <div id="ig-action-area"><button class="btn" onclick="connectPlatform('instagram')">Connect IG</button></div>
+            
+            <h2 style="margin-top:2rem;">Content Pipeline</h2>
             <input type="file" id="imageInput" accept="image/*">
-            <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image</button>
+            <button class="btn btn-primary" onclick="generateDraft()">1. Analyze Image</button>
+            
             <div id="selection-area" class="view-section">
                 <textarea id="finalCaption" style="min-height:200px;"></textarea>
-                <div style="margin: 1rem 0;">
+                <div>
                     <label><input type="checkbox" id="publish-to-fb" checked> Facebook</label>
                     <label><input type="checkbox" id="publish-to-ig" checked> Instagram</label>
                 </div>
@@ -39,9 +63,27 @@
             </div>
         </main>
     </div>
+
     <script>
         const supabaseClient = supabase.createClient("https://fntsthjupopvbwvmfsmz.supabase.co", "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS");
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
+
+        async function checkSession() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                document.getElementById('view-login').className = "container view-active-flex";
+                document.getElementById('view-dashboard').className = "view-section";
+            } else {
+                document.getElementById('view-login').className = "view-section";
+                document.getElementById('view-dashboard').className = "container view-active-block";
+            }
+        }
+
+        async function connectPlatform(platform) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            localStorage.setItem('connecting_platform', platform);
+            window.location.href = `${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=6a1350634beb548c15895d64&t=${Date.now()}`;
+        }
 
         async function publishToSocials() {
             const caption = document.getElementById('finalCaption').value;
@@ -59,23 +101,32 @@
                         "Authorization": `Bearer ${session.access_token}`
                     },
                     body: JSON.stringify({
-                        image_url: "",
+                        image_url: window.currentPostImageUrl || "",
                         caption: caption,
                         fb_account_id: targetFB ? settings.zernio_facebook_id : null,
                         ig_account_id: targetIG ? settings.zernio_instagram_id : null,
-                        profile_id: "6a1350634beb548c15895d64" // Enforce master workspace ID
+                        profile_id: "6a1350634beb548c15895d64"
                     })
                 });
                 const data = await response.json();
                 if (data.status === "success") {
-                    alert("🚀 Post published successfully!");
+                    alert("🚀 Published!");
                 } else {
-                    // 🚀 FIXED: Displays exact error details instead of [object Object]
                     alert("Delivery Error: " + (typeof data.detail === 'object' ? JSON.stringify(data.detail) : data.detail));
                 }
-            } catch (err) { alert("Delivery Error: Network communication failure."); }
+            } catch (err) { alert("Error communicating with server."); }
         }
-        // ... (Include other logic)
+
+        async function signInUser() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            await supabaseClient.auth.signInWithPassword({ email, password });
+            location.reload();
+        }
+
+        async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
+
+        window.onload = checkSession;
     </script>
 </body>
 </html>
