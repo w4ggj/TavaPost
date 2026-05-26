@@ -389,16 +389,13 @@ async function loadUsageStats() {
 
         const counterElement = document.getElementById('usage-counter');
         
-        // Inside loadUsageStats
-if (profile.subscription_tier === 'starter') {
-    counterElement.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 25 Drafts</span> <a href="#" onclick="startUpgrade(event)" style="color: var(--accent-green); text-decoration: none; margin-left: 10px; font-weight: bold;">(Upgrade to Founders)</a>`;
-} else if (profile.subscription_tier === 'founders') {
-        counterElement.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Unlimited (Founders)</span>`;
-} else if (profile.subscription_tier === 'complimentary') {
-        // What you see when you log in with the hidden account
-        counterElement.innerHTML = `<span style="color: var(--accent-blue); font-weight: bold;">System Admin Access</span>`;
-    }
-}
+        if (profile.subscription_tier === 'starter') {
+            counterElement.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 25 Drafts</span> <a href="#" onclick="startUpgrade(event)" style="color: var(--accent-green); text-decoration: none; margin-left: 10px; font-weight: bold;">(Upgrade to Founders)</a>`;
+        } else if (profile.subscription_tier === 'founders') {
+            counterElement.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Unlimited (Founders)</span>`;
+        } else if (profile.subscription_tier === 'complimentary') {
+            counterElement.innerHTML = `<span style="color: var(--accent-blue); font-weight: bold;">System Admin Access</span>`;
+        }
     } catch (err) {
         console.error("Failed to load usage stats:", err);
     }
