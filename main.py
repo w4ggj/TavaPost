@@ -122,4 +122,25 @@ async def publish_post(payload: PostRequest):
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-# ... (keep your existing disconnect_platform and get_accounts functions)
+@app.post("/disconnect-platform")
+async def disconnect_platform(payload: dict):
+    zernio_key = os.environ.get("ZERNIO_API_KEY")
+    account_id = payload.get("account_id")
+    platform = payload.get("platform")
+
+    if not account_id:
+        raise HTTPException(status_code=400, detail="Missing account_id")
+
+    zernio_disconnect_url = f"https://zernio.com/api/v1/accounts/{account_id}"
+    headers = {"Authorization": f"Bearer {zernio_key.strip()}"}
+
+    async with httpx.AsyncClient() as client:
+        # Use DELETE as per Zernio docs
+        response = await client.delete(zernio_disconnect_url, headers=headers)
+        
+        if response.status_code in [200, 204]:
+            return {"status": "success"}
+        else:
+            # Log the specific reason Zernio refused the deletion
+            print(f"!!! ZERNIO DELETE FAILED: {response.text} !!!")
+            raise HTTPException(status_code=response.status_code, detail=response.text)
