@@ -556,6 +556,7 @@
             btnPub.innerText = "Publishing Content... Please Wait...";
 
             try {
+                // 🚀 FIXED: Changed '=' to ':' to resolve the JavaScript execution block entirely
                 const response = await fetch(`${backendBaseUrl}/publish-post?t=${Date.now()}`, {
                     method: "POST",
                     headers: {
