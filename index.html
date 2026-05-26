@@ -470,6 +470,72 @@ async function generateDraft() {
         btnGen.disabled = false;
     }
 }
+
+async function publishToSocials() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return alert("Session expired. Please log in again.");
+
+    const caption = document.getElementById('finalCaption').value.trim();
+    if (!caption) return alert("Please select or write a caption first.");
+
+    const targetFB = document.getElementById('publish-to-fb').checked;
+    const targetIG = document.getElementById('publish-to-ig').checked;
+
+    if (!targetFB && !targetIG) return alert("Please select at least one platform.");
+
+    const { data: settings, error } = await supabaseClient
+        .from('user_settings')
+        .select('zernio_facebook_id, zernio_instagram_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+    if (error || !settings) return alert("Error fetching account settings.");
+
+    const platforms = [];
+    if (targetFB) {
+        if (!settings.zernio_facebook_id) return alert("Facebook is checked but no account is connected.");
+        platforms.push({ platform: "facebook", accountId: settings.zernio_facebook_id });
+    }
+    if (targetIG) {
+        if (!settings.zernio_instagram_id) return alert("Instagram is checked but no account is connected.");
+        platforms.push({ platform: "instagram", accountId: settings.zernio_instagram_id });
+    }
+
+    const btnPub = document.getElementById('btn-publish');
+    btnPub.classList.add('btn-disabled');
+    btnPub.disabled = true;
+    btnPub.innerText = "Publishing... Please Wait...";
+
+    try {
+        const response = await fetch(`${backendBaseUrl}/publish-post`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+                image_url: window.currentPostImageUrl || "",
+                caption: caption,
+                platforms: platforms
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === "success") {
+            alert("🚀 Successfully published to your selected platforms!");
+        } else {
+            alert("Publishing failed: " + (result.detail || JSON.stringify(result)));
+        }
+    } catch (err) {
+        console.error("Publish error:", err);
+        alert("Network error: Could not reach the backend.");
+    } finally {
+        btnPub.classList.remove('btn-disabled');
+        btnPub.disabled = false;
+        btnPub.innerText = "🚀 Publish Directly to Social Channels";
+    }
+}
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
         window.onload = initializeApp;
     </script>
