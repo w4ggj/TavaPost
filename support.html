@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support // TavaPost Studio</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="brand-title">Tava<span>One</span> // Studio</div>
+        <button class="btn btn-logout view-active-block" onclick="window.location.href='index.html'">Return to Login</button>
+    </header>
+
+    <main class="container" style="margin-top: 3rem; margin-bottom: 3rem;">
+        
+        <div style="text-align: center; margin-bottom: 3rem;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">How can we help?</h1>
+            <p style="color: var(--text-muted);">Find answers to common questions or reach out to our team directly.</p>
+        </div>
+
+        <div class="panel" style="margin-bottom: 2rem;">
+            <h2 class="panel-title">Frequently Asked Questions</h2>
+            
+            <details class="interactive-accordion">
+                <summary>Why is my Instagram account failing to connect?</summary>
+                <div style="padding-top: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+                    Ensure that your Instagram account is a Professional or Creator account, and that it is properly linked to a Facebook Page you manage. The API requires this bridge to authenticate successfully.
+                </div>
+            </details>
+
+            <details class="interactive-accordion">
+                <summary>How long does image analysis take?</summary>
+                <div style="padding-top: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+                    Our engine downscales your image and processes it through the visual model. This typically takes between 15 and 45 seconds depending on server load and image complexity.
+                </div>
+            </details>
+
+            <details class="interactive-accordion">
+                <summary>Can I upgrade or cancel my subscription?</summary>
+                <div style="padding-top: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+                    Yes. You can manage your subscription tier, update payment methods, or cancel at any time directly through the billing portal in your dashboard.
+                </div>
+            </details>
+        </div>
+
+        <div class="panel">
+            <h2 class="panel-title">Contact Support</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Need further assistance? Fill out the form below or email us directly at <strong>support@tavaone.com</strong>.</p>
+            
+            <form onsubmit="event.preventDefault(); alert('Message sent! Our team will reply shortly.');">
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" required placeholder="you@yourbrand.com">
+                </div>
+                <div class="input-group">
+                    <label>How can we help?</label>
+                    <textarea required placeholder="Describe your issue or feature request..." style="min-height: 120px;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
+        </div>
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-copyright" style="border-top: none; padding-top: 0;">
+            &copy; <script>document.write(new Date().getFullYear())</script> TavaOne. All rights reserved.
+        </div>
+    </footer>
+
+</body>
+</html>
