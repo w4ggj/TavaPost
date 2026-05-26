@@ -174,14 +174,13 @@ async function connectPlatform(platform) {
         const response = await fetch(`${backendBaseUrl}/api/get-connect-url?platform=${platform}`);
         const data = await response.json();
         
-        // ADD THIS DEBUG LINE
         console.log("Zernio API Response:", data); 
 
-        if (data && data.url) {
-            window.location.href = data.url;
+        // CHANGE: Check for 'authUrl' instead of 'url'
+        if (data && data.authUrl) {
+            window.location.href = data.authUrl;
         } else {
-            // Include the data in the error alert so you can see it
-            throw new Error(JSON.stringify(data));
+            throw new Error("API returned success, but authUrl was missing.");
         }
     } catch (err) {
         console.error("Connection error:", err);
