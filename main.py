@@ -359,9 +359,9 @@ async def stripe_webhook(request: Request):
         
         print(f"Processing checkout.session.completed for user: {user_id}")
         
-        if user_id:
-    # Change 'pro' to 'founders'
-    supabase_admin.table('user_profiles').update({'subscription_tier': 'founders'}).eq('id', user_id).execute()
-            print("Database updated to pro")
+    if user_id:
+            # This line MUST be indented
+            supabase_admin.table('user_profiles').update({'subscription_tier': 'founders'}).eq('id', user_id).execute()
+            print(f"Successfully upgraded user: {user_id}")
     
     return {"status": "success"}
