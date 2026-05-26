@@ -501,30 +501,57 @@ async function publishToSocials() {
 
     if (!targetFB && !targetIG) return alert("Please select at least one platform.");
 
-    const { data: settings, error } = await supabaseClient
-        .from('user_settings')
-        .select('zernio_facebook_id, zernio_instagram_id')
-        .eq('user_id', session.user.id)
-        .single();
-
-    if (error || !settings) return alert("Error fetching account settings.");
-
-    const platforms = [];
-    if (targetFB) {
-        if (!settings.zernio_facebook_id) return alert("Facebook is checked but no account is connected.");
-        platforms.push({ platform: "facebook", accountId: settings.zernio_facebook_id });
-    }
-    if (targetIG) {
-        if (!settings.zernio_instagram_id) return alert("Instagram is checked but no account is connected.");
-        platforms.push({ platform: "instagram", accountId: settings.zernio_instagram_id });
-    }
+    const fileInput = document.getElementById('imageInput');
+    if (!fileInput.files || fileInput.files.length === 0) return alert("Missing image file.");
 
     const btnPub = document.getElementById('btn-publish');
     btnPub.classList.add('btn-disabled');
     btnPub.disabled = true;
-    btnPub.innerText = "Publishing... Please Wait...";
+    btnPub.innerText = "Uploading Media & Publishing...";
+
+    let finalImageUrl = "";
 
     try {
+        // 1. Upload image to your tavapost-images Supabase Storage bucket
+        const file = fileInput.files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabaseClient
+            .storage
+            .from('tavapost-images') // Updated to your bucket name
+            .upload(fileName, file);
+
+        if (uploadError) throw new Error("Image upload failed: " + uploadError.message);
+
+        // 2. Get the public URL for Zernio
+        const { data: publicUrlData } = supabaseClient
+            .storage
+            .from('tavapost-images') // Updated to your bucket name
+            .getPublicUrl(fileName);
+            
+        finalImageUrl = publicUrlData.publicUrl;
+
+        // 3. Fetch user settings for connected accounts
+        const { data: settings, error } = await supabaseClient
+            .from('user_settings')
+            .select('zernio_facebook_id, zernio_instagram_id')
+            .eq('user_id', session.user.id)
+            .single();
+
+        if (error || !settings) return alert("Error fetching account settings.");
+
+        const platforms = [];
+        if (targetFB) {
+            if (!settings.zernio_facebook_id) return alert("Facebook is checked but no account is connected.");
+            platforms.push({ platform: "facebook", accountId: settings.zernio_facebook_id });
+        }
+        if (targetIG) {
+            if (!settings.zernio_instagram_id) return alert("Instagram is checked but no account is connected.");
+            platforms.push({ platform: "instagram", accountId: settings.zernio_instagram_id });
+        }
+
+        // 4. Send the final URL and caption to your backend
         const response = await fetch(`${backendBaseUrl}/publish-post`, {
             method: "POST",
             headers: {
@@ -532,7 +559,7 @@ async function publishToSocials() {
                 "Authorization": `Bearer ${session.access_token}`
             },
             body: JSON.stringify({
-                image_url: window.currentPostImageUrl || "",
+                image_url: finalImageUrl, // Sending the real URL to your backend
                 caption: caption,
                 platforms: platforms
             })
@@ -547,7 +574,7 @@ async function publishToSocials() {
         }
     } catch (err) {
         console.error("Publish error:", err);
-        alert("Network error: Could not reach the backend.");
+        alert("Error: " + err.message);
     } finally {
         btnPub.classList.remove('btn-disabled');
         btnPub.disabled = false;
