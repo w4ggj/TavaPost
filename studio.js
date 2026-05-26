@@ -107,29 +107,36 @@ async function loadSettings() {
 }
 
 async function generateDraft() {
+    // 1. Declare all variables at the top level of the function
     const fileInput = document.getElementById('imageInput');
+    const loadingLabel = document.getElementById('loading');
+    const btnGen = document.getElementById('btn-generate');
     const customPromptElement = document.getElementById('customPrompt');
     const customPromptValue = customPromptElement ? customPromptElement.value : "";
-
-    if (!fileInput.files || fileInput.files.length === 0) return alert("Select an image.");
     
+    // Declare formData here so it is accessible in the finally block if needed
+    let formData = new FormData(); 
+
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        return alert("Please select an image file first.");
+    }
+
     const { data: { session } } = await supabaseClient.auth.getSession();
-    
+    if (!session) return alert("Session expired.");
+
+    if (loadingLabel) loadingLabel.className = "view-active-block";
+    if (btnGen) btnGen.disabled = true;
+
     try {
-        // Prepare JSON payload
-        const payload = {
-            user_id: session.user.id,
-            custom_prompt: customPromptValue
-        };
+        formData.append("file", fileInput.files[0]);
+        formData.append("user_id", session.user.id);
+        formData.append("custom_prompt", customPromptValue);
 
-        // We use JSON here for better reliability
         const response = await fetch(`${backendBaseUrl}/generate-draft`, {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${session.access_token}` },
-    body: formData // Keep using FormData as your backend expects
-});
-
-        // ... rest of logic
+            method: "POST",
+            headers: { "Authorization": `Bearer ${session.access_token}` },
+            body: formData
+        });
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -137,16 +144,25 @@ async function generateDraft() {
         }
 
         const data = await response.json();
-        // ... (display logic remains the same)
-        
+        const container = document.getElementById('draft-cards');
+        if (container) {
+            container.innerHTML = "";
+            const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(t => t.trim().length > 0);
+            options.forEach((txt, i) => {
+                const card = document.createElement('div');
+                card.className = "draft-card";
+                card.innerHTML = `<header>DRAFT VARIATION ${i + 1}</header><p>${txt.trim()}</p>`;
+                card.onclick = () => { document.getElementById('finalCaption').value = txt.trim(); };
+                container.appendChild(card);
+            });
+            document.getElementById('selection-area').className = "view-active-block";
+        }
     } catch (err) {
         console.error("Draft error:", err);
         alert("Generation failed: " + err.message);
     } finally {
-    // Re-select the element inside the finally block to ensure it exists
-    const loading = document.getElementById('loading');
-    if (loading) loading.className = "view-section";
-    
-    if (btnGen) btnGen.disabled = false;
-}
+        // Now 'loadingLabel' and 'btnGen' are guaranteed to exist here
+        if (loadingLabel) loadingLabel.className = "view-section";
+        if (btnGen) btnGen.disabled = false;
+    }
 }
