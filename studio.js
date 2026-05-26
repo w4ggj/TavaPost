@@ -101,3 +101,18 @@ async function loadSettings() {
 }
 
 window.addEventListener('load', initializeApp);
+// Add this event listener to ensure components load FIRST
+document.addEventListener("componentsLoaded", async () => {
+    console.log("Components ready, syncing UI...");
+    await checkSession();
+});
+
+// Update initializeApp to NOT run checkSession immediately
+async function initializeApp() {
+    try {
+        supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        // We removed checkSession() from here to avoid the race condition
+    } catch (err) {
+        console.error("CRITICAL ERROR: ", err);
+    }
+}
