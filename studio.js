@@ -404,11 +404,11 @@ async function loadUsageStats() {
     }
 }
 
-async function startUpgrade(event) {
+// Remove the broken startUpgrade function entirely 
+// since you are now using upgradeToPlan for both buttons.
+
 async function upgradeToPlan(priceId) {
     try {
-        // We no longer require the user to be logged in to start the checkout
-        // because we are using Stripe's customer creation flow.
         const response = await fetch(`${backendBaseUrl}/create-checkout-session`, {
             method: 'POST',
             headers: {
