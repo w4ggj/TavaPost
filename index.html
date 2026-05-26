@@ -171,5 +171,22 @@
         if (login) login.className = "view-section";
     });
 </script>
+    <script>
+    // Force a direct test of the Supabase connection
+    const testConnection = async () => {
+        try {
+            console.log("TESTING CONNECTION...");
+            const { createClient } = supabase;
+            const client = createClient("https://fntsthjupopvbwvmfsmz.supabase.co", "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS");
+            const { data, error } = await client.auth.getSession();
+            if (error) throw error;
+            console.log("TEST SUCCESS:", data);
+        } catch (e) {
+            console.error("TEST FAILED:", e.message);
+            alert("Connection Test Failed: " + e.message);
+        }
+    };
+    setTimeout(testConnection, 1000);
+</script>
 </body>
 </html>
