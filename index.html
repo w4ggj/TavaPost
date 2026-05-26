@@ -140,9 +140,15 @@
             <summary>✨ Quick Start Guide</summary>
             <ul>
                 <li><strong>1. Connect Channels:</strong> Link your Facebook and Instagram profiles below under settings.</li>
-                <li><strong>2. Map Voice Guidelines:</strong> Save your custom instructions inside your prompt box.</li>
-                <li><strong>3. Process Assets:</strong> Load an image file to run Gemini visual analysis routines.</li>
-                <li><strong>4. Polish & Sync:</strong> Select a card to fill the text pane and push directly live.</li>
+                <li style="margin-bottom: 0.5rem;"><strong>2. Map Voice Guidelines:</strong> Define your brand's unique personality in the prompt box below. You can command the system using specific rules, such as:
+                    <ul style="margin-top: 0.25rem; list-style-type: circle; padding-left: 1.5rem; color: var(--text-muted); font-size: 0.85rem;">
+                        <li><strong>Tone & Vibe:</strong> "Write in a witty, sarcastic tone" or "Keep it highly professional and corporate."</li>
+                        <li><strong>Formatting Rules:</strong> "Never use emojis," "Always write in short, punchy single sentences," or "Use bullet points."</li>
+                        <li><strong>Hashtags & Structure:</strong> "Always end the post with a call to action and exactly 5 relevant hashtags."</li>
+                    </ul>
+                </li>
+                <li><strong>3. Process Assets:</strong> Load an image file to extract visual context and generate tailored draft variations.</li>
+                <li><strong>4. Polish & Sync:</strong> Select a card to fill the text pane, make any final edits, and push directly live.</li>
             </ul>
         </details>
 
@@ -188,10 +194,10 @@
             <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
             
             <p id="generation-disclaimer" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 0.6rem; letter-spacing: 0.01em;">
-                ℹ️ Image canvas downscaling and Gemini AI visual analysis typically finish within <strong>15 to 45 seconds</strong>.
+                ℹ️ Image processing and draft generation typically finish within <strong>15 to 45 seconds</strong>.
             </p>
 
-            <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Running deep image matrix interpretation and generating caption variants... Please wait...</div>
+            <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Processing visual context and writing caption variations... Please wait...</div>
 
             <div id="selection-area" class="view-section" style="margin-top:2rem;">
                 <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
@@ -467,7 +473,7 @@ async function generateDraft() {
         const container = document.getElementById('draft-cards');
         const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(t => t.trim().length > 0);
 
-        if (options.length === 0) throw new Error("No caption variations returned from AI.");
+        if (options.length === 0) throw new Error("No caption variations were returned by the system.");
 
         options.forEach((txt, i) => {
             const card = document.createElement('div');
