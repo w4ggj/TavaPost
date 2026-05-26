@@ -118,28 +118,38 @@
         </div>
     </details>
 
-    <main class="panel" style="margin-top: 1.5rem;">
-        <h2 class="panel-title">Content Pipeline</h2>
-        <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
-            <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
-            <input type="file" id="imageInput" class="view-section" accept="image/*" onchange="updateFileInputLabel()">
+   <main class="panel" style="margin-top: 1.5rem;">
+    <h2 class="panel-title">Content Pipeline</h2>
+    
+    <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
+        <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
+        <input type="file" id="imageInput" class="view-section" accept="image/*" onchange="updateFileInputLabel()">
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 0.75rem 1rem; background: rgba(15, 23, 42, 0.4); border-radius: 8px; border: 1px solid var(--border-color);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Draft Quota</span>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 0.75rem 1rem; background: rgba(15, 23, 42, 0.4); border-radius: 8px; border: 1px solid var(--border-color);">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Draft Quota</span>
-            </div>
-            <div id="usage-counter" style="font-size: 0.9rem;"><span style="color: var(--text-muted);">Checking...</span></div>
-        </div>
-        <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
-        <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Processing...</div>
-        <div id="selection-area" class="view-section" style="margin-top:2rem;">
-            <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
-            <div id="draft-cards" class="draft-container"></div>
-            <h3 style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL EDITING & POLISH ]</h3>
-            <textarea id="finalCaption" style="min-height:200px; margin-top:1rem;"></textarea>
-            <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber);" onclick="publishToSocials()">🚀 Publish Directly</button>
-        </div>
-    </main>
+        <div id="usage-counter" style="font-size: 0.9rem;"><span style="color: var(--text-muted);">Checking...</span></div>
+    </div>
+
+    <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
+    <p id="generation-disclaimer" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 0.6rem; letter-spacing: 0.01em;">
+        ℹ️ Image processing and draft generation typically finish within <strong>15 to 45 seconds</strong>.
+    </p>
+
+    <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Processing visual context... Please wait...</div>
+
+    <div id="selection-area" class="view-section" style="margin-top:2rem;">
+        <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
+        <div id="draft-cards" class="draft-container"></div>
+        
+        <h3 style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL EDITING & POLISH ]</h3>
+        <textarea id="finalCaption" style="min-height:200px; margin-top:1rem;"></textarea>
+        
+        <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber); margin-top: 1rem;" onclick="publishToSocials()">🚀 Publish Directly to Social Channels</button>
+    </div>
+</main>
 </div>
 
 <div id="footer-placeholder"></div>
