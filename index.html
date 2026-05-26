@@ -3,165 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TavaOne // Social Media Content Studio</title>
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>TavaOne // Studio</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="header-placeholder"></div>
 
-<div id="header-placeholder"></div>
-
-<div id="system-crash-alert" class="view-section container">
-    <div class="panel" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.05);">
-        <h2 class="text-red">⚠️ System Handshake Failure</h2>
-        <p id="crash-diagnostic-text" style="color: var(--text-muted); font-size: 0.9rem;">Your client failed to connect with your database.</p>
+    <div id="system-crash-alert" class="view-section container">
+        <div class="panel" style="border: 1px solid #ef4444; background: rgba(239, 68, 68, 0.05); padding: 1rem;">
+            <h2 style="color: #ef4444;">⚠️ System Handshake Failure</h2>
+            <p id="crash-diagnostic-text">Your client failed to connect with your database.</p>
+        </div>
     </div>
-</div>
 
-<div id="view-login" class="view-section landing-wrapper">
-    <div class="landing-grid">
-        <div class="left-column">
-            <div class="hero-content">
+    <div id="view-login" class="view-section landing-wrapper">
+        <div class="landing-grid">
+            <div class="left-column">
                 <h1>Command Your Brand's <span>Social Presence</span></h1>
-                <p>TavaOne Studio is the ultimate workflow engine for creators. Upload your media, establish your unique brand voice, and let our system automatically craft and publish high-converting content directly to your channels.</p>
-                <ul class="feature-list">
-                    <li>Intelligent visual analysis of your media assets</li>
-                    <li>Strict adherence to your custom brand voice instructions</li>
-                    <li>Generate multiple distinct caption variations instantly</li>
-                    <li>Direct push publishing to Facebook & Instagram</li>
-                </ul>
+                <p>Upload your media and let our system craft high-converting content.</p>
             </div>
-        </div>
-
-        <div class="right-column">
-            <div class="login-card">
-                <h2 style="margin-bottom: 0.5rem;">Access Studio</h2>
-                <div class="input-group">
-                    <label>Email Address</label>
-                    <input type="email" id="login-email" placeholder="you@yourbrand.com">
-                </div>
-                <div class="input-group" style="margin-bottom: 2rem;">
-                    <label>Password</label>
-                    <input type="password" id="login-password" placeholder="••••••••••••">
-                </div>
-                <button class="btn btn-primary" onclick="signInUser()">Log In to Dashboard</button>
-                <p id="login-error" class="text-red view-section" style="margin-top: 1rem;"></p>
-            </div>
-        </div>
-    </div>
-
-    <div class="pricing-section container" style="margin-top: 4rem; margin-bottom: 4rem;">
-        <h2>Select Your Plan</h2>
-        <div class="pricing-grid">
-            <div class="pricing-tier">
-                <div class="tier-name">Starter</div>
-                <div class="tier-price">$9<span>/mo</span></div>
-                <ul class="tier-features">
-                    <li>Connect 1 Facebook Page</li>
-                    <li>Connect 1 Instagram Profile</li>
-                    <li>25 Auto-Draft Generations / mo</li>
-                </ul>
-                <button class="btn" onclick="upgradeToPlan('price_1TbPJJBBcpXhNPIONjQayRQ8')">Subscribe Now</button>
-            </div>
-            <div class="pricing-tier pro">
-                <div class="tier-badge">Limited Time</div>
-                <div class="tier-name">Founders</div>
-                <div class="tier-price">$14<span>/mo</span></div>
-                <ul class="tier-features">
-                    <li>Unlimited Social Connections</li>
-                    <li>Unlimited Auto-Draft Generations</li>
-                    <li>Advanced Voice Mapping</li>
-                </ul>
-                <button class="btn btn-primary" onclick="upgradeToPlan('price_1TbPJaBBcpXhNPIO7BJK7lKj')">Subscribe Now</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="view-dashboard" class="view-section container">
-    <details class="guide-box">
-        <summary>✨ Quick Start Guide</summary>
-        <ul>
-            <li><strong>1. Connect Channels:</strong> Link your profiles under settings.</li>
-            <li><strong>2. Map Voice Guidelines:</strong> Define your brand's unique personality.</li>
-            <li><strong>3. Process Assets:</strong> Load an image file to generate tailored draft variations.</li>
-            <li><strong>4. Polish & Sync:</strong> Select a card, make final edits, and push live.</li>
-        </ul>
-    </details>
-
-    <details class="interactive-accordion" open>
-        <summary>⚙️ Studio Settings</summary>
-        <div>
-            <div class="connection-grid">
-                <div class="conn-card">
-                    <div>
-                        <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
-                        <div id="fb-status" class="badge badge-red">Not Connected</div>
-                    </div>
-                    <div id="fb-action-area"><button type="button" class="btn btn-fb" onclick="connectPlatform('facebook')">Connect Page</button></div>
-                </div>
-                <div class="conn-card">
-                    <div>
-                        <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
-                        <div id="ig-status" class="badge badge-red">Not Connected</div>
-                    </div>
-                    <div id="ig-action-area"><button type="button" class="btn btn-ig" onclick="connectPlatform('instagram')">Connect IG</button></div>
+            <div class="right-column">
+                <div class="login-card">
+                    <h2>Access Studio</h2>
+                    <input type="email" id="login-email" placeholder="Email">
+                    <input type="password" id="login-password" placeholder="Password">
+                    <button class="btn btn-primary" onclick="signInUser()">Log In</button>
                 </div>
             </div>
-            <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase;">Custom Brand Instructions</h4>
-                <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules here..."></textarea>
-                <button class="btn btn-primary" onclick="saveSettings()">Save Instructions Settings</button>
-                <span id="save-status" class="text-green view-section" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
+        </div>
+    </div>
+
+    <div id="view-dashboard" class="view-section container">
+        <main class="panel">
+            <h2>Content Pipeline</h2>
+            <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">Analyze & Generate</button>
+            <div id="selection-area" class="view-section">
+                <button id="btn-publish" class="btn btn-primary" onclick="publishToSocials()">🚀 Publish</button>
             </div>
-        </div>
-    </details>
-
-   <main class="panel" style="margin-top: 1.5rem;">
-    <h2 class="panel-title">Content Pipeline</h2>
-    
-    <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
-        <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
-        <input type="file" id="imageInput" class="view-section" accept="image/*" onchange="updateFileInputLabel()">
+        </main>
     </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 0.75rem 1rem; background: rgba(15, 23, 42, 0.4); border-radius: 8px; border: 1px solid var(--border-color);">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Draft Quota</span>
-        </div>
-        <div id="usage-counter" style="font-size: 0.9rem;"><span style="color: var(--text-muted);">Checking...</span></div>
-    </div>
+    <div id="footer-placeholder"></div>
 
-    <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
-    <p id="generation-disclaimer" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 0.6rem; letter-spacing: 0.01em;">
-        ℹ️ Image processing and draft generation typically finish within <strong>15 to 45 seconds</strong>.
-    </p>
-
-    <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Processing visual context... Please wait...</div>
-
-    <div id="selection-area" class="view-section" style="margin-top:2rem;">
-        <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
-        <div id="draft-cards" class="draft-container"></div>
-        
-        <h3 style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL EDITING & POLISH ]</h3>
-        <textarea id="finalCaption" style="min-height:200px; margin-top:1rem;"></textarea>
-        
-        <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber); margin-top: 1rem;" onclick="publishToSocials()">🚀 Publish Directly to Social Channels</button>
-    </div>
-</main>
-</div>
-
-<div id="footer-placeholder"></div>
-
-<script src="components.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="studio.js"></script>
-<script>
-    // Give components.js a chance to render the DOM before checking session
-    window.onload = () => {
-        setTimeout(initializeApp, 500); 
-    };
-</script>
+    <script src="components.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="studio.js"></script>
 </body>
 </html>
