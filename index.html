@@ -486,19 +486,7 @@
 
         // Add this function to your script in index.html
 async function disconnectPlatform(platform) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    const { data: settings } = await supabaseClient
-        .from('user_settings')
-        .select('zernio_facebook_id, zernio_instagram_id')
-        .eq('user_id', session.user.id)
-        .single();
-
-    const accountId = platform === 'facebook' ? settings?.zernio_facebook_id : settings?.zernio_instagram_id;
-
-    if (!accountId) {
-        await clearLocalState(platform);
-        return;
-    }
+    // ... (fetch ID logic) ...
 
     try {
         const response = await fetch(`${backendBaseUrl}/disconnect-platform`, {
@@ -507,17 +495,21 @@ async function disconnectPlatform(platform) {
             body: JSON.stringify({ platform, account_id: accountId })
         });
 
-        // If the API returns 404, it means the account is already gone.
-        // We treat this as success to clean up your UI.
+        // If the server returns success (200) or indicates the account is already gone (404)
         if (response.ok || response.status === 404) {
-            await clearLocalState(platform);
+            // Force clear the database column
+            let update = { user_id: session.user.id };
+            update[platform === 'facebook' ? 'zernio_facebook_id' : 'zernio_instagram_id'] = null;
+            await supabaseClient.from('user_settings').upsert(update);
+            
+            await loadSettings();
             alert("Disconnected successfully.");
         } else {
             const error = await response.json();
             alert("Zernio API Error: " + (error.detail || "Unknown error"));
         }
     } catch (err) {
-        alert("Network error: Check backend connectivity.");
+        alert("Network error.");
     }
 }
 
