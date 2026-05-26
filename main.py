@@ -158,7 +158,14 @@ async def generate_draft(
             except Exception as e:
                 print(f"Non-fatal error updating count for {user_id}: {str(e)}")
                 
-            return {"image_url": "https://studio.tavaone.com/placeholder.jpg", "draft_text": raw_text}
+            file_path = f"drafts/{user_id}/{file.filename}"
+supabase.storage.from_("posts").upload(file_path, file_content)
+
+# 2. Get the public URL
+public_url = supabase.storage.from_("posts").get_public_url(file_path)
+
+# 3. Return the real URL
+return {"image_url": public_url, "draft_text": raw_text}
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
