@@ -328,33 +328,27 @@ async def create_checkout_session(request: CheckoutRequest):
 
 @app.post("/webhook")
 async def stripe_webhook(request: Request):
-    # Get the raw body bytes
     payload = await request.body()
-    # Get the signature header
     sig_header = request.headers.get('stripe-signature')
     endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
     
     try:
-        # Verify the message
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, endpoint_secret
-        )
+        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
     except Exception as e:
-        print(f"Auth failed: {e}")
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    # If we get here, the signature is valid!
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
+        customer_email = session.get('customer_details', {}).get('email')
         
-        # FIX: Use dot notation instead of .get()
-        user_id = getattr(session, 'client_reference_id', None)
-        
-        print(f"Processing checkout.session.completed for user: {user_id}")
-        
-    if user_id:
-            # This line MUST be indented
-            supabase_admin.table('user_profiles').update({'subscription_tier': 'founders'}).eq('id', user_id).execute()
-            print(f"Successfully upgraded user: {user_id}")
-    
+        # We store this payment intent so we can "find" it when they register
+        if customer_email:
+            print(f"Payment successful for: {customer_email}")
+            # Optional: Add to a 'pending_registrations' table in Supabase
+            supabase_admin.table('pending_registrations').insert({
+                'email': customer_email,
+                'tier': 'founders',
+                'status': 'paid'
+            }).execute()
+            
     return {"status": "success"}
