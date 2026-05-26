@@ -405,9 +405,12 @@ async function publishToSocials() {
             setTimeout(safeInit, 500);
         }
     }
-    window.addEventListener('load', safeInit);
-})(); = initializeApp;
-document.addEventListener("componentsLoaded", initializeApp);
+// --- INITIALIZATION ---
+// This runs once when the page is fully loaded
+window.addEventListener('load', () => {
+    console.log("App initializing...");
+    initializeApp();
+});
 
 async function loadUsageStats() {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -423,44 +426,26 @@ async function loadUsageStats() {
         if (error || !profile) return;
 
         const counterElement = document.getElementById('usage-counter');
-        
         if (profile.subscription_tier === 'starter') {
-            counterElement.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 25 Drafts</span> <a href="#" onclick="startUpgrade(event)" style="color: var(--accent-green); text-decoration: none; margin-left: 10px; font-weight: bold;">(Upgrade to Founders)</a>`;
+            counterElement.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 25 Drafts</span>`;
         } else if (profile.subscription_tier === 'founders') {
             counterElement.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Unlimited (Founders)</span>`;
-        } else if (profile.subscription_tier === 'complimentary') {
-            counterElement.innerHTML = `<span style="color: var(--accent-blue); font-weight: bold;">System Admin Access</span>`;
         }
     } catch (err) {
         console.error("Failed to load usage stats:", err);
     }
 }
 
-// Remove the broken startUpgrade function entirely 
-// since you are now using upgradeToPlan for both buttons.
-
 async function upgradeToPlan(priceId) {
     try {
         const response = await fetch(`${backendBaseUrl}/create-checkout-session`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                price_id: priceId 
-            }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price_id: priceId }),
         });
-
         const data = await response.json();
-        
-        if (data.url) {
-            window.location.href = data.url;
-        } else {
-            console.error("No URL returned from backend");
-            alert("Could not start checkout. Please try again.");
-        }
+        if (data.url) window.location.href = data.url;
     } catch (error) {
-        console.error("Error starting checkout:", error);
         alert("System error. Please contact support.");
     }
 }
