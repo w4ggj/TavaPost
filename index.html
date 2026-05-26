@@ -360,167 +360,32 @@
     }
 }
 
-        async function disconnectPlatform(platform) {
+async function disconnectPlatform(platform) {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    // 1. Get the account ID stored in your database
+    if (!session) return;
+
     const { data: settings } = await supabaseClient
         .from('user_settings')
         .select('zernio_facebook_id, zernio_instagram_id')
         .eq('user_id', session.user.id)
         .single();
 
-    const accountId = platform === 'facebook' ? settings.zernio_facebook_id : settings.zernio_instagram_id;
+    const accountId = platform === 'facebook' ? settings?.zernio_facebook_id : settings?.zernio_instagram_id;
     if (!accountId) return alert("No account ID found to disconnect.");
 
     if (!confirm(`Are you sure you want to disconnect your ${platform} account?`)) return;
 
-    // 2. Call backend FIRST
-    const response = await fetch(`${backendBaseUrl}/disconnect-platform`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform, account_id: accountId })
-    });
+    let update = { user_id: session.user.id };
+    update[platform === 'facebook' ? 'zernio_facebook_id' : 'zernio_instagram_id'] = null;
 
-    if (response.ok) {
-        // 3. ONLY clear the database if the API call succeeded
-        let update = { user_id: session.user.id };
-        if (platform === 'facebook') update.zernio_facebook_id = null;
-        else update.zernio_instagram_id = null;
-        
-        await supabaseClient.from('user_settings').upsert(update);
+    const { error } = await supabaseClient.from('user_settings').upsert(update);
+    if (!error) {
         await loadSettings();
         alert("Account disconnected successfully.");
     } else {
-        const errorData = await response.json();
-        alert("Zernio API failed to disconnect: " + (errorData.detail || "Unknown error"));
+        alert("Database error: " + error.message);
     }
-}
-
-        async function generateDraft() {
-            const fileInput = document.getElementById('imageInput');
-            if (fileInput.files.length === 0) return alert("Select file.");
-            
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            document.getElementById('loading').className = "view-active-block";
-            
-            const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-            formData.append("custom_prompt", document.getElementById('customPrompt').value);
-
-            try {
-                const response = await fetch(`${backendBaseUrl}/generate-draft?t=${Date.now()}`, {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${session.access_token}` },
-                    body: formData
-                });
-                const data = await response.json();
-                window.currentPostImageUrl = data.image_url;
-                
-                const container = document.getElementById('draft-cards');
-                container.innerHTML = "";
-                const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(t => t.trim());
-                options.forEach((txt, i) => {
-                    const card = document.createElement('div');
-                    card.className = "draft-card";
-                    card.innerHTML = `<header>Variation ${i+1}</header><p>${txt.trim()}</p>`;
-                    card.onclick = () => { document.getElementById('finalCaption').value = txt.trim(); };
-                    container.appendChild(card);
-                });
-                document.getElementById('loading').className = "view-section";
-                document.getElementById('selection-area').className = "view-active-block";
-            } catch (err) { alert("Error: " + err.message); }
-        }
-
-        async function publishToSocials() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    const caption = document.getElementById('finalCaption').value;
-    const targetFB = document.getElementById('publish-to-fb').checked;
-    const targetIG = document.getElementById('publish-to-ig').checked;
-    
-    const { data: settings, error } = await supabaseClient
-        .from('user_settings')
-        .select('zernio_facebook_id, zernio_instagram_id')
-        .eq('user_id', session.user.id)
-        .single();
-
-    if (error || !settings) return alert("Error fetching settings.");
-
-    const platforms = [];
-    if (targetFB) {
-        if (!settings.zernio_facebook_id) return alert("Facebook is checked but no Account ID found!");
-        platforms.push({ platform: "facebook", accountId: settings.zernio_facebook_id });
-    }
-    if (targetIG) {
-        if (!settings.zernio_instagram_id) return alert("Instagram is checked but no Account ID found!");
-        platforms.push({ platform: "instagram", accountId: settings.zernio_instagram_id });
-    }
-
-    if (platforms.length === 0) return alert("Select at least one platform.");
-
-    try {
-        const response = await fetch(`${backendBaseUrl}/publish-post`, {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json", 
-                "Authorization": `Bearer ${session.access_token}` 
-            },
-            body: JSON.stringify({
-                image_url: window.currentPostImageUrl || "",
-                caption: caption,
-                platforms: platforms
-            })
-        });
-
-        const result = await response.json();
-
-        if (response.ok && result.status === "success") {
-            alert("🚀 Successfully published!");
-        } else {
-            alert("Publishing Failed: " + (result.detail || JSON.stringify(result)));
-        }
-    } catch (err) {
-        console.error("Publish Error:", err);
-        alert("Delivery Error: Could not reach the backend.");
-    }
-}
-
-        // Add this function to your script in index.html
-async function disconnectPlatform(platform) {
-    // ... (fetch ID logic) ...
-
-    try {
-        const response = await fetch(`${backendBaseUrl}/disconnect-platform`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ platform, account_id: accountId })
-        });
-
-        // If the server returns success (200) or indicates the account is already gone (404)
-        if (response.ok || response.status === 404) {
-            // Force clear the database column
-            let update = { user_id: session.user.id };
-            update[platform === 'facebook' ? 'zernio_facebook_id' : 'zernio_instagram_id'] = null;
-            await supabaseClient.from('user_settings').upsert(update);
-            
-            await loadSettings();
-            alert("Disconnected successfully.");
-        } else {
-            const error = await response.json();
-            alert("Zernio API Error: " + (error.detail || "Unknown error"));
-        }
-    } catch (err) {
-        alert("Network error.");
-    }
-}
-
-async function clearLocalState(platform) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    let update = { user_id: session.user.id };
-    update[platform === 'facebook' ? 'zernio_facebook_id' : 'zernio_instagram_id'] = null;
-    await supabaseClient.from('user_settings').upsert(update);
-    await loadSettings();
-}
-        
+}        
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
         window.onload = initializeApp;
     </script>
