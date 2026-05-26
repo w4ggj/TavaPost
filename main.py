@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 
-app = FastAPI(title="TavaPost Backend")
+app = FastAPI(title="TavaOne Backend")
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,7 +29,7 @@ class PostRequest(BaseModel):
 
 @app.get("/")
 async def root_check():
-    return {"status": "online", "service": "TavaPost Engine"}
+    return {"status": "online", "service": "TavaOne Engine"}
 
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str, profile_id: str = None):
