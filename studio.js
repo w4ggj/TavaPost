@@ -361,3 +361,4 @@ async function publishToSocials() {
 }
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
         window.onload = initializeApp;
+document.addEventListener("componentsLoaded", initializeApp);
