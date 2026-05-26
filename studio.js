@@ -108,34 +108,31 @@ async function loadSettings() {
 
 async function generateDraft() {
     const fileInput = document.getElementById('imageInput');
-    const loadingLabel = document.getElementById('loading');
-    const btnGen = document.getElementById('btn-generate');
-    
-    // SAFE ELEMENT CHECK
     const customPromptElement = document.getElementById('customPrompt');
     const customPromptValue = customPromptElement ? customPromptElement.value : "";
 
-    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-        return alert("Please select an image file first.");
-    }
-
+    if (!fileInput.files || fileInput.files.length === 0) return alert("Select an image.");
+    
     const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) return alert("Session expired. Please log in again.");
-
-    if (loadingLabel) loadingLabel.className = "view-active-block";
-    if (btnGen) btnGen.disabled = true;
-
+    
     try {
-        let formData = new FormData();
-        formData.append("file", fileInput.files[0]);
-        formData.append("user_id", session.user.id);
-        formData.append("custom_prompt", customPromptValue);
+        // Prepare JSON payload
+        const payload = {
+            user_id: session.user.id,
+            custom_prompt: customPromptValue
+        };
 
-        const response = await fetch(`${backendBaseUrl}/generate-draft`, {
+        // We use JSON here for better reliability
+        const response = await fetch(`${backendBaseUrl}/generate-draft-json`, {
             method: "POST",
-            headers: { "Authorization": `Bearer ${session.access_token}` },
-            body: formData
+            headers: { 
+                "Authorization": `Bearer ${session.access_token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
         });
+
+        // ... rest of logic
 
         if (!response.ok) {
             const errorText = await response.text();
