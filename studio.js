@@ -17,8 +17,11 @@
 
         checkSession();
     } catch (err) {
-        // ... rest of your code
-    }
+    console.error("Core Engine Init Error: ", err);
+    // Explicitly show the crash alert
+    document.getElementById('system-crash-alert').className = "container view-active-block";
+    document.getElementById('crash-diagnostic-text').innerText = "Database connection failed: " + err.message;
+}
 }
 
         function updateFileInputLabel() {
