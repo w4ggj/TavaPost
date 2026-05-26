@@ -157,5 +157,14 @@
 <script src="components.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="studio.js"></script>
+<script>
+    window.addEventListener('load', () => {
+        console.log("Forcing dashboard visibility...");
+        const dash = document.getElementById('view-dashboard');
+        const login = document.getElementById('view-login');
+        if (dash) dash.className = "container view-active-block";
+        if (login) login.className = "view-section";
+    });
+</script>
 </body>
 </html>
