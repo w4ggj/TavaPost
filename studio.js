@@ -273,10 +273,21 @@ async function publishToSocials() {
     const caption = document.getElementById('finalCaption').value;
     if (!caption) return alert("Please select or write a caption first.");
 
-    // Identify which platforms are checked
+    // 1. UPDATED IDs to match your HTML
+    const fbCheck = document.getElementById('publish-to-fb');
+    const igCheck = document.getElementById('publish-to-ig');
+
     const platforms = [];
-    if (document.getElementById('check-fb')?.checked) platforms.push({ platform: 'facebook', accountId: 'FB_ID_HERE' });
-    if (document.getElementById('check-ig')?.checked) platforms.push({ platform: 'instagram', accountId: 'IG_ID_HERE' });
+
+    // 2. Use your stored window variables (assuming you set these in loadSettings)
+    if (fbCheck?.checked) {
+        if (!window.currentFbId) return alert("Facebook ID not loaded. Please refresh.");
+        platforms.push({ platform: 'facebook', accountId: window.currentFbId });
+    }
+    if (igCheck?.checked) {
+        if (!window.currentIgId) return alert("Instagram ID not loaded. Please refresh.");
+        platforms.push({ platform: 'instagram', accountId: window.currentIgId });
+    }
 
     if (platforms.length === 0) return alert("Select at least one platform.");
 
