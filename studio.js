@@ -100,10 +100,30 @@ async function loadSettings() {
         .maybeSingle();
 
     if (error) {
-        console.error("Error loading settings:", error);
-    } else if (data) {
-        console.log("Settings found:", data); // This will tell us if your IDs are null
-        // ... (rest of your existing logic)
+        console.error("Database Fetch Error:", error);
+        return;
+    }
+
+    if (data) {
+        if (data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
+        
+        // --- FACEBOOK FIX ---
+        const fbStatus = document.getElementById('fb-status');
+        const fbAction = document.getElementById('fb-action-area');
+        if (data.zernio_facebook_id && fbStatus && fbAction) {
+            fbStatus.innerText = "Connected ✅";
+            fbStatus.className = "badge badge-green";
+            fbAction.innerHTML = `<button type="button" class="btn btn-disconnect" onclick="disconnectPlatform('facebook')">Disconnect</button>`;
+        }
+        
+        // --- INSTAGRAM FIX ---
+        const igStatus = document.getElementById('ig-status');
+        const igAction = document.getElementById('ig-action-area');
+        if (data.zernio_instagram_id && igStatus && igAction) {
+            igStatus.innerText = "Connected ✅";
+            igStatus.className = "badge badge-green";
+            igAction.innerHTML = `<button type="button" class="btn btn-disconnect" onclick="disconnectPlatform('instagram')">Disconnect</button>`;
+        }
     }
 }
 
@@ -123,3 +143,10 @@ async function initializeApp() {
         console.error("CRITICAL ERROR: ", err);
     }
 }
+// Force button visibility after everything loads
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        const logoutBtn = document.getElementById('header-logout');
+        if (logoutBtn) logoutBtn.className = "btn btn-logout view-active-block";
+    }, 1000);
+});
