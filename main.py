@@ -146,7 +146,12 @@ async def publish_post(payload: PostRequest):
     
     # Inject the image URL if it exists
     if payload.image_url:
-        body["mediaUrls"] = [payload.image_url]
+        body["mediaItems"] = [
+            {
+                "type": "image",
+                "url": payload.image_url
+            }
+        ]
         
     print("DEBUG - SENDING TO ZERNIO:", body)
     
