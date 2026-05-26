@@ -37,40 +37,35 @@
             document.getElementById('signup-email').value = params.get('email') || "";
         };
 
-        async function finalizeAccount() {
+    async function finalizeAccount() {
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
 
-    if (!password) return alert("Please create a password.");
+    // 1. Verify they paid first
+    const { data: pending } = await supabase
+        .from('pending_registrations')
+        .select('*')
+        .eq('email', email)
+        .eq('status', 'paid')
+        .maybeSingle();
 
-    // 1. Sign up the user
-    const { data: authData, error: authError } = await supabase.auth.signUp({ 
-        email, 
-        password 
+    if (!pending) {
+        return alert("No payment record found for this email. Did you complete the subscription?");
+    }
+
+    // 2. Sign up
+    const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+    if (authError) return document.getElementById('signup-error').innerText = authError.message;
+
+    // 3. Upgrade to Founders
+    await supabase.from('user_profiles').upsert({ 
+        id: authData.user.id, 
+        subscription_tier: 'founders' 
     });
 
-    if (authError) {
-        document.getElementById('signup-error').innerText = authError.message;
-        return;
-    }
-
-    // 2. Map the new user to their paid tier
-    // Note: We use the ID returned from the sign-up process
-    const { error: updateError } = await supabase
-        .from('user_profiles')
-        .upsert({ 
-            id: authData.user.id, 
-            subscription_tier: 'founders',
-            monthly_draft_count: 0 // Initialize for new users
-        });
-
-    if (updateError) {
-        console.error("Tier update failed:", updateError);
-        alert("Account created, but there was an issue setting your plan. Contact support.");
-    } else {
-        alert("Account finalized! Welcome to the Founders tier.");
-        window.location.href = "index.html";
-    }
+    alert("Registration complete! Welcome to Founders.");
+    window.location.href = "index.html";
+}
 }
     </script>
 </body>
