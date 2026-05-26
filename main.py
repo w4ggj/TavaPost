@@ -309,20 +309,20 @@ async def admin_list_users(x_admin_secret: str = Header(...)):
 @app.post("/create-checkout-session")
 async def create_checkout_session(request: CheckoutRequest):
     try:
-        # Create a secure Stripe checkout session
+       # Create a secure Stripe checkout session
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[
                 {
-                    # REPLACE THIS with your actual Price ID from Stripe
-                    'price': 'price_1TbMC2B4jnTQeHqCSznEjs01', 
+                    'price': 'price_1TbMkUBBcpXhNPIOADyzL1Xj', 
                     'quantity': 1,
                 },
             ],
             mode='subscription',
-            # Stripe will redirect users back here after they pay (or cancel)
-            success_url='https://studio.tavaone.com/?upgrade=success',
-            cancel_url='https://studio.tavaone.com/?upgrade=canceled',
+            # THIS IS THE MISSING PIECE:
+            client_reference_id=user_id, 
+            success_url='https://studio.tavaone.com/success',
+            cancel_url='https://studio.tavaone.com/cancel',
             
             # THE SECRET SAUCE: We pass the Supabase User ID to Stripe.
             # When Stripe tells us the payment worked, it hands this ID back to us!
