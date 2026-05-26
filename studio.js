@@ -224,6 +224,7 @@ async function generateDraft() {
         }
 
         formData.append("custom_prompt", customPromptValue);
+        formData.append("user_id", session.user.id);
 
         const response = await fetch(`${backendBaseUrl}/generate-draft?t=${Date.now()}`, {
             method: "POST",
