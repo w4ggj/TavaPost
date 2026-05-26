@@ -1,6 +1,6 @@
         let supabaseClient;
-        const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
-        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
+        const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co"; // Keep your URL
+        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; // Use the NEW Publishable key
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
 
 async function initializeApp() {
