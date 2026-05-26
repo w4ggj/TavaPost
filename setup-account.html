@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Complete Your TavaOne Account</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="landing-wrapper">
+
+    <div class="login-card" style="max-width: 400px; margin: 4rem auto;">
+        <h2>Welcome to TavaOne!</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Set your password to finalize your account and access your studio.</p>
+        
+        <div class="input-group">
+            <label>Email Address</label>
+            <input type="email" id="signup-email" disabled>
+        </div>
+        <div class="input-group" style="margin-bottom: 2rem;">
+            <label>Create Password</label>
+            <input type="password" id="signup-password" placeholder="••••••••••••">
+        </div>
+        
+        <button class="btn btn-primary" onclick="finalizeAccount()">Complete Registration</button>
+        <p id="signup-error" class="text-red" style="margin-top: 1rem;"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabase = supabase.createClient("YOUR_SUPABASE_URL", "YOUR_SUPABASE_KEY");
+
+        // Grab email from URL if you passed it, or just let them type it
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            document.getElementById('signup-email').value = params.get('email') || "";
+        };
+
+        async function finalizeAccount() {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+
+            const { data, error } = await supabase.auth.signUp({ email, password });
+
+            if (error) {
+                document.getElementById('signup-error').innerText = error.message;
+            } else {
+                alert("Account created! Redirecting to your studio...");
+                window.location.href = "index.html";
+            }
+        }
+    </script>
+</body>
+</html>
