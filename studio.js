@@ -177,6 +177,12 @@ async function generateDraft() {
         }
 
         const data = await response.json();
+        if (data.image_url) {
+            window.cachedImageUrl = data.image_url;
+            console.log("URL Cached for publishing:", window.cachedImageUrl);
+        } else {
+            console.warn("Backend response did not contain an image_url.");
+        }
         const container = document.getElementById('draft-cards');
         if (container) {
             container.innerHTML = "";
@@ -259,7 +265,10 @@ async function disconnectPlatform(platform) {
 
 async function publishToSocials() {
     const caption = document.getElementById('finalCaption').value;
-    if (!caption) return alert("Please select or write a caption first.");
+    const imageUrl = window.cachedImageUrl; // Retrieve the stored URL
+
+    if (!caption) return alert("Select a caption first.");
+    if (!imageUrl) return alert("Image URL missing. Please run 'Analyze Image' again.");
 
     // 1. UPDATED IDs to match your HTML
     const fbCheck = document.getElementById('publish-to-fb');
@@ -284,17 +293,17 @@ async function publishToSocials() {
     btn.innerText = "Publishing...";
 
     try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        
         const response = await fetch(`${backendBaseUrl}/publish-post`, {
             method: "POST",
             headers: { 
-                "Content-Type": "application/json",
+                "Content-Type": "application/json", 
                 "Authorization": `Bearer ${session.access_token}` 
             },
-            body: JSON.stringify({
-                caption: caption,
-                platforms: platforms
+            // Ensure image_url is sent in the JSON body
+            body: JSON.stringify({ 
+                caption: caption, 
+                platforms: platforms, 
+                image_url: imageUrl 
             })
         });
 
