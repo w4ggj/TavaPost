@@ -1,4 +1,3 @@
-<script>
         let supabaseClient;
         const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
         const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
@@ -362,4 +361,3 @@ async function publishToSocials() {
 }
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
         window.onload = initializeApp;
-    </script>
