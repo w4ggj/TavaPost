@@ -92,12 +92,19 @@ async function handleZernioCallback() {
 async function loadSettings() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return;
-    const { data } = await supabaseClient
+
+    const { data, error } = await supabaseClient
         .from('user_settings')
         .select('custom_prompt, zernio_facebook_id, zernio_instagram_id')
         .eq('user_id', session.user.id)
         .maybeSingle();
-    if (data && data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
+
+    if (error) {
+        console.error("Error loading settings:", error);
+    } else if (data) {
+        console.log("Settings found:", data); // This will tell us if your IDs are null
+        // ... (rest of your existing logic)
+    }
 }
 
 window.addEventListener('load', initializeApp);
