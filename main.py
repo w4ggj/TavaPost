@@ -276,11 +276,26 @@ async def admin_list_users(x_admin_secret: str = Header(...)):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
     try:
-        # Securely fetch all users from the Supabase Authentication system
-        users = supabase_admin.auth.admin.list_users()
+        # 1. Securely fetch all user emails from the Auth system
+        auth_users = supabase_admin.auth.admin.list_users()
         
-        # Package the IDs and Emails for the frontend table
-        user_list = [{"id": u.id, "email": u.email} for u in users]
+        # 2. Fetch all subscription tiers and usage stats from the public profiles table
+        profiles_response = supabase_admin.table('user_profiles').select('id, subscription_tier, monthly_draft_count').execute()
+        
+        # Convert the profile list into a dictionary for super-fast lookups
+        profiles_data = {p['id']: p for p in profiles_response.data}
+        
+        # 3. Merge the data together
+        user_list = []
+        for u in auth_users:
+            profile = profiles_data.get(u.id, {})
+            
+            user_list.append({
+                "id": u.id,
+                "email": u.email,
+                "tier": profile.get('subscription_tier', 'starter'),
+                "usage": profile.get('monthly_draft_count', 0)
+            })
             
         return {"status": "success", "data": user_list}
     except Exception as e:
