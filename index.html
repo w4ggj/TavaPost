@@ -391,34 +391,41 @@
         }
 
         async function publishToSocials() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            const caption = document.getElementById('finalCaption').value;
-            const targetFB = document.getElementById('publish-to-fb').checked;
-            const targetIG = document.getElementById('publish-to-ig').checked;
-            
-            const { data: settings } = await supabaseClient.from('user_settings').select('*').eq('user_id', session.user.id).single();
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const caption = document.getElementById('finalCaption').value;
+    const targetFB = document.getElementById('publish-to-fb').checked;
+    const targetIG = document.getElementById('publish-to-ig').checked;
+    
+    // Ensure we are fetching the most recent settings
+    const { data: settings } = await supabaseClient.from('user_settings').select('*').eq('user_id', session.user.id).single();
 
-            try {
-                // FIXED: Syntax corrected to use a colon ':' for the headers property
-                const response = await fetch(`${backendBaseUrl}/publish-post?t=${Date.now()}`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${session.access_token}`
-                    },
-                    body: JSON.stringify({
-                        image_url: window.currentPostImageUrl || "",
-                        caption: caption,
-                        fb_account_id: targetFB ? settings.zernio_facebook_id : null,
-                        ig_account_id: targetIG ? settings.zernio_instagram_id : null,
-                        profile_id: session.user.id
-                    })
-                });
-                const data = await response.json();
-                // FIXED: Used JSON.stringify to show the full error instead of [object Object]
-                alert(data.status === "success" ? "🚀 Published!" : "Error: " + (typeof data.detail === 'object' ? JSON.stringify(data.detail) : data.detail));
-            } catch (err) { alert("Delivery Error."); }
+    try {
+        const response = await fetch(`${backendBaseUrl}/publish-post?t=${Date.now()}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+                image_url: window.currentPostImageUrl || "",
+                caption: caption,
+                fb_account_id: targetFB ? settings.zernio_facebook_id : null,
+                ig_account_id: targetIG ? settings.zernio_instagram_id : null,
+                profile_id: session.user.id
+            })
+        });
+        const data = await response.json();
+        
+        // FIXED: JSON.stringify prevents the [object Object] error
+        if (data.status === "success") {
+            alert("🚀 Published!");
+        } else {
+            alert("Delivery Mismatch: " + (typeof data.detail === 'object' ? JSON.stringify(data.detail) : data.detail));
         }
+    } catch (err) { 
+        alert("Delivery Error: Communication failure."); 
+    }
+}
 
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
         window.onload = initializeApp;
