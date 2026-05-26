@@ -84,8 +84,8 @@ async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form
             ]}]
         }
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(google_url, json=body, headers=headers)
+        async with httpx.AsyncClient(timeout=60.0) as client: # Increased from 30.0
+    response = await client.delete(zernio_disconnect_url, headers=headers)
             data = response.json()
             raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
             return {"image_url": "https://studio.tavaone.com/placeholder.jpg", "draft_text": raw_text}
