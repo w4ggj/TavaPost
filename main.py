@@ -131,6 +131,7 @@ async def disconnect_platform(payload: dict):
     if not account_id:
         raise HTTPException(status_code=400, detail="Missing account_id")
 
+    print(f"!!! ATTEMPTING TO DELETE ACCOUNT: {account_id} for {platform} !!!")
     zernio_disconnect_url = f"https://zernio.com/api/v1/accounts/{account_id}"
     headers = {"Authorization": f"Bearer {zernio_key.strip()}"}
 
