@@ -364,3 +364,28 @@ async function publishToSocials() {
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
         window.onload = initializeApp;
 document.addEventListener("componentsLoaded", initializeApp);
+
+async function loadUsageStats() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    try {
+        const { data: profile, error } = await supabaseClient
+            .from('user_profiles')
+            .select('subscription_tier, monthly_draft_count')
+            .eq('id', session.user.id)
+            .single();
+
+        if (error || !profile) return;
+
+        const counterElement = document.getElementById('usage-counter');
+        
+        if (profile.subscription_tier === 'starter') {
+            counterElement.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 50 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 50 Drafts</span> <a href="#" style="color: var(--accent-purple); text-decoration: none; margin-left: 10px;">(Upgrade)</a>`;
+        } else {
+            counterElement.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Unlimited (Pro)</span>`;
+        }
+    } catch (err) {
+        console.error("Failed to load usage stats:", err);
+    }
+}
