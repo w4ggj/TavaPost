@@ -123,14 +123,11 @@ async function generateDraft() {
         };
 
         // We use JSON here for better reliability
-        const response = await fetch(`${backendBaseUrl}/generate-draft-json`, {
-            method: "POST",
-            headers: { 
-                "Authorization": `Bearer ${session.access_token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
+        const response = await fetch(`${backendBaseUrl}/generate-draft`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${session.access_token}` },
+    body: formData // Keep using FormData as your backend expects
+});
 
         // ... rest of logic
 
@@ -146,7 +143,10 @@ async function generateDraft() {
         console.error("Draft error:", err);
         alert("Generation failed: " + err.message);
     } finally {
-        if (loadingLabel) loadingLabel.className = "view-section";
-        if (btnGen) btnGen.disabled = false;
-    }
+    // Re-select the element inside the finally block to ensure it exists
+    const loading = document.getElementById('loading');
+    if (loading) loading.className = "view-section";
+    
+    if (btnGen) btnGen.disabled = false;
+}
 }
