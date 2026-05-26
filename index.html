@@ -481,7 +481,25 @@
 
         // Add this function to your script in index.html
 async function disconnectPlatform(platform) {
-    // ... existing ID retrieval ...
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    // Fetch fresh settings
+    const { data: settings } = await supabaseClient
+        .from('user_settings')
+        .select('zernio_facebook_id, zernio_instagram_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+    const accountId = platform === 'facebook' ? settings?.zernio_facebook_id : settings?.zernio_instagram_id;
+
+    if (!accountId) {
+        // If no ID exists, force-clear the UI state and exit
+        alert("Account ID not found. Force-clearing UI state.");
+        await clearLocalState(platform); 
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to disconnect ${platform}?`)) return;
 
     try {
         const response = await fetch(`${backendBaseUrl}/disconnect-platform`, {
@@ -490,22 +508,26 @@ async function disconnectPlatform(platform) {
             body: JSON.stringify({ platform, account_id: accountId })
         });
 
-        // UPDATED: If the API says "Account not found", it's already gone from Zernio.
-        // We should proceed to clear it from our database anyway.
         if (response.ok || response.status === 404) {
-            let update = { user_id: session.user.id };
-            if (platform === 'facebook') update.zernio_facebook_id = null;
-            else update.zernio_instagram_id = null;
-            
-            await supabaseClient.from('user_settings').upsert(update);
-            await loadSettings();
-            alert("Account disconnected and local state cleared.");
+            await clearLocalState(platform);
+            alert("Disconnected successfully.");
         } else {
-            alert("Zernio API error: " + (await response.json()).detail);
+            const error = await response.json();
+            alert("Zernio API Error: " + (error.detail || "Unknown error"));
         }
     } catch (err) {
-        alert("Network error.");
+        console.error(err);
+        alert("Network error: Check your backend connection.");
     }
+}
+
+// Helper to clean up UI
+async function clearLocalState(platform) {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    let update = { user_id: session.user.id };
+    update[platform === 'facebook' ? 'zernio_facebook_id' : 'zernio_instagram_id'] = null;
+    await supabaseClient.from('user_settings').upsert(update);
+    await loadSettings();
 }
         
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
