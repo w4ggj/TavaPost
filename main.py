@@ -27,38 +27,41 @@ class PostRequest(BaseModel):
 async def root_check():
     return {"status": "online", "service": "TavaPost Engine"}
 
+# In main.py
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str, profile_id: str = None):
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
-    # Always enforce the verified master Zernio profile token workspace
-    active_profile = "6a1350634beb548c15895d64"
+    # Use the active profile ID passed from the frontend or a verified constant
+    active_profile = profile_id or "6a1350634beb548c15895d64"
     
-    # Aggressively clean up the token string to prevent any line breaks or quote leaks
-    clean_key = zernio_key.strip().replace("'", "").replace('"', "").replace("\n", "").replace("\r", "")
+    # Use the documented endpoint structure
+    zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}"
     
-    zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={active_profile}&redirect_url=https://studio.tavaone.com/index.html"
+    params = {
+        "profileId": active_profile,
+        "redirect_url": "https://studio.tavaone.com/index.html"
+    }
     
     headers = {
-        "Authorization": f"Bearer {clean_key}",
+        "Authorization": f"Bearer {zernio_key.strip()}",
         "Content-Type": "application/json"
     }
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(zernio_endpoint, headers=headers)
+            # Send params separately for better URL encoding
+            response = await client.get(zernio_endpoint, headers=headers, params=params)
             
             if response.status_code == 200:
                 return response.json()
             else:
-                # 🚀 DIAGNOSTIC LOG: Prints the exact error reason straight into your Render terminal
                 print(f"!!! ZERNIO CONNECTION HANDSHAKE CRASH: {response.status_code} - {response.text} !!!")
                 raise HTTPException(status_code=response.status_code, detail=f"Zernio Handshake Rejected: {response.text}")
                 
         except Exception as e:
-            # Catch raw connection timeouts or network blocks
             print(f"!!! BACKEND NETWORK EXCEPTION: {str(e)} !!!")
             raise HTTPException(status_code=500, detail=str(e))
 
