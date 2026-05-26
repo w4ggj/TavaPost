@@ -374,7 +374,17 @@ async function publishToSocials() {
     }
 }
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
-        window.onload = initializeApp;
+        (function() {
+    function safeInit() {
+        if (typeof supabase !== 'undefined') {
+            initializeApp();
+        } else {
+            console.error("Supabase not found, retrying...");
+            setTimeout(safeInit, 500);
+        }
+    }
+    window.addEventListener('load', safeInit);
+})(); = initializeApp;
 document.addEventListener("componentsLoaded", initializeApp);
 
 async function loadUsageStats() {
