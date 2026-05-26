@@ -353,10 +353,14 @@ async def stripe_webhook(request: Request):
     # If we get here, the signature is valid!
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        user_id = session.get('client_reference_id')
+        
+        # FIX: Use dot notation instead of .get()
+        user_id = getattr(session, 'client_reference_id', None)
+        
+        print(f"Processing checkout.session.completed for user: {user_id}")
         
         if user_id:
             supabase_admin.table('user_profiles').update({'subscription_tier': 'pro'}).eq('id', user_id).execute()
-            print(f"Successfully upgraded user: {user_id}")
+            print("Database updated to pro")
     
     return {"status": "success"}
