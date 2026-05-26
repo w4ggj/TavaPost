@@ -20,7 +20,7 @@ supabase: Client = create_client(url, key)
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 class CheckoutRequest(BaseModel):
-    user_id: str
+    price_id: str
 
 # ADD THIS NEW ADMIN SETUP:
 # This uses the master key to bypass normal security rules for admin tasks
@@ -310,22 +310,20 @@ async def admin_list_users(x_admin_secret: str = Header(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/create-checkout-session")
-async def create_checkout_session(request: Request):
-    # No user_id required here anymore!
-    checkout_session = stripe.checkout.Session.create(
-        payment_method_types=['card'],
-        line_items=[{
-            'price': 'price_YOUR_LIVE_FOUNDERS_ID', # Use your Live ID
-            'quantity': 1,
-        }],
-        mode='subscription',
-        success_url='https://yourdomain.com/setup-account?session_id={CHECKOUT_SESSION_ID}',
-        cancel_url='https://yourdomain.com/',
-    )
-    return {"url": checkout_session.url}
-        
+async def create_checkout_session(request: CheckoutRequest):
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': request.price_id, # Dynamically uses the ID from the frontend
+                'quantity': 1,
+            }],
+            mode='subscription',
+            success_url='https://studio.tavaone.com/?status=success',
+            cancel_url='https://studio.tavaone.com/',
+        )
+        return {"url": checkout_session.url}
     except Exception as e:
-        print(f"Checkout Error: {e}") # This will show the error in Render logs!
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/webhook")
