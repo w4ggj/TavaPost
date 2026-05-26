@@ -414,25 +414,26 @@ window.addEventListener('load', () => {
 
 async function loadUsageStats() {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) return;
+    if (!session) {
+        document.getElementById('usage-counter').innerHTML = "Not logged in";
+        return;
+    }
 
     try {
+        console.log("Fetching profile for user:", session.user.id);
         const { data: profile, error } = await supabaseClient
             .from('user_profiles')
             .select('subscription_tier, monthly_draft_count')
             .eq('id', session.user.id)
             .single();
 
-        if (error || !profile) return;
+        if (error) throw error; // This will trigger the catch block below
 
         const counterElement = document.getElementById('usage-counter');
-        if (profile.subscription_tier === 'starter') {
-            counterElement.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 25 Drafts</span>`;
-        } else if (profile.subscription_tier === 'founders') {
-            counterElement.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Unlimited (Founders)</span>`;
-        }
+        // ... rest of your existing logic ...
     } catch (err) {
         console.error("Failed to load usage stats:", err);
+        document.getElementById('usage-counter').innerHTML = "Error loading data";
     }
 }
 
