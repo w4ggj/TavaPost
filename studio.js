@@ -171,3 +171,59 @@ function updateFileInputLabel() {
         label.style.color = "var(--accent-green)";
     }
 }
+
+async function generateDraft() {
+    const fileInput = document.getElementById('imageInput');
+    const loadingLabel = document.getElementById('loading');
+    const btnGen = document.getElementById('btn-generate');
+
+    if (!fileInput.files || fileInput.files.length === 0) {
+        return alert("Please select an image file first.");
+    }
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return alert("Session expired. Please log in again.");
+
+    loadingLabel.className = "view-active-block";
+    btnGen.disabled = true;
+    
+    const rawFile = fileInput.files[0];
+    const customPromptValue = document.getElementById('customPrompt').value || "";
+
+    try {
+        let formData = new FormData();
+        formData.append("file", rawFile);
+        formData.append("custom_prompt", customPromptValue);
+        formData.append("user_id", session.user.id);
+
+        const response = await fetch(`${backendBaseUrl}/generate-draft`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${session.access_token}` },
+            body: formData
+        });
+
+        if (!response.ok) throw new Error("Server error during generation");
+
+        const data = await response.json();
+        const container = document.getElementById('draft-cards');
+        container.innerHTML = ""; // Clear old drafts
+
+        // Process and display captions
+        const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(t => t.trim().length > 0);
+        options.forEach((txt, i) => {
+            const card = document.createElement('div');
+            card.className = "draft-card";
+            card.innerHTML = `<header>DRAFT VARIATION ${i + 1}</header><p>${txt.trim()}</p>`;
+            card.onclick = () => { document.getElementById('finalCaption').value = txt.trim(); };
+            container.appendChild(card);
+        });
+
+        document.getElementById('selection-area').className = "view-active-block";
+    } catch (err) {
+        console.error("Draft error:", err);
+        alert("Generation failed: " + err.message);
+    } finally {
+        loadingLabel.className = "view-section";
+        btnGen.disabled = false;
+    }
+}
