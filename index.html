@@ -385,7 +385,91 @@ async function disconnectPlatform(platform) {
     } else {
         alert("Database error: " + error.message);
     }
-}        
+}
+
+async function generateDraft() {
+    const fileInput = document.getElementById('imageInput');
+    const loadingLabel = document.getElementById('loading');
+    const btnGen = document.getElementById('btn-generate');
+
+    if (!fileInput.files || fileInput.files.length === 0) {
+        return alert("Please select an image file first.");
+    }
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return alert("Session expired. Please log in again.");
+
+    loadingLabel.className = "view-active-block";
+    btnGen.classList.add('btn-disabled');
+    btnGen.disabled = true;
+    document.getElementById('draft-cards').innerHTML = "";
+    document.getElementById('selection-area').className = "view-section";
+
+    const rawFile = fileInput.files[0];
+    const customPromptValue = document.getElementById('customPrompt').value || "";
+
+    try {
+        let formData = new FormData();
+
+        if (rawFile.size > 4 * 1024 * 1024) {
+            // Compress large images before sending
+            const img = new Image();
+            img.src = URL.createObjectURL(rawFile);
+            await new Promise(resolve => img.onload = resolve);
+
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height, max = 1920;
+            if (w > h) { if (w > max) { h *= max / w; w = max; } }
+            else { if (h > max) { w *= max / h; h = max; } }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+            formData.append("file", blob, "compressed.jpg");
+        } else {
+            formData.append("file", rawFile);
+        }
+
+        formData.append("custom_prompt", customPromptValue);
+
+        const response = await fetch(`${backendBaseUrl}/generate-draft?t=${Date.now()}`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${session.access_token}` },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.detail || `Server error ${response.status}`);
+        }
+
+        const data = await response.json();
+        window.currentPostImageUrl = data.image_url;
+
+        const container = document.getElementById('draft-cards');
+        const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(t => t.trim().length > 0);
+
+        if (options.length === 0) throw new Error("No caption variations returned from AI.");
+
+        options.forEach((txt, i) => {
+            const card = document.createElement('div');
+            card.className = "draft-card";
+            card.innerHTML = `<header>DRAFT VARIATION ${i + 1}</header><p style="white-space:pre-wrap;">${txt.trim()}</p>`;
+            card.onclick = () => { document.getElementById('finalCaption').value = txt.trim(); };
+            container.appendChild(card);
+        });
+
+        document.getElementById('selection-area').className = "view-active-block";
+
+    } catch (err) {
+        console.error("Draft generation error:", err);
+        alert("Generation failed: " + err.message);
+    } finally {
+        loadingLabel.className = "view-section";
+        btnGen.classList.remove('btn-disabled');
+        btnGen.disabled = false;
+    }
+}
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
         window.onload = initializeApp;
     </script>
