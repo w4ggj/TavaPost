@@ -177,6 +177,14 @@ async function generateDraft() {
         }
 
         const data = await response.json();
+        // Inside generateDraft() -> try block -> after const data = await response.json();
+        console.log("Full Backend Response:", data); // Check this in the console!
+
+        if (data.image_url) {
+            window.cachedImageUrl = data.image_url;
+        } else {
+            console.error("Backend did not provide a valid image_url");
+        }
         if (data.image_url) {
             window.cachedImageUrl = data.image_url;
             console.log("URL Cached for publishing:", window.cachedImageUrl);
