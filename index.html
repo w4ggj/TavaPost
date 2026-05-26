@@ -276,28 +276,46 @@
             }
         }
 
-        async function handleZernioCallback() {
+async function handleZernioCallback() {
     const urlParams = new URLSearchParams(window.location.search);
-    const accountId = urlParams.get('profileId');
     const platform = localStorage.getItem('connecting_platform');
 
-    if (accountId && platform) {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        
-        let updateData = { user_id: session.user.id };
-        if (platform === 'facebook') updateData.zernio_facebook_id = accountId;
-        if (platform === 'instagram') updateData.zernio_instagram_id = accountId;
+    // Only run if we were in the middle of a connect flow
+    if (!platform || !urlParams.has('profileId')) return;
 
-        // Ensure this write finishes before loading settings
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    try {
+        // Fetch real account IDs from Zernio
+        const response = await fetch(`${backendBaseUrl}/api/get-accounts`);
+        const data = await response.json();
+
+        if (!data.accounts || data.accounts.length === 0) {
+            return alert("Connected but could not find account. Check Zernio dashboard.");
+        }
+
+        // Find the account matching the platform we just connected
+        const match = data.accounts.find(a => a.platform === platform);
+        if (!match) {
+            return alert(`No ${platform} account found in Zernio. Try connecting again.`);
+        }
+
+        // Store the real account _id
+        let updateData = { user_id: session.user.id };
+        if (platform === 'facebook') updateData.zernio_facebook_id = match._id;
+        if (platform === 'instagram') updateData.zernio_instagram_id = match._id;
+
         const { error } = await supabaseClient.from('user_settings').upsert(updateData);
-        
         if (!error) {
             window.history.replaceState({}, document.title, window.location.pathname);
             localStorage.removeItem('connecting_platform');
-            await loadSettings(); // Only refresh UI after successful write
+            await loadSettings();
         } else {
             console.error("Database write failed:", error);
         }
+    } catch (err) {
+        console.error("Callback error:", err);
     }
 }
 
