@@ -321,8 +321,8 @@ async def create_checkout_session(request: CheckoutRequest):
             mode='subscription',
             # USE THIS ONE:
             client_reference_id=request.user_id, 
-            success_url='https://studio.tavaone.com/success',
-            cancel_url='https://studio.tavaone.com/cancel',
+            success_url='https://studio.tavaone.com/?status=success',
+            cancel_url='https://studio.tavaone.com/?status=canceled',
         )
         
         # Return the secure Stripe URL to the frontend
