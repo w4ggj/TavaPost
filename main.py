@@ -128,23 +128,21 @@ async def publish_post(payload: PostRequest):
 
 @app.post("/disconnect-platform")
 async def disconnect_platform(payload: dict):
-    zernio_key = os.environ.get("ZERNIO_API_KEY")
-    if not zernio_key:
-        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
-
-    # Clean the key to ensure no whitespace or formatting issues
-    clean_key = zernio_key.strip().replace("'", "").replace('"', "").replace("\n", "").replace("\r", "")
-    account_id = payload.get("account_id")
+    # ... (header/key setup) ...
     
-    if not account_id:
-        raise HTTPException(status_code=400, detail="Missing account_id")
-
-    zernio_disconnect_url = f"https://zernio.com/api/v1/accounts/{account_id}"
-    
-    headers = {
-        "Authorization": f"Bearer {clean_key}",
-        "Content-Type": "application/json"
-    }
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            response = await client.delete(zernio_disconnect_url, headers=headers)
+            
+            # Treat 200/204 (Success) AND 404 (Already gone) as success
+            if response.status_code in [200, 204, 404]:
+                return {"status": "success"}
+            else:
+                print(f"!!! ZERNIO DELETE FAILED: {response.text} !!!")
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+                
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
