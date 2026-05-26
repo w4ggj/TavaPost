@@ -9,74 +9,335 @@
     
     <style>
         :root {
-            --bg-main: #0f172a; --bg-card: #1e293b; --border-color: #334155;
-            --text-main: #f8fafc; --text-muted: #94a3b8; --accent-green: #10b981;
-            --accent-purple: #a855f7; --accent-blue: #3b82f6; --warning-amber: #f59e0b;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --warning-amber: #f59e0b;
             --danger-red: #ef4444;
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; }
-        header { border-bottom: 1px solid var(--border-color); padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            background-color: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.05em; text-transform: uppercase; }
+        .brand-title span { color: var(--accent-green); }
         .container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
         .view-section { display: none !important; }
         .view-active-flex { display: flex !important; }
         .view-active-block { display: block !important; }
+
+        .login-wrapper { width: 100%; justify-content: center; padding: 6rem 1rem 0 1rem; }
+        .login-panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2.5rem 2rem; width: 100%; max-width: 420px; }
+        .input-group { text-align: left; margin-bottom: 1.25rem; }
+        .input-group label { display: block; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
+        input[type="email"], input[type="password"] { width: 100%; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 0.75rem 1rem; }
+        input:focus { outline: none; border-color: var(--accent-green); }
+
         .panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; }
-        .btn { padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; }
+        .panel-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-left: 3px solid var(--accent-green); padding-left: 0.75rem; }
+        .interactive-accordion { background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; }
+        .interactive-accordion summary { font-weight: 600; cursor: pointer; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; }
+        .interactive-accordion summary::-webkit-details-marker { display: none; }
+        .interactive-accordion summary::after { content: '＋'; color: var(--accent-green); font-weight: 700; }
+        .interactive-accordion[open] summary::after { content: '－'; }
+
+        .connection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+        @media (max-width: 568px) { .connection-grid { grid-template-columns: 1fr; } }
+        .conn-card { background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; text-align: center; display: flex; flex-direction: column; justify-content: space-between; min-height: 160px; }
+        
+        .badge { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.5rem; border-radius: 4px; text-transform: uppercase; margin-top: 0.5rem; align-self: center; }
+        .badge-red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+
+        .guide-box { background: rgba(51, 65, 85, 0.2); border: 1px dashed var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+        .guide-box summary { font-weight: 600; cursor: pointer; color: var(--accent-green); }
+        .guide-box ul { margin-top: 0.75rem; padding-left: 1.25rem; color: var(--text-muted); font-size: 0.9rem; }
+        .guide-box li { margin-bottom: 0.5rem; }
+
+        textarea { width: 100%; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 1rem; resize: vertical; min-height: 150px; margin-bottom: 1rem; }
+        textarea:focus { outline: none; border-color: var(--accent-green); }
+
+        .file-dropzone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 1.5rem; text-align: center; background: rgba(15, 23, 42, 0.2); margin-bottom: 1rem; cursor: pointer; }
+        
+        .btn { width: 100%; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s ease; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em; }
         .btn-primary { background-color: var(--accent-green); color: var(--bg-main); }
-        .btn-disabled { background-color: var(--border-color); color: var(--text-muted); cursor: not-allowed; }
-        textarea { width: 100%; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 1rem; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-fb { background-color: var(--accent-blue); color: #fff; margin-top: 0.75rem; }
+        .btn-ig { background-color: var(--accent-purple); color: #fff; margin-top: 0.75rem; }
+        .btn-disconnect { background-color: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger-red); color: #f87171; margin-top: 0.75rem; }
+        .btn-disconnect:hover { background-color: var(--danger-red); color: var(--bg-main); }
+        .btn-logout { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: auto; }
+        .btn-disabled { background-color: var(--border-color) !important; color: var(--text-muted) !important; cursor: not-allowed; }
+
+        .pipeline-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.85rem; color: #fbbf24; margin-top: 1rem; display: flex; gap: 0.5rem; }
+        .draft-container { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem; }
+        .draft-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; cursor: pointer; }
+        .draft-card:hover { border-color: var(--accent-green); }
+        .draft-card header { background: none; border: none; padding: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--accent-green); font-weight: 700; text-transform: uppercase; }
+
+        .text-green { color: var(--accent-green) !important; }
+        .text-red { color: #f87171 !important; }
     </style>
 </head>
 <body>
+
     <header>
-        <div style="font-size: 1.5rem; font-weight: 700;">TavaOne // Studio</div>
-        <button id="header-logout" class="btn view-section" onclick="signOutUser()">Log Out</button>
+        <div class="brand-title">Tava<span>One</span> // Studio</div>
+        <button id="header-logout" class="btn btn-logout view-section" onclick="signOutUser()">Log Out</button>
     </header>
 
-    <div id="view-login" class="container view-active-flex">
-        <div class="panel">
-            <h2>Welcome</h2>
-            <input type="email" id="login-email" placeholder="Email">
-            <input type="password" id="login-password" placeholder="Password">
+    <div id="system-crash-alert" class="view-section container">
+        <div class="panel" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.05);">
+            <h2 class="text-red">⚠️ System Handshake Failure</h2>
+            <p id="crash-diagnostic-text" style="color: var(--text-muted); font-size: 0.9rem;">Your client failed to connect with your database.</p>
+        </div>
+    </div>
+
+    <div id="view-login" class="view-section login-wrapper">
+        <div class="login-panel">
+            <h2 style="margin-bottom: 0.5rem;">Welcome to Studio</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Log in to manage your brand content</p>
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="login-email" placeholder="you@yourbrand.com">
+            </div>
+            <div class="input-group" style="margin-bottom: 2rem;">
+                <label>Password</label>
+                <input type="password" id="login-password" placeholder="••••••••••••">
+            </div>
             <button class="btn btn-primary" onclick="signInUser()">Log In</button>
+            <p id="login-error" class="text-red view-section" style="margin-top: 1rem; font-size: 0.8rem;"></p>
         </div>
     </div>
 
     <div id="view-dashboard" class="view-section container">
-        <main class="panel">
-            <h2>Studio Settings</h2>
-            <div id="fb-action-area"><button class="btn" onclick="connectPlatform('facebook')">Connect FB</button></div>
-            <div id="ig-action-area"><button class="btn" onclick="connectPlatform('instagram')">Connect IG</button></div>
-            
-            <h2 style="margin-top:2rem;">Content Pipeline</h2>
-            <input type="file" id="imageInput" accept="image/*">
-            <button class="btn btn-primary" onclick="generateDraft()">1. Analyze Image</button>
-            
-            <div id="selection-area" class="view-section">
-                <textarea id="finalCaption" style="min-height:200px;"></textarea>
-                <div>
-                    <label><input type="checkbox" id="publish-to-fb" checked> Facebook</label>
-                    <label><input type="checkbox" id="publish-to-ig" checked> Instagram</label>
+        <details class="guide-box">
+            <summary>✨ Quick Start Guide</summary>
+            <ul>
+                <li><strong>1. Connect Channels:</strong> Link your Facebook and Instagram profiles below under settings.</li>
+                <li><strong>2. Map Voice Guidelines:</strong> Save your custom instructions inside your prompt box.</li>
+                <li><strong>3. Process Assets:</strong> Load an image file to run Gemini visual analysis routines.</li>
+                <li><strong>4. Polish & Sync:</strong> Select a card to fill the text pane and push directly live.</li>
+            </ul>
+        </details>
+
+        <details class="interactive-accordion" open>
+            <summary>⚙️ Studio Settings</summary>
+            <div>
+                <div class="connection-grid">
+                    <div class="conn-card">
+                        <div>
+                            <div style="font-size:0.9rem; font-weight:600;">Facebook Page</div>
+                            <div id="fb-status" class="badge badge-red">Not Connected</div>
+                        </div>
+                        <div id="fb-action-area">
+                            <button type="button" class="btn btn-fb" onclick="connectPlatform('facebook')">Connect Page</button>
+                        </div>
+                    </div>
+                    <div class="conn-card">
+                        <div>
+                            <div style="font-size:0.9rem; font-weight:600;">Instagram Profile</div>
+                            <div id="ig-status" class="badge badge-red">Not Connected</div>
+                        </div>
+                        <div id="ig-action-area">
+                            <button type="button" class="btn btn-ig" onclick="connectPlatform('instagram')">Connect IG</button>
+                        </div>
+                    </div>
                 </div>
-                <button id="btn-publish" class="btn btn-primary" onclick="publishToSocials()">🚀 Publish</button>
+                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                    <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase;">Custom Brand Instructions</h4>
+                    <textarea id="customPrompt" placeholder="Define your brand voice, formatting guidelines, strict text rules here..."></textarea>
+                    <button class="btn btn-primary" onclick="saveSettings()">Save Instructions Settings</button>
+                    <span id="save-status" class="text-green view-section" style="display:block; margin-top:0.5rem; font-size:0.8rem;">✓ Brand instructions successfully updated.</span>
+                </div>
+            </div>
+        </details>
+
+        <main class="panel" style="margin-top: 1.5rem;">
+            <h2 class="panel-title">Content Pipeline</h2>
+            <div class="file-dropzone" onclick="document.getElementById('imageInput').click()">
+                <span id="file-label" style="color: var(--text-muted);">📁 Click here to select and load an image file</span>
+                <input type="file" id="imageInput" class="view-section" accept="image/*" onchange="updateFileInputLabel()">
+            </div>
+            
+            <button id="btn-generate" class="btn btn-primary" onclick="generateDraft()">1. Analyze Image & Generate Drafts</button>
+            
+            <p id="generation-disclaimer" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 0.6rem; letter-spacing: 0.01em;">
+                ℹ️ Image canvas downscaling and Gemini AI visual analysis typically finish within <strong>15 to 45 seconds</strong>.
+            </p>
+
+            <div id="loading" style="color: var(--warning-amber); text-align:center; padding:1.5rem 0; font-size:0.9rem;" class="view-section">⏳ Running deep image matrix interpretation and generating caption variants... Please wait...</div>
+
+            <div id="selection-area" class="view-section" style="margin-top:2rem;">
+                <h3 style="font-size: 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ SELECT A CAPTION VERSION ]</h3>
+                <div id="draft-cards" class="draft-container"></div>
+                
+                <h3 style="font-size: 1rem; margin-top:2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; color: var(--text-muted);">[ FINAL EDITING & POLISH ]</h3>
+                <textarea id="finalCaption" style="min-height:200px; margin-top:1rem;"></textarea>
+                
+                <div style="display: flex; gap: 1.5rem; margin-bottom: 1.25rem; background: rgba(15, 23, 42, 0.3); padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-main);">
+                        <input type="checkbox" id="publish-to-fb" checked style="accent-color: var(--accent-green); width: 1.1rem; height: 1.1rem; cursor: pointer;">
+                        Facebook
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-main);">
+                        <input type="checkbox" id="publish-to-ig" checked style="accent-color: var(--accent-green); width: 1.1rem; height: 1.1rem; cursor: pointer;">
+                        Instagram
+                    </label>
+                </div>
+
+                <button id="btn-publish" class="btn btn-primary" style="background-color: var(--warning-amber);" onclick="publishToSocials()">🚀 Publish Directly to Social Channels</button>
+                
+                <div class="pipeline-warning">
+                    <span>⚠️</span>
+                    <div>
+                        <strong>Social Media Processing Window:</strong> Media integrations typically take <strong>30 seconds to 3 minutes</strong> while networks process metrics. Do not close this tab or duplicate clicks.
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
-        const supabaseClient = supabase.createClient("https://fntsthjupopvbwvmfsmz.supabase.co", "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS");
+        let supabaseClient;
+        const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
+        const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
         const backendBaseUrl = "https://tavapost-backend.onrender.com";
+
+        function initializeApp() {
+            try {
+                supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+                checkSession();
+            } catch (err) {
+                console.error("Core Engine Init Error: ", err.message);
+                document.getElementById('system-crash-alert').className = "container view-active-block";
+            }
+        }
+
+        function updateFileInputLabel() {
+            const fileInput = document.getElementById('imageInput');
+            const label = document.getElementById('file-label');
+            if(fileInput.files.length > 0) {
+                label.innerText = `✅ File Selected: ${fileInput.files[0].name}`;
+                label.style.color = "var(--accent-green)";
+            }
+        }
 
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) {
-                document.getElementById('view-login').className = "container view-active-flex";
+                document.getElementById('view-login').className = "login-wrapper view-active-flex";
                 document.getElementById('view-dashboard').className = "view-section";
+                document.getElementById('header-logout').className = "view-section";
             } else {
                 document.getElementById('view-login').className = "view-section";
                 document.getElementById('view-dashboard').className = "container view-active-block";
+                document.getElementById('header-logout').className = "btn btn-logout view-active-block";
+                await handleZernioCallback();
+                await loadSettings();
             }
+        }
+
+        async function signInUser() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                const errorLabel = document.getElementById('login-error');
+                errorLabel.innerText = `Login Failed: ${error.message}`;
+                errorLabel.className = "text-red view-active-block";
+            } else {
+                await checkSession();
+            }
+        }
+
+        async function handleZernioCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const accountId = urlParams.get('profileId');
+            const platform = localStorage.getItem('connecting_platform') || urlParams.get('connected');
+
+            if (accountId && platform) {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) return;
+                
+                let updateData = { user_id: session.user.id };
+                if (platform === 'facebook') updateData.zernio_facebook_id = accountId;
+                if (platform === 'instagram') updateData.zernio_instagram_id = accountId;
+
+                await supabaseClient.from('user_settings').upsert(updateData);
+                window.history.replaceState({}, document.title, window.location.pathname);
+                localStorage.removeItem('connecting_platform');
+                await loadSettings();
+            }
+        }
+
+        async function loadSettings() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+
+            const { data } = await supabaseClient
+                .from('user_settings')
+                .select('custom_prompt, zernio_facebook_id, zernio_instagram_id')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+
+            if (data) {
+                if (data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
+                
+                const fbStatus = document.getElementById('fb-status');
+                const fbAction = document.getElementById('fb-action-area');
+                if (data.zernio_facebook_id) {
+                    fbStatus.innerText = "Connected ✅";
+                    fbStatus.className = "badge badge-green";
+                    fbAction.innerHTML = `<button type="button" class="btn btn-disconnect" onclick="disconnectPlatform('facebook')">Disconnect Page</button>`;
+                } else {
+                    fbAction.innerHTML = `<button type="button" class="btn btn-fb" onclick="connectPlatform('facebook')">Connect Page</button>`;
+                }
+                
+                const igStatus = document.getElementById('ig-status');
+                const igAction = document.getElementById('ig-action-area');
+                if (data.zernio_instagram_id) {
+                    igStatus.innerText = "Connected ✅";
+                    igStatus.className = "badge badge-green";
+                    igAction.innerHTML = `<button type="button" class="btn btn-disconnect" onclick="disconnectPlatform('instagram')">Disconnect IG</button>`;
+                } else {
+                    igAction.innerHTML = `<button type="button" class="btn btn-ig" onclick="connectPlatform('instagram')">Connect IG</button>`;
+                }
+            }
+        }
+
+        async function saveSettings() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+            await supabaseClient.from('user_settings').upsert({ user_id: session.user.id, custom_prompt: document.getElementById('customPrompt').value });
+            const status = document.getElementById('save-status');
+            status.className = "text-green view-active-block";
+            setTimeout(() => status.className = "view-section", 3000);
         }
 
         async function connectPlatform(platform) {
@@ -85,11 +346,56 @@
             window.location.href = `${backendBaseUrl}/api/get-connect-url?platform=${platform}&profile_id=6a1350634beb548c15895d64&t=${Date.now()}`;
         }
 
+        async function disconnectPlatform(platform) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!confirm(`Disconnect ${platform}?`)) return;
+            let update = { user_id: session.user.id };
+            if (platform === 'facebook') update.zernio_facebook_id = null;
+            else update.zernio_instagram_id = null;
+            await supabaseClient.from('user_settings').upsert(update);
+            await loadSettings();
+        }
+
+        async function generateDraft() {
+            const fileInput = document.getElementById('imageInput');
+            if (fileInput.files.length === 0) return alert("Select file.");
+            
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            document.getElementById('loading').className = "view-active-block";
+            
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            formData.append("custom_prompt", document.getElementById('customPrompt').value);
+
+            try {
+                const response = await fetch(`${backendBaseUrl}/generate-draft?t=${Date.now()}`, {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${session.access_token}` },
+                    body: formData
+                });
+                const data = await response.json();
+                window.currentPostImageUrl = data.image_url;
+                
+                const container = document.getElementById('draft-cards');
+                container.innerHTML = "";
+                const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(t => t.trim());
+                options.forEach((txt, i) => {
+                    const card = document.createElement('div');
+                    card.className = "draft-card";
+                    card.innerHTML = `<header>Variation ${i+1}</header><p>${txt.trim()}</p>`;
+                    card.onclick = () => { document.getElementById('finalCaption').value = txt.trim(); };
+                    container.appendChild(card);
+                });
+                document.getElementById('loading').className = "view-section";
+                document.getElementById('selection-area').className = "view-active-block";
+            } catch (err) { alert("Error: " + err.message); }
+        }
+
         async function publishToSocials() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
             const caption = document.getElementById('finalCaption').value;
             const targetFB = document.getElementById('publish-to-fb').checked;
             const targetIG = document.getElementById('publish-to-ig').checked;
-            const { data: { session } } = await supabaseClient.auth.getSession();
             
             const { data: settings } = await supabaseClient.from('user_settings').select('*').eq('user_id', session.user.id).single();
 
@@ -105,28 +411,16 @@
                         caption: caption,
                         fb_account_id: targetFB ? settings.zernio_facebook_id : null,
                         ig_account_id: targetIG ? settings.zernio_instagram_id : null,
-                        profile_id: "6a1350634beb548c15895d64"
+                        profile_id: session.user.id
                     })
                 });
                 const data = await response.json();
-                if (data.status === "success") {
-                    alert("🚀 Published!");
-                } else {
-                    alert("Delivery Error: " + (typeof data.detail === 'object' ? JSON.stringify(data.detail) : data.detail));
-                }
-            } catch (err) { alert("Error communicating with server."); }
-        }
-
-        async function signInUser() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            await supabaseClient.auth.signInWithPassword({ email, password });
-            location.reload();
+                alert(data.status === "success" ? "🚀 Published!" : "Error: " + data.detail);
+            } catch (err) { alert("Delivery Error."); }
         }
 
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
-
-        window.onload = checkSession;
+        window.onload = initializeApp;
     </script>
 </body>
 </html>
