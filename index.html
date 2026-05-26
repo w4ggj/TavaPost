@@ -519,8 +519,12 @@ async function publishToSocials() {
         
         const { data: uploadData, error: uploadError } = await supabaseClient
             .storage
-            .from('tavapost-images') // Updated to your bucket name
-            .upload(fileName, file);
+            .from('tavapost-images')
+            .upload(fileName, file, {
+                contentType: file.type || `image/${fileExt}`, // FORCE the image header
+                cacheControl: '3600',
+                upsert: false
+            });
 
         if (uploadError) throw new Error("Image upload failed: " + uploadError.message);
 
