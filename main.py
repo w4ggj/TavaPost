@@ -319,7 +319,7 @@ async def create_checkout_session(request: CheckoutRequest):
                 'quantity': 1,
             }],
             mode='subscription',
-            success_url='https://studio.tavaone.com/?status=success',
+           success_url='https://studio.tavaone.com/setup-account.html?email={CHECKOUT_SESSION_EMAIL}'
             cancel_url='https://studio.tavaone.com/',
         )
         return {"url": checkout_session.url}
