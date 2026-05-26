@@ -3,33 +3,21 @@ import os
 import httpx
 import base64
 import stripe
+import uuid
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-import os
 from supabase import create_client, Client
-from pydantic import BaseModel
-from fastapi import Header, HTTPException
-from fastapi import FastAPI, Request, HTTPException # Ensure Request is imported
+from fastapi import Header, Request
 
-# Your existing setup probably looks like this:
+# Setup
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
-
-class CheckoutRequest(BaseModel):
-    price_id: str
-
-# ADD THIS NEW ADMIN SETUP:
-# This uses the master key to bypass normal security rules for admin tasks
 service_key: str = os.environ.get("SUPABASE_SERVICE_KEY")
 supabase_admin: Client = create_client(url, service_key)
-
-# A simple Pydantic model to accept the user ID from the frontend
-class AdminRequest(BaseModel):
-    target_user_id: str
 
 app = FastAPI(title="TavaOne Backend")
 
@@ -41,12 +29,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class AdminRequest(BaseModel):
+    target_user_id: str
+
+class CheckoutRequest(BaseModel):
+    price_id: str
+
 class PlatformTarget(BaseModel):
     platform: str
     accountId: str
 
 class PostRequest(BaseModel):
-    image_url: str"
+    image_url: str
     caption: str
     platforms: List[PlatformTarget]
     profile_id: Optional[str] = None
@@ -92,55 +86,60 @@ async def generate_draft(
 ):
     # 1. Verify User and Check Limits
     try:
-        # Use .execute() and access .data directly
-        response = supabase.table('user_profiles') \
-            .select('subscription_tier, monthly_draft_count') \
-            .eq('id', user_id.strip()) \
-            .execute()
-        
-        # Check if response.data is empty
+        response = supabase.table('user_profiles').select('subscription_tier, monthly_draft_count').eq('id', user_id.strip()).execute()
         if not response.data:
-            # OPTION: Auto-initialize if missing
             profile = {'subscription_tier': 'starter', 'monthly_draft_count': 0}
-            print(f"DEBUG: Created default profile for {user_id}")
         else:
             profile = response.data[0]
             
         tier = profile.get('subscription_tier', 'starter')
         usage_count = profile.get('monthly_draft_count', 0)
         
-        if tier == 'complimentary':
-            pass 
-        elif tier == 'starter' and usage_count >= 25:
+        if tier == 'starter' and usage_count >= 25:
             raise HTTPException(status_code=403, detail="Monthly limit reached.")
-            
-    except HTTPException as he:
-        raise he
     except Exception as e:
-        print(f"DEBUG: Database error: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Database verification failed: {str(e)}")
 
-    # 2. Proceed with Gemini AI Generation
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    if not gemini_key:
-        raise HTTPException(status_code=500, detail="Missing GEMINI_API_KEY.")
-
+    # 2. Upload to Supabase Storage
     try:
         file_content = await file.read()
+        file_ext = file.filename.split('.')[-1]
+        file_name = f"{uuid.uuid4()}.{file_ext}"
+        # Uploading to 'posts' bucket
+        supabase.storage.from_("posts").upload(file_name, file_content)
+        # Generate the Public URL
+        public_url = supabase.storage.from_("posts").get_public_url(file_name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
+
+    # 3. Gemini AI Generation
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    try:
         base64_image = base64.b64encode(file_content).decode("utf-8")
         google_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
         headers = {"Content-Type": "application/json"}
-        
-        system_rules = "CRITICAL: Output ONLY the requested caption options. Do not include introductory conversational filler."
+        system_rules = "CRITICAL: Output ONLY caption options. No filler."
         if custom_prompt and custom_prompt.strip():
             system_rules += f"\nStrict Voice Guidelines:\n{custom_prompt.strip()}"
 
         body = {
             "contents": [{"parts": [
-                {"text": f"{system_rules}\n\nTask: Provide 3 distinct social media caption variations. Separate using 'Variation 1.', 'Variation 2.', and 'Variation 3.'"},
+                {"text": f"{system_rules}\n\nTask: Provide 3 distinct social media caption variations."},
                 {"inlineData": {"mimeType": file.content_type, "data": base64_image}}
             ]}]
         }
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(google_url, json=body, headers=headers)
+            data = response.json()
+            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+            
+        # 4. Success: Update usage
+        supabase.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
+        
+        return {"image_url": public_url, "draft_text": raw_text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(google_url, json=body, headers=headers)
