@@ -110,19 +110,26 @@ async function generateDraft() {
     const fileInput = document.getElementById('imageInput');
     const loadingLabel = document.getElementById('loading');
     const btnGen = document.getElementById('btn-generate');
-    const customPromptValue = document.getElementById('customPrompt').value || ""; // Get the value
-
-    if (!fileInput.files || fileInput.files.length === 0) return alert("Select an image.");
     
+    // SAFE ELEMENT CHECK
+    const customPromptElement = document.getElementById('customPrompt');
+    const customPromptValue = customPromptElement ? customPromptElement.value : "";
+
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        return alert("Please select an image file first.");
+    }
+
     const { data: { session } } = await supabaseClient.auth.getSession();
-    loadingLabel.className = "view-active-block";
-    btnGen.disabled = true;
+    if (!session) return alert("Session expired. Please log in again.");
+
+    if (loadingLabel) loadingLabel.className = "view-active-block";
+    if (btnGen) btnGen.disabled = true;
 
     try {
         let formData = new FormData();
         formData.append("file", fileInput.files[0]);
         formData.append("user_id", session.user.id);
-        formData.append("custom_prompt", customPromptValue); // ADD THIS LINE
+        formData.append("custom_prompt", customPromptValue);
 
         const response = await fetch(`${backendBaseUrl}/generate-draft`, {
             method: "POST",
@@ -130,14 +137,19 @@ async function generateDraft() {
             body: formData
         });
 
-        // Use response.text() to see the actual error if it fails
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("Backend Error:", errorText);
-            throw new Error("Backend rejected request: " + errorText);
+            throw new Error(errorText);
         }
-        
+
         const data = await response.json();
         // ... (display logic remains the same)
-    finally { loadingLabel.className = "view-section"; btnGen.disabled = false; }
+        
+    } catch (err) {
+        console.error("Draft error:", err);
+        alert("Generation failed: " + err.message);
+    } finally {
+        if (loadingLabel) loadingLabel.className = "view-section";
+        if (btnGen) btnGen.disabled = false;
+    }
 }
