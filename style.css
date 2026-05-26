@@ -36,7 +36,7 @@ header {
 
 .brand-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.05em; text-transform: uppercase; }
 .brand-title span { color: var(--accent-green); }
-.container { max-width: 1024px; margin: 2rem auto; padding: 0 1.5rem; }
+.container { max-width: 1024px !important; margin: 2rem auto; padding: 0 1.5rem; }
 .view-section { display: none !important; }
 .view-active-flex { display: flex !important; }
 .view-active-block { display: block !important; }
@@ -104,7 +104,7 @@ input:focus { outline: none; border-color: var(--accent-green); }
 .login-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2.5rem 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); position: sticky; top: 100px; }
 
 /* --- Landing Page & Grid Layout --- */
-.landing-wrapper { width: 100%; max-width: 1024px; margin: 0 auto; padding: 4rem 2rem; }
+.landing-wrapper { width: 100%; max-width: 1024px !important; margin: 0 auto; padding: 4rem 2rem; }
 .landing-grid { display: grid; grid-template-columns: 1fr 400px; gap: 5rem; align-items: start; }
 
 .left-column { display: flex; flex-direction: column; gap: 4rem; }
