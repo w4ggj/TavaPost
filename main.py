@@ -11,6 +11,7 @@ import os
 from supabase import create_client, Client
 from pydantic import BaseModel
 from fastapi import Header, HTTPException
+from fastapi import FastAPI, Request, HTTPException # Ensure Request is imported
 
 # Your existing setup probably looks like this:
 url: str = os.environ.get("SUPABASE_URL")
@@ -334,28 +335,28 @@ async def create_checkout_session(request: CheckoutRequest):
 
 @app.post("/webhook")
 async def stripe_webhook(request: Request):
+    # Get the raw body bytes
     payload = await request.body()
+    # Get the signature header
     sig_header = request.headers.get('stripe-signature')
+    endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
     
     try:
+        # Verify the message
         event = stripe.Webhook.construct_event(
-            payload, sig_header, os.environ.get("STRIPE_WEBHOOK_SECRET")
+            payload, sig_header, endpoint_secret
         )
     except Exception as e:
         print(f"Auth failed: {e}")
-        raise HTTPException(status_code=400)
+        raise HTTPException(status_code=400, detail="Invalid signature")
 
-    # Debug: Print every event type we receive to the logs
-    print(f"Received event type: {event['type']}")
-
+    # If we get here, the signature is valid!
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        # Check if the client_reference_id is actually there
         user_id = session.get('client_reference_id')
-        print(f"Processing checkout.session.completed for user: {user_id}")
         
         if user_id:
             supabase_admin.table('user_profiles').update({'subscription_tier': 'pro'}).eq('id', user_id).execute()
-            print("Database updated to pro")
-            
+            print(f"Successfully upgraded user: {user_id}")
+    
     return {"status": "success"}
