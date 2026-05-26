@@ -86,20 +86,28 @@
                 }
                 
                 // Build the table rows dynamically based on the database response
-                tableBody.innerHTML = result.data.map(user => `
+                tableBody.innerHTML = result.data.map(user => {
+                    // Decide what colors to make the badges based on their tier
+                    const tierBadgeClass = user.tier.toLowerCase() === 'pro' ? 'badge active' : 'badge';
+                    
+                    return `
                     <tr>
                         <td>
                             <div style="font-weight: 600;">${user.email}</div>
                             <div style="font-size: 0.75rem; color: var(--text-muted);">ID: ${user.id.substring(0, 8)}...</div>
                         </td>
-                        <td><span class="badge active">Registered</span></td>
+                        <td>
+                            <span class="${tierBadgeClass}" style="text-transform: capitalize;">${user.tier}</span>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Usage: ${user.usage} Drafts</div>
+                        </td>
                         <td><span class="badge">Check DB</span></td>
                         <td>
                             <button class="btn-small" onclick="disconnectSocial('${user.id}')">Disconnect Meta</button>
                             <button class="btn-small btn-danger" onclick="deleteUser('${user.id}')" style="margin-left: 0.5rem;">Wipe Data</button>
                         </td>
                     </tr>
-                `).join('');
+                    `;
+                }).join('');
                 
             } catch (error) {
                 console.error(error);
