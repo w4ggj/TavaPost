@@ -430,7 +430,7 @@ async function startUpgrade(event) {
     } catch (err) {
         console.error("Checkout error:", err);
         alert("Could not start checkout: " + err.message);
-        event.target.innerText = "(Upgrade to Pro)"; // Reset the button if it fails
+        event.target.innerText = "(Upgrade to Founders)";
     }
 }
 
