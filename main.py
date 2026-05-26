@@ -315,7 +315,7 @@ async def create_checkout_session(request: CheckoutRequest):
             line_items=[
                 {
                     # REPLACE THIS with your actual Price ID from Stripe
-                    'price': 'price_1TbMkUBBcpXhNPIOADyzL1Xj', 
+                    'price': 'price_1TbMC2B4jnTQeHqCSznEjs01', 
                     'quantity': 1,
                 },
             ],
