@@ -61,48 +61,40 @@
     
     <script>
         // We will build out this logic to talk to your Python backend next
-        async function loadUsers() {
-            // Placeholder for backend fetch
-            document.getElementById('admin-user-list').innerHTML = `
-                <tr>
-                    <td>
-                        <div style="font-weight: 600;">testuser@example.com</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">ID: a1b2c3d4...</div>
-                    </td>
-                    <td><span class="badge active">Starter</span></td>
-                    <td><span class="badge">Connected</span></td>
-                    <td>
-                        <button class="btn-small" onclick="disconnectSocial('a1b2c3d4')">Disconnect Meta</button>
-                        <button class="btn-small btn-danger" onclick="deleteUser('a1b2c3d4')" style="margin-left: 0.5rem;">Wipe Data</button>
-                    </td>
-                </tr>
-            `;
-        }
+        const BACKEND_URL = "https://tavapost-backend.onrender.com"; // Your Render URL
+        const ADMIN_SECRET = "super-secret-tava-key-123"; // Must match what is in main.py
 
         async function disconnectSocial(userId) {
             if(confirm("Are you sure you want to revoke this user's Meta tokens?")) {
-                alert("This will ping your Python backend to erase their tokens.");
+                const response = await fetch(`${BACKEND_URL}/admin/disconnect`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-secret': ADMIN_SECRET
+                    },
+                    body: JSON.stringify({ target_user_id: userId })
+                });
+                const data = await response.json();
+                alert(data.message || "Action completed.");
+                loadUsers(); // Refresh the table
             }
         }
 
         async function deleteUser(userId) {
             if(confirm("WARNING: This will permanently delete the user's account and all associated data. Proceed?")) {
-                alert("This will ping your Python backend to delete the user from Supabase Auth.");
+                const response = await fetch(`${BACKEND_URL}/admin/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-secret': ADMIN_SECRET
+                    },
+                    body: JSON.stringify({ target_user_id: userId })
+                });
+                const data = await response.json();
+                alert(data.message || "User deleted.");
+                loadUsers(); // Refresh the table
             }
         }
-
-        // Wait for components and Supabase to initialize, then verify admin status
-        document.addEventListener("componentsLoaded", async () => {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            
-            // Basic security: Kick them out if they aren't your specific email
-            if (!session || session.user.email !== 'jleone0@gmail.com') { // CHANGE THIS TO YOUR ACTUAL ADMIN EMAIL
-                document.body.innerHTML = "<h2 style='color:white; text-align:center; margin-top:5rem;'>Access Denied</h2>";
-                return;
-            }
-            
-            loadUsers();
-        });
     </script>
 </body>
 </html>
