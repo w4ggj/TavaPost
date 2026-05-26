@@ -84,7 +84,7 @@ async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form
             ]}]
         }
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         try: # <--- Correct: This is indented inside the 'with' block
             response = await client.delete(zernio_disconnect_url, headers=headers)
             # The rest of your logic must also be indented here
