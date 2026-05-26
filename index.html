@@ -406,49 +406,39 @@
     const targetFB = document.getElementById('publish-to-fb').checked;
     const targetIG = document.getElementById('publish-to-ig').checked;
     
-    // Fetch the most recent settings
-    const { data: settings } = await supabaseClient.from('user_settings').select('*').eq('user_id', session.user.id).single();
+    // 1. Fetch settings and check for IDs
+    const { data: settings, error } = await supabaseClient
+        .from('user_settings')
+        .select('zernio_facebook_id, zernio_instagram_id')
+        .eq('user_id', session.user.id)
+        .single();
 
-    // Prepare the list of platforms to post to
+    if (error || !settings) return alert("Error fetching settings.");
+
+    // 2. Validate IDs based on selections
     const platforms = [];
-    
-    if (targetFB && settings.zernio_facebook_id) {
+    if (targetFB) {
+        if (!settings.zernio_facebook_id) return alert("Facebook is checked but no Account ID found!");
         platforms.push({ platform: "facebook", accountId: settings.zernio_facebook_id });
     }
-    
-    if (targetIG && settings.zernio_instagram_id) {
+    if (targetIG) {
+        if (!settings.zernio_instagram_id) return alert("Instagram is checked but no Account ID found!");
         platforms.push({ platform: "instagram", accountId: settings.zernio_instagram_id });
     }
 
-    if (platforms.length === 0) {
-        return alert("Please select at least one connected platform to publish.");
-    }
+    if (platforms.length === 0) return alert("Select at least one platform.");
 
-    try {
-        const response = await fetch(`${backendBaseUrl}/publish-post?t=${Date.now()}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${session.access_token}`
-            },
-            body: JSON.stringify({
-                image_url: window.currentPostImageUrl || "",
-                caption: caption,
-                platforms: platforms, // Send the array of platform objects
-                profile_id: session.user.id
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.status === "success") {
-            alert("🚀 Published!");
-        } else {
-            alert("Delivery Mismatch: " + (typeof data.detail === 'object' ? JSON.stringify(data.detail) : data.detail));
-        }
-    } catch (err) { 
-        alert("Delivery Error: Communication failure."); 
-    }
+    // 3. Proceed with request
+    const response = await fetch(`${backendBaseUrl}/publish-post`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+            image_url: window.currentPostImageUrl || "",
+            caption: caption,
+            platforms: platforms
+        })
+    });
+    // ... handle response
 }
 
         async function signOutUser() { await supabaseClient.auth.signOut(); location.reload(); }
