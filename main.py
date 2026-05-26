@@ -1,4 +1,4 @@
-# TavaPost Studio Backend API Node // Ver 2.1.1
+# TavaPost Studio Backend API Node // Ver 2.1.2
 import os
 import httpx
 import base64
@@ -17,7 +17,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# UPDATED: Model to accept an array of platform objects
 class PlatformTarget(BaseModel):
     platform: str
     accountId: str
@@ -25,7 +24,7 @@ class PlatformTarget(BaseModel):
 class PostRequest(BaseModel):
     image_url: Optional[str] = ""
     caption: str
-    platforms: List[PlatformTarget] # Expecting the list from frontend
+    platforms: List[PlatformTarget]
     profile_id: Optional[str] = None
 
 @app.get("/")
@@ -92,7 +91,6 @@ async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form
             data = response.json()
             raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
             return {"image_url": "https://studio.tavaone.com/placeholder.jpg", "draft_text": raw_text}
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -102,7 +100,6 @@ async def publish_post(payload: PostRequest):
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
-    # UPDATED: Use payload.platforms directly
     if not payload.platforms:
         raise HTTPException(status_code=400, detail="No platforms selected.")
 
@@ -128,34 +125,28 @@ async def publish_post(payload: PostRequest):
 
 @app.post("/disconnect-platform")
 async def disconnect_platform(payload: dict):
-    # ... (header/key setup) ...
+    zernio_key = os.environ.get("ZERNIO_API_KEY")
+    if not zernio_key:
+        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
+
+    clean_key = zernio_key.strip().replace("'", "").replace('"', "")
+    account_id = payload.get("account_id")
     
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        try:
-            response = await client.delete(zernio_disconnect_url, headers=headers)
-            
-            # Treat 200/204 (Success) AND 404 (Already gone) as success
-            if response.status_code in [200, 204, 404]:
-                return {"status": "success"}
-            else:
-                print(f"!!! ZERNIO DELETE FAILED: {response.text} !!!")
-                raise HTTPException(status_code=response.status_code, detail=response.text)
-                
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    if not account_id:
+        raise HTTPException(status_code=400, detail="Missing account_id")
+
+    zernio_disconnect_url = f"https://zernio.com/api/v1/accounts/{account_id}"
+    headers = {
+        "Authorization": f"Bearer {clean_key}",
+        "Content-Type": "application/json"
+    }
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             response = await client.delete(zernio_disconnect_url, headers=headers)
-            
-            # Zernio typically returns 200 or 204 on successful deletion
-            if response.status_code in [200, 204]:
+            if response.status_code in [200, 204, 404]:
                 return {"status": "success"}
             else:
-                # Log the error detail from Zernio if it fails
-                print(f"!!! ZERNIO DELETE FAILED: {response.text} !!!")
                 raise HTTPException(status_code=response.status_code, detail=response.text)
-                
         except Exception as e:
-            print(f"!!! DISCONNECT ERROR: {str(e)} !!!")
             raise HTTPException(status_code=500, detail=str(e))
