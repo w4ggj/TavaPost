@@ -93,15 +93,6 @@ async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form
             return {"image_url": "https://studio.tavaone.com/placeholder.jpg", "draft_text": raw_text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        try:
-            response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
-            if response.status_code in [200, 201]:
-                return {"status": "success", "data": response.json()}
-            return {"status": "error", "detail": response.text}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/disconnect-platform")
 async def disconnect_platform(payload: dict):
@@ -148,7 +139,7 @@ async def publish_post(payload: PostRequest):
     body = {
         "profileId": "6a1350634beb548c15895d64",
         "content": payload.caption,
-        "publishNow": True,  # Keep this, but also add status below
+        "publishNow": True,
         "status": "published", 
         "platforms": [p.dict() for p in payload.platforms]
     }
@@ -156,15 +147,8 @@ async def publish_post(payload: PostRequest):
     # Inject the image URL if it exists
     if payload.image_url:
         body["mediaUrls"] = [payload.image_url]
-    
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        try:
-            response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
-            if response.status_code in [200, 201]:
-                return {"status": "success", "data": response.json()}
-            return {"status": "error", "detail": response.text}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        
+    print("DEBUG - SENDING TO ZERNIO:", body)
     
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
