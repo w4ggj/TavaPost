@@ -88,27 +88,36 @@ async def get_connect_url(platform: str, profile_id: str = None):
 async def generate_draft(
     file: UploadFile = File(...), 
     custom_prompt: str = Form(None),
-    user_id: str = Form(...) # NEW: We need to know who is requesting this
+    user_id: str = Form(...) 
 ):
     # 1. Verify User and Check Limits
     try:
-        user_response = supabase.table('user_profiles').select('subscription_tier, monthly_draft_count').eq('id', user_id).single().execute()
-        profile = user_response.data
+        # Use .execute() and access .data directly
+        response = supabase.table('user_profiles') \
+            .select('subscription_tier, monthly_draft_count') \
+            .eq('id', user_id.strip()) \
+            .execute()
         
-        # Existing logic
+        # Check if response.data is empty
+        if not response.data:
+            # OPTION: Auto-initialize if missing
+            profile = {'subscription_tier': 'starter', 'monthly_draft_count': 0}
+            print(f"DEBUG: Created default profile for {user_id}")
+        else:
+            profile = response.data[0]
+            
         tier = profile.get('subscription_tier', 'starter')
         usage_count = profile.get('monthly_draft_count', 0)
         
-        # New "Hidden Tier" logic
         if tier == 'complimentary':
-            # They bypass all limits
             pass 
         elif tier == 'starter' and usage_count >= 25:
-            raise HTTPException(status_code=403, detail="Monthly limit reached. Please upgrade to Founders.")
+            raise HTTPException(status_code=403, detail="Monthly limit reached.")
             
-    except HTTPException:
-        raise
+    except HTTPException as he:
+        raise he
     except Exception as e:
+        print(f"DEBUG: Database error: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Database verification failed: {str(e)}")
 
     # 2. Proceed with Gemini AI Generation
