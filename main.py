@@ -79,7 +79,29 @@ async def get_connect_url(platform: str, profile_id: str = None):
             raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-draft")
-async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form(None)):
+async def generate_draft(
+    file: UploadFile = File(...), 
+    custom_prompt: str = Form(None),
+    user_id: str = Form(...) # NEW: We need to know who is requesting this
+):
+    # 1. Verify User and Check Limits
+    try:
+        user_response = supabase.table('user_profiles').select('subscription_tier, monthly_draft_count').eq('id', user_id).single().execute()
+        profile = user_response.data
+        
+        tier = profile.get('subscription_tier', 'starter')
+        usage_count = profile.get('monthly_draft_count', 0)
+        
+        # Enforce the 50-post limit for the Starter tier
+        if tier == 'starter' and usage_count >= 50:
+            raise HTTPException(status_code=403, detail="Monthly limit reached. Please upgrade to Pro.")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Database verification failed: {str(e)}")
+
+    # 2. Proceed with Gemini AI Generation
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if not gemini_key:
         raise HTTPException(status_code=500, detail="Missing GEMINI_API_KEY.")
@@ -108,7 +130,17 @@ async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form
             
             data = response.json()
             raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+            
+            # 3. Increment the User's Usage Counter on Success
+            try:
+                supabase.table('user_profiles').update({
+                    'monthly_draft_count': usage_count + 1
+                }).eq('id', user_id).execute()
+            except Exception as e:
+                print(f"Non-fatal error updating count for {user_id}: {str(e)}")
+                
             return {"image_url": "https://studio.tavaone.com/placeholder.jpg", "draft_text": raw_text}
+            
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
