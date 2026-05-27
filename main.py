@@ -97,33 +97,33 @@ async def generate_draft(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Database check failed: {str(e)}")
 
-    # 2. UPLOAD TO SUPABASE BUCKET
+# 2. UPLOAD TO SUPABASE BUCKET
     try:
         file_content = await file.read()
-        
-        # Use a BytesIO object for the initial open
         img = Image.open(io.BytesIO(file_content))
         
-        # Ensure RGB
+        # 1. Force convert to RGB (strips transparency/CMYK/weird profiles)
         if img.mode != "RGB":
             img = img.convert("RGB")
         
-        # Save ONCE to a fresh buffer
+        # 2. Save ONCE to a fresh buffer
         output_buffer = io.BytesIO()
         img.save(output_buffer, format="JPEG", quality=90, optimize=True)
-        jpeg_content = output_buffer.getvalue()
+        jpeg_data = output_buffer.getvalue()
         
         file_name = f"{uuid.uuid4()}.jpg"
         
-        # Upload
+        # 3. Upload the bytes directly
         supabase_admin.storage.from_("tavapost-images").upload(
             file_name, 
-            jpeg_content, 
+            jpeg_data, 
             {"content_type": "image/jpeg"}
         )
         
         public_url = supabase_admin.storage.from_("tavapost-images").get_public_url(file_name)
     except Exception as e:
+        # Crucial: print the error so you can see it in Render logs
+        print(f"DEBUG: Storage upload failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
 
     # 3. GEMINI AI GENERATION
