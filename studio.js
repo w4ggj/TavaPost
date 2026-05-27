@@ -148,30 +148,22 @@ async function saveSettings() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return alert("Session expired.");
 
-    // 1. Get the values from your UI
-    const customPromptValue = document.getElementById("custom-prompt-input")?.value;
+    // Corrected to match your index.html ID: "customPrompt"
+    const inputElement = document.getElementById("customPrompt");
+    const customPromptValue = inputElement ? inputElement.value : "";
     
-    // 2. Prepare the data to save
     console.log("Attempting to save:", customPromptValue);
-    
-    try {
-        // 3. Send to Supabase with proper error checking
-        const { data, error } = await supabaseClient
-            .from('user_settings') // Ensure this table name is correct
-            .update({ custom_prompt: customPromptValue })
-            .eq('user_id', session.user.id);
 
-        // 4. CRITICAL: Check for database-level errors
-        if (error) {
-            console.error("Supabase error details:", error);
-            alert("Database error: " + error.message);
-            return;
-        }
-        
-        alert("Settings saved successfully and verified!");
-    } catch (err) {
-        console.error("Catch block error:", err);
-        alert("System error: " + err.message);
+    const { error } = await supabaseClient
+        .from('user_settings')
+        .update({ custom_prompt: customPromptValue })
+        .eq('user_id', session.user.id);
+
+    if (error) {
+        console.error("Supabase error:", error);
+        alert("Database error: " + error.message);
+    } else {
+        alert("Settings saved successfully!");
     }
 }
 
