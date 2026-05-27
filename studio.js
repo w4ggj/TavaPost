@@ -210,15 +210,15 @@ async function generateDraft() {
             console.log("URL Cached for publishing:", window.cachedImageUrl);
         }
 
-        // --- IMPROVED SPLITTING LOGIC ---
+// --- PRECISE SPLITTING LOGIC ---
 const container = document.getElementById('draft-cards');
 if (container) {
     container.innerHTML = ""; 
     
-    // Split by double newlines or standard labels to catch variations
-    // This looks for "Option", "Variation", or just newlines
-    const options = data.draft_text.split(/\n\s*\n|(?=Option|Variation|\d+\.)/i)
-                                   .filter(t => t.trim().length > 10); // Ignore tiny fragments
+    // Split specifically on the text "DRAFT VARIATION" followed by a number
+    // This ignores all internal paragraph breaks within a variation
+    const options = data.draft_text.split(/DRAFT\s+VARIATION\s+\d+/i)
+                                   .filter(t => t.trim().length > 50); // Keep only substantial content
     
     options.forEach((txt, i) => {
         const card = document.createElement('div');
@@ -229,7 +229,7 @@ if (container) {
             <header style="font-weight:bold; margin-bottom:10px; color: #38bdf8; text-transform: uppercase; font-size: 0.8rem;">
                 Draft Variation ${i + 1}
             </header>
-            <p style="margin: 0; line-height: 1.6; font-size: 0.95rem;">${txt.trim()}</p>
+            <p style="margin: 0; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap;">${txt.trim()}</p>
         `;
         
         card.onclick = () => { 
