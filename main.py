@@ -95,16 +95,16 @@ async def generate_draft(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Database check failed: {str(e)}")
 
-    # 2. UPLOAD TO SUPABASE BUCKET: tavapost-images
+    # 2. UPLOAD TO SUPABASE BUCKET: tavapost-images (Using ADMIN client to bypass RLS)
     try:
         file_content = await file.read()
         file_name = f"{uuid.uuid4()}-{file.filename}"
         
-        # Upload the file to 'tavapost-images'
-        supabase.storage.from_("tavapost-images").upload(file_name, file_content)
+        # Use supabase_admin to bypass RLS policies
+        supabase_admin.storage.from_("tavapost-images").upload(file_name, file_content)
         
         # Get the public URL
-        public_url = supabase.storage.from_("tavapost-images").get_public_url(file_name)
+        public_url = supabase_admin.storage.from_("tavapost-images").get_public_url(file_name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
 
@@ -134,15 +134,14 @@ async def generate_draft(
             data = response.json()
             raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
             
-        # 4. Increment usage
-        supabase.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
+        # 4. Increment usage (Using supabase_admin here is safer as well)
+        supabase_admin.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
         
         # RETURN THE REAL URL
         return {"image_url": public_url, "draft_text": raw_text}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
-
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
     media_items = [{"type": "image", "url": payload.image_url}]
