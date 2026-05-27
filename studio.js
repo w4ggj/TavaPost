@@ -399,3 +399,30 @@ async function upgradeToPlan(priceId) {
         alert("Checkout error: " + err.message);
     }
 }
+
+async function finalizeAccount() {
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+
+    const { data: pending } = await supabaseClient
+        .from('pending_registrations')
+        .select('*')
+        .eq('email', email)
+        .eq('status', 'paid')
+        .maybeSingle();
+
+    if (!pending) {
+        return alert("No payment record found for this email. Did you complete the subscription?");
+    }
+
+    const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
+    if (authError) return document.getElementById('signup-error').innerText = authError.message;
+
+    await supabaseClient.from('user_profiles').upsert({ 
+        id: authData.user.id, 
+        subscription_tier: 'founders' 
+    });
+
+    alert("Registration complete! Welcome to Founders.");
+    window.location.href = "index.html";
+}
