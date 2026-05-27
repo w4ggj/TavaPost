@@ -153,6 +153,7 @@ async def generate_draft(
         
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
+    print(f"DEBUG: Type of time is: {type(time)}")
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
