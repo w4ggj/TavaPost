@@ -86,6 +86,9 @@ async def generate_draft(
     custom_prompt: str = Form(None),
     user_id: str = Form(...) 
 ):
+    # Initialize jpeg_content as None so it is defined for the whole function scope
+    jpeg_content = None 
+
     # 1. Verify User and Check Limits
     try:
         response = supabase.table('user_profiles').select('subscription_tier, monthly_draft_count').eq('id', user_id.strip()).execute()
@@ -97,38 +100,29 @@ async def generate_draft(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Database check failed: {str(e)}")
 
-# 2. UPLOAD TO SUPABASE BUCKET
+    # 2. UPLOAD TO SUPABASE BUCKET
     try:
         file_content = await file.read()
         img = Image.open(io.BytesIO(file_content))
-        
-        # 1. Force convert to RGB (strips transparency/CMYK/weird profiles)
         if img.mode != "RGB":
             img = img.convert("RGB")
         
-        # 2. Save ONCE to a fresh buffer
-        output_buffer = io.BytesIO()
-        img.save(output_buffer, format="JPEG", quality=90, optimize=True)
-        jpeg_data = output_buffer.getvalue()
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=90, optimize=True)
+        jpeg_content = buffer.getvalue() # Now this is accessible to the rest of the function
         
         file_name = f"{uuid.uuid4()}.jpg"
-        
-        # 3. Upload the bytes directly
-        supabase_admin.storage.from_("tavapost-images").upload(
-            file_name, 
-            jpeg_data, 
-            {"content_type": "image/jpeg"}
-        )
-        
+        supabase_admin.storage.from_("tavapost-images").upload(file_name, jpeg_content, {"content_type": "image/jpeg"})
         public_url = supabase_admin.storage.from_("tavapost-images").get_public_url(file_name)
     except Exception as e:
-        # Crucial: print the error so you can see it in Render logs
-        print(f"DEBUG: Storage upload failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
 
     # 3. GEMINI AI GENERATION
     gemini_key = os.environ.get("GEMINI_API_KEY")
     try:
+        if jpeg_content is None:
+            raise Exception("Image processing failed.")
+            
         base64_image = base64.b64encode(jpeg_content).decode("utf-8")
         
         # All of this must be indented inside the try block
