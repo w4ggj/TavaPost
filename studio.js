@@ -335,11 +335,13 @@ async function publishToSocials() {
                 "Content-Type": "application/json", 
                 "Authorization": `Bearer ${session.access_token}` 
             },
-            body: JSON.stringify({ 
-                caption: caption, 
-                platforms: platforms, 
-                image_url: imageUrl 
-            })
+            body: JSON.stringify({
+    image_url: (window.currentPostImageUrl && !window.currentPostImageUrl.includes('placeholder')) 
+        ? window.currentPostImageUrl 
+        : "",
+    caption: caption,
+    platforms: platforms
+})
         });
 
         const result = await response.json();
