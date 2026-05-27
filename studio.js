@@ -163,26 +163,25 @@ async function loadUsageStats() {
 
         const counter = document.getElementById('usage-counter');
         const tier = profile.subscription_tier;
+        const count = profile.monthly_draft_count;
 
-        // --- ADMIN/PRIVILEGED GATES ---
-        // Treat 'admin' and 'complimentary' as privileged tiers
-        const isPrivileged = (tier === 'admin' || tier === 'complimentary');
-
-        if (isPrivileged) {
-            // Reveal elements tagged with 'admin-only'
+        // Admin panel logic (revealed for admin or complimentary)
+        if (tier === 'admin' || tier === 'complimentary') {
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
         }
 
-        // --- COUNTER DISPLAY LOGIC ---
         if (!counter) return;
 
-        if (tier === 'founders') {
-            counter.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Founder Unlimited</span>`;
-        } else if (isPrivileged) {
-            counter.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Complimentary Unlimited</span>`;
+        // --- UPDATED TIER LIMIT LOGIC ---
+        if (tier === 'admin') {
+            counter.innerHTML = `<span style="color: var(--accent-purple); font-weight: bold;">Admin: Unlimited</span>`;
+        } else if (tier === 'complimentary') {
+            counter.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Complimentary: ${count} / 75 Drafts</span>`;
+        } else if (tier === 'founders') {
+            counter.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Founder: ${count} / 50 Drafts</span>`;
         } else {
-            // Logic for standard users (Starter tier)
-            counter.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 25 Drafts</span>`;
+            // Starter Tier
+            counter.innerHTML = `<span style="color: ${count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${count} / 25 Drafts</span>`;
         }
     } catch (err) {
         console.error("loadUsageStats error:", err);
