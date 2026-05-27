@@ -157,13 +157,12 @@ async def publish_post(payload: PostRequest):
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
-    # Define headers at the function level so they are always available
     headers = {
         "Authorization": f"Bearer {zernio_key.strip()}",
         "Content-Type": "application/json"
     }
 
-    # Construct the body with the cache-busting parameter
+    # 1. Start with the base body
     body = {
         "profileId": "6a1350634beb548c15895d64",
         "content": payload.caption,
@@ -173,10 +172,11 @@ async def publish_post(payload: PostRequest):
     }
     
     if payload.image_url:
-        # 1. Use the 'time_lib' alias we fixed earlier
-        # 2. Append a dynamic timestamp so Instagram thinks this is a fresh file
-        timestamp = int(time_lib.time())
-        clean_url = f"{payload.image_url}?t={timestamp}"
+        # APPEND A RANDOM STRING AS A QUERY PARAMETER
+        # This breaks Instagram's cache and forces a fresh fetch
+        import uuid
+        cache_buster = uuid.uuid4().hex
+        clean_url = f"{payload.image_url}?v={cache_buster}"
         
         body["mediaItems"] = [
             {
@@ -192,6 +192,8 @@ async def publish_post(payload: PostRequest):
             if response.status_code in [200, 201]:
                 return {"status": "success", "data": response.json()}
             else:
+                # This will print the error to your Render logs so you can see it
+                print(f"Zernio API Error: {response.text}")
                 return {"status": "error", "detail": response.text}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
