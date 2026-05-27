@@ -153,35 +153,32 @@ async def generate_draft(
         
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
-    print(f"DEBUG: Type of time is: {type(time)}")
+    # REMOVE 'import time' FROM HERE. It is already imported at the top as 'time_lib'.
     zernio_key = os.environ.get("ZERNIO_API_KEY")
-    if not zernio_key:
-        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
-
-    if not payload.platforms:
-        raise HTTPException(status_code=400, detail="No platforms selected.")
-
-    headers = {
-        "Authorization": f"Bearer {zernio_key.strip()}",
-        "Content-Type": "application/json"
-    }
-    
-    # 1. Force a clean, unique URL to bypass Instagram's internal cache
-    # This prevents the API from returning an "invalid file" error based on a prior failed attempt.
+    # ...
     
     if payload.image_url:
-        import time
-        # Append cache-buster
+        # Use the alias we defined at the top of the file
         clean_url = f"{payload.image_url}?t={int(time_lib.time())}"
         
-        body["mediaItems"] = [
-            {
-                "type": "image",
-                "url": clean_url,
-                # Explicitly tell Zernio/Instagram that this is an image
-                "mimeType": "image/jpeg" 
-            }
-        ]
+        # NOTE: You were missing 'body =' definition here in your snippet
+        # Make sure 'body' is defined here as well!
+        body = {
+             "profileId": "6a1350634beb548c15895d64",
+             "content": payload.caption,
+             "publishNow": True,
+             "status": "published",
+             "platforms": [p.dict() for p in payload.platforms],
+             "mediaItems": [
+                 {
+                     "type": "image",
+                     "url": clean_url,
+                     "mimeType": "image/jpeg"
+                 }
+             ]
+        }
+    
+    # ... rest of the code ...
     
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
