@@ -82,9 +82,14 @@ async def get_connect_url(platform: str, profile_id: str = None):
             raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-draft")
-async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form(None), user_id: str = Form(...)):
-    # INITIALIZE THIS AT THE TOP
+async def generate_draft(
+    file: UploadFile = File(...), 
+    custom_prompt: str = Form(None),
+    user_id: str = Form(...) 
+):
+    # Initialize variables at the top-level scope of the function
     jpeg_content = None
+    buffer = None
 
     # 1. Verify User and Check Limits
     try:
@@ -99,15 +104,15 @@ async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form
 
     # 2. UPLOAD TO SUPABASE BUCKET
     try:
-        jpeg_content = buffer.getvalue()
         file_content = await file.read()
         img = Image.open(io.BytesIO(file_content))
         if img.mode != "RGB":
             img = img.convert("RGB")
         
+        # Initialize buffer properly
         buffer = io.BytesIO()
         img.save(buffer, format="JPEG", quality=90, optimize=True)
-        jpeg_content = buffer.getvalue() # Now this is accessible to the rest of the function
+        jpeg_content = buffer.getvalue()
         
         file_name = f"{uuid.uuid4()}.jpg"
         supabase_admin.storage.from_("tavapost-images").upload(file_name, jpeg_content, {"content_type": "image/jpeg"})
@@ -118,12 +123,11 @@ async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form
     # 3. GEMINI AI GENERATION
     gemini_key = os.environ.get("GEMINI_API_KEY")
     try:
-        # NOW THIS WILL WORK
         if jpeg_content is None:
-            raise Exception("Image processing failed, no valid JPEG data found.")
+            raise Exception("Image processing failed.")
+            
         base64_image = base64.b64encode(jpeg_content).decode("utf-8")
         
-        # All of this must be indented inside the try block
         system_rules = "CRITICAL: Output ONLY caption options. Use '###SEPARATOR###' between each option. No filler."
         if custom_prompt and custom_prompt.strip():
             system_rules += f"\nStrict Voice Guidelines:\n{custom_prompt.strip()}"
@@ -139,22 +143,17 @@ async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(google_url, json=body, headers={"Content-Type": "application/json"})
             if response.status_code != 200:
-                raise Exception(f"Gemini Error: {response.text}")
+                raise Exception(f"Gemini API Error: {response.text}")
             
             data = response.json()
             raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
             
-        # 4. Increment usage
         supabase_admin.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
-        
-        # 5. Sanitize hashtags (already correct)
-        # ... (keep your existing hashtag sanitization code here) ...
         
         return {"image_url": public_url, "draft_text": raw_text}
         
     except Exception as e:
-        print(f"Error in Gemini generation: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
         
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
