@@ -1,20 +1,21 @@
-# TavaPost Studio Backend API Node // Ver 2.1.2
+# TavaPost Studio Backend API Node // Ver 2.1.3
 import os
 import io
 import httpx
 import base64
 import stripe
-import time as time_lib
+import tempfile
 import uuid
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List, Optional
 from supabase import create_client, Client
-from fastapi import Header, Request
 from PIL import Image
 
-# Setup
+# ─── SETUP ────────────────────────────────────────────────────────────────────
+
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
@@ -32,6 +33,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ─── MODELS ───────────────────────────────────────────────────────────────────
+
 class AdminRequest(BaseModel):
     target_user_id: str
 
@@ -48,9 +51,22 @@ class PostRequest(BaseModel):
     platforms: List[PlatformTarget]
     profile_id: Optional[str] = None
 
+# ─── HEALTH ───────────────────────────────────────────────────────────────────
+
 @app.get("/")
 async def root_check():
     return {"status": "online", "service": "TavaOne Engine"}
+
+# ─── IMAGE SERVING ────────────────────────────────────────────────────────────
+
+@app.get("/image/{filename}")
+async def serve_image(filename: str):
+    file_path = os.path.join(tempfile.gettempdir(), filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Image not found.")
+    return FileResponse(file_path, media_type="image/jpeg")
+
+# ─── CONNECT ──────────────────────────────────────────────────────────────────
 
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str, profile_id: str = None):
@@ -60,12 +76,12 @@ async def get_connect_url(platform: str, profile_id: str = None):
 
     active_profile = profile_id or "6a1350634beb548c15895d64"
     zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}"
-    
+
     params = {
         "profileId": active_profile,
         "redirect_url": "https://studio.tavaone.com/index.html"
     }
-    
+
     headers = {
         "Authorization": f"Bearer {zernio_key.strip()}",
         "Content-Type": "application/json"
@@ -76,158 +92,10 @@ async def get_connect_url(platform: str, profile_id: str = None):
             response = await client.get(zernio_endpoint, headers=headers, params=params)
             if response.status_code == 200:
                 return response.json()
-            else:
-                raise HTTPException(status_code=response.status_code, detail=f"Zernio Error: {response.text}")
+            raise HTTPException(status_code=response.status_code, detail=f"Zernio Error: {response.text}")
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/generate-draft")
-async def generate_draft(
-    file: UploadFile = File(...), 
-    custom_prompt: str = Form(None),
-    user_id: str = Form(...) 
-):
-    # 1. INITIALIZE VARIABLES AT THE TOP LEVEL
-    usage_count = 0
-    jpeg_content = None
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-
-    # 2. WRAP THE ENTIRE FLOW IN ONE MAIN TRY/EXCEPT
-    try:
-        # A. Database Check
-        response = supabase.table('user_profiles').select('subscription_tier, monthly_draft_count').eq('id', user_id.strip()).execute()
-        profile = response.data[0] if response.data else {'subscription_tier': 'starter', 'monthly_draft_count': 0}
-        usage_count = profile.get('monthly_draft_count', 0)
-        
-        if profile.get('subscription_tier') == 'starter' and usage_count >= 25:
-            raise HTTPException(status_code=403, detail="Monthly limit reached.")
-
-        ## B. Process & Upload
-        file_content = await file.read()
-        img = Image.open(io.BytesIO(file_content))
-        if img.mode != "RGB":
-            img = img.convert("RGB")
-
-        # Enforce Instagram-safe dimensions
-        w, h = img.size
-        max_dim = 1080
-        
-        # Scale down if too large
-        if w > max_dim or h > max_dim:
-            ratio = min(max_dim / w, max_dim / h)
-            w = int(w * ratio)
-            h = int(h * ratio)
-            img = img.resize((w, h), Image.LANCZOS)
-
-        # Enforce aspect ratio between 4:5 (0.8) and 1.91:1
-        aspect = w / h
-        if aspect < 0.8:
-            # Too tall — crop height
-            new_h = int(w / 0.8)
-            top = (h - new_h) // 2
-            img = img.crop((0, top, w, top + new_h))
-        elif aspect > 1.91:
-            # Too wide — crop width
-            new_w = int(h * 1.91)
-            left = (w - new_w) // 2
-            img = img.crop((left, 0, left + new_w, h))
-
-        # Minimum 320px on shortest side
-        w, h = img.size
-        if w < 320 or h < 320:
-            scale = 320 / min(w, h)
-            img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
-
-        buffer = io.BytesIO()
-        img.save(buffer, format="JPEG", quality=90, optimize=True)
-        jpeg_content = buffer.getvalue()
-
-        file_name = f"{uuid.uuid4()}.jpg"
-        supabase_admin.storage.from_("tavapost-images").upload(
-            file_name, jpeg_content, {"content_type": "image/jpeg"}
-        )
-        public_url = supabase_admin.storage.from_("tavapost-images").get_public_url(file_name)
-        print(f"DEBUG: Image uploaded to {public_url}")
-
-        # C. Gemini
-        if not gemini_key:
-            raise Exception("Gemini key missing.")
-            
-        base64_image = base64.b64encode(jpeg_content).decode("utf-8")
-        
-        system_rules = "CRITICAL: Output ONLY caption options. Use '###SEPARATOR###' between each option. No filler."
-        if custom_prompt and custom_prompt.strip():
-            system_rules += f"\nStrict Voice Guidelines:\n{custom_prompt.strip()}"
-
-        body = {
-            "contents": [{"parts": [
-                {"text": f"{system_rules}\n\nTask: Provide 3 distinct social media caption variations. Separate each one with ###SEPARATOR###."},
-                {"inlineData": {"mimeType": "image/jpeg", "data": base64_image}}
-            ]}]
-        }
-
-        google_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(google_url, json=body, headers={"Content-Type": "application/json"})
-            if response.status_code != 200:
-                raise Exception(f"Gemini API Error: {response.text}")
-            
-            data = response.json()
-            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-            
-            # Ensure this line is aligned with the 'data =' line above it
-            supabase_admin.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
-            
-            return {"image_url": public_url, "draft_text": raw_text}
-
-    except Exception as e:
-        print(f"DEBUG: Process failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-        
-@app.post("/publish-post")
-async def publish_post(payload: PostRequest):
-    zernio_key = os.environ.get("ZERNIO_API_KEY")
-    if not zernio_key:
-        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
-
-    headers = {
-        "Authorization": f"Bearer {zernio_key.strip()}",
-        "Content-Type": "application/json"
-    }
-
-    # Initialize body with required fields
-    body = {
-        "profileId": "6a1350634beb548c15895d64",
-        "content": payload.caption,
-        "publishNow": True,
-        "status": "published",
-        "platforms": [p.dict() for p in payload.platforms]
-    }
-    
-    if payload.image_url and payload.image_url.strip():
-        # FORCE CACHE BYPASS: Append a random value every time
-        # This makes the URL look 'brand new' to Instagram's validator
-        random_id = uuid.uuid4().hex
-        clean_url = f"{payload.image_url.strip()}?v={random_id}"
-        
-        body["mediaItems"] = [
-            {
-                "type": "image",
-                "url": clean_url,
-                "mimeType": "image/jpeg"
-            }
-        ]
-    
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        try:
-            response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
-            if response.status_code in [200, 201]:
-                return {"status": "success", "data": response.json()}
-            print(f"Zernio API Error Details: {response.text}")
-            return {"status": "error", "detail": response.text}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Publishing failed: {str(e)}")
-            
 @app.get("/api/get-accounts")
 async def get_accounts():
     zernio_key = os.environ.get("ZERNIO_API_KEY")
@@ -248,22 +116,163 @@ async def get_accounts():
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-# --- ADMIN ENDPOINTS ---
+# ─── GENERATE DRAFT ───────────────────────────────────────────────────────────
 
-ADMIN_SECRET = os.environ.get("ADMIN_SECRET_KEY", "super-secret-tava-key-123") # Change this in Render later!
+@app.post("/generate-draft")
+async def generate_draft(
+    file: UploadFile = File(...),
+    custom_prompt: str = Form(None),
+    user_id: str = Form(...)
+):
+    usage_count = 0
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+
+    try:
+        # A. Usage check
+        response = supabase.table('user_profiles').select('subscription_tier, monthly_draft_count').eq('id', user_id.strip()).execute()
+        profile = response.data[0] if response.data else {'subscription_tier': 'starter', 'monthly_draft_count': 0}
+        usage_count = profile.get('monthly_draft_count', 0)
+
+        if profile.get('subscription_tier') == 'starter' and usage_count >= 25:
+            raise HTTPException(status_code=403, detail="Monthly limit reached.")
+
+        # B. Process image
+        file_content = await file.read()
+        img = Image.open(io.BytesIO(file_content))
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+
+        # Scale down if too large
+        w, h = img.size
+        max_dim = 1080
+        if w > max_dim or h > max_dim:
+            ratio = min(max_dim / w, max_dim / h)
+            img = img.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+
+        # Enforce Instagram aspect ratio (4:5 to 1.91:1)
+        w, h = img.size
+        aspect = w / h
+        if aspect < 0.8:
+            new_h = int(w / 0.8)
+            top = (h - new_h) // 2
+            img = img.crop((0, top, w, top + new_h))
+        elif aspect > 1.91:
+            new_w = int(h * 1.91)
+            left = (w - new_w) // 2
+            img = img.crop((left, 0, left + new_w, h))
+
+        # Minimum 320px on shortest side
+        w, h = img.size
+        if w < 320 or h < 320:
+            scale = 320 / min(w, h)
+            img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=90, optimize=True)
+        jpeg_content = buffer.getvalue()
+
+        # Save to /tmp — served via /image/ endpoint for Instagram
+        file_name = f"{uuid.uuid4()}.jpg"
+        tmp_path = os.path.join(tempfile.gettempdir(), file_name)
+        with open(tmp_path, "wb") as f:
+            f.write(jpeg_content)
+
+        # Also upload to Supabase for permanent storage
+        supabase_admin.storage.from_("tavapost-images").upload(
+            file_name, jpeg_content, {"content_type": "image/jpeg"}
+        )
+
+        # Use Render URL — clean, direct, Instagram-compatible
+        public_url = f"https://tavapost-backend.onrender.com/image/{file_name}"
+        print(f"DEBUG: Serving image at {public_url}")
+
+        # C. Gemini caption generation
+        if not gemini_key:
+            raise Exception("Gemini key missing.")
+
+        base64_image = base64.b64encode(jpeg_content).decode("utf-8")
+
+        system_rules = "CRITICAL: Output ONLY caption options. Use '###SEPARATOR###' between each option. No filler."
+        if custom_prompt and custom_prompt.strip():
+            system_rules += f"\nStrict Voice Guidelines:\n{custom_prompt.strip()}"
+
+        body = {
+            "contents": [{"parts": [
+                {"text": f"{system_rules}\n\nTask: Provide 3 distinct social media caption variations. Separate each one with ###SEPARATOR###."},
+                {"inlineData": {"mimeType": "image/jpeg", "data": base64_image}}
+            ]}]
+        }
+
+        google_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(google_url, json=body, headers={"Content-Type": "application/json"})
+            if response.status_code != 200:
+                raise Exception(f"Gemini API Error: {response.text}")
+
+            data = response.json()
+            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+
+        # D. Increment usage
+        supabase_admin.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
+
+        return {"image_url": public_url, "draft_text": raw_text}
+
+    except Exception as e:
+        print(f"DEBUG: Process failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ─── PUBLISH ──────────────────────────────────────────────────────────────────
+
+@app.post("/publish-post")
+async def publish_post(payload: PostRequest):
+    zernio_key = os.environ.get("ZERNIO_API_KEY")
+    if not zernio_key:
+        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
+
+    headers = {
+        "Authorization": f"Bearer {zernio_key.strip()}",
+        "Content-Type": "application/json"
+    }
+
+    body = {
+        "profileId": "6a1350634beb548c15895d64",
+        "content": payload.caption,
+        "publishNow": True,
+        "platforms": [p.dict() for p in payload.platforms]
+    }
+
+    # Only attach image if a real URL is provided
+    if payload.image_url and payload.image_url.strip() and "placeholder" not in payload.image_url:
+        body["mediaItems"] = [
+            {
+                "type": "image",
+                "url": payload.image_url.strip()
+            }
+        ]
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        try:
+            response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
+            if response.status_code in [200, 201]:
+                return {"status": "success", "data": response.json()}
+            print(f"Zernio API Error Details: {response.text}")
+            return {"status": "error", "detail": response.text}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Publishing failed: {str(e)}")
+
+# ─── ADMIN ────────────────────────────────────────────────────────────────────
+
+ADMIN_SECRET = os.environ.get("ADMIN_SECRET_KEY", "super-secret-tava-key-123")
 
 @app.post("/admin/disconnect")
 async def admin_disconnect_social(request: AdminRequest, x_admin_secret: str = Header(...)):
     if x_admin_secret != ADMIN_SECRET:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    
     try:
-        # Example: Update the user's row in your database to wipe their Meta tokens
         supabase_admin.table('user_profiles').update({
             'meta_access_token': None,
             'meta_page_id': None
         }).eq('id', request.target_user_id).execute()
-        
         return {"status": "success", "message": "Social accounts disconnected."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -272,14 +281,8 @@ async def admin_disconnect_social(request: AdminRequest, x_admin_secret: str = H
 async def admin_delete_user(request: AdminRequest, x_admin_secret: str = Header(...)):
     if x_admin_secret != ADMIN_SECRET:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    
     try:
-        # This completely deletes the user from the Supabase Authentication system
         supabase_admin.auth.admin.delete_user(request.target_user_id)
-        
-        # Note: If your tables have "ON DELETE CASCADE" set up in Supabase, 
-        # deleting them from Auth will automatically wipe their rows in your other tables!
-        
         return {"status": "success", "message": "User permanently deleted."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -288,44 +291,35 @@ async def admin_delete_user(request: AdminRequest, x_admin_secret: str = Header(
 async def admin_list_users(x_admin_secret: str = Header(...)):
     if x_admin_secret != ADMIN_SECRET:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    
     try:
-        # 1. Securely fetch all user emails from the Auth system
         auth_users = supabase_admin.auth.admin.list_users()
-        
-        # 2. Fetch all subscription tiers and usage stats from the public profiles table
         profiles_response = supabase_admin.table('user_profiles').select('id, subscription_tier, monthly_draft_count').execute()
-        
-        # Convert the profile list into a dictionary for super-fast lookups
         profiles_data = {p['id']: p for p in profiles_response.data}
-        
-        # 3. Merge the data together
+
         user_list = []
         for u in auth_users:
             profile = profiles_data.get(u.id, {})
-            
             user_list.append({
                 "id": u.id,
                 "email": u.email,
                 "tier": profile.get('subscription_tier', 'starter'),
                 "usage": profile.get('monthly_draft_count', 0)
             })
-            
+
         return {"status": "success", "data": user_list}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ─── STRIPE ───────────────────────────────────────────────────────────────────
 
 @app.post("/create-checkout-session")
 async def create_checkout_session(request: CheckoutRequest):
     try:
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
-            line_items=[{
-                'price': request.price_id, # Dynamically uses the ID from the frontend
-                'quantity': 1,
-            }],
+            line_items=[{'price': request.price_id, 'quantity': 1}],
             mode='subscription',
-           success_url='https://studio.tavaone.com/setup-account.html?email={CHECKOUT_SESSION_EMAIL}',
+            success_url='https://studio.tavaone.com/setup-account.html?email={CHECKOUT_SESSION_EMAIL}',
             cancel_url='https://studio.tavaone.com/',
         )
         return {"url": checkout_session.url}
@@ -337,7 +331,7 @@ async def stripe_webhook(request: Request):
     payload = await request.body()
     sig_header = request.headers.get('stripe-signature')
     endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
-    
+
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
     except Exception as e:
@@ -346,15 +340,12 @@ async def stripe_webhook(request: Request):
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
         customer_email = session.get('customer_details', {}).get('email')
-        
-        # We store this payment intent so we can "find" it when they register
         if customer_email:
             print(f"Payment successful for: {customer_email}")
-            # Optional: Add to a 'pending_registrations' table in Supabase
             supabase_admin.table('pending_registrations').insert({
                 'email': customer_email,
                 'tier': 'founders',
                 'status': 'paid'
             }).execute()
-            
+
     return {"status": "success"}
