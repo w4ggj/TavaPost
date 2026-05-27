@@ -105,7 +105,7 @@ async def generate_draft(
             img = img.convert("RGB")
         
         buffer = io.BytesIO()
-        img.save(buffer, format="JPEG", quality=90)
+        img.save(buffer, format="JPEG", quality=90, optimize=True)
         jpeg_content = buffer.getvalue()
 
         # Force re-save as standard JPEG
