@@ -82,34 +82,28 @@ async def get_connect_url(platform: str, profile_id: str = None):
             raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-draft")
-async def generate_draft(
-    file: UploadFile = File(...), 
-    custom_prompt: str = Form(None),
-    user_id: str = Form(...) 
-):
-    # Initialize variables at the top-level scope of the function
-    jpeg_content = None
-    buffer = None
-
-    # 1. Verify User and Check Limits
+async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form(None), user_id: str = Form(...)):
+    # 1. Initialize variables at the top-level function scope
+    jpeg_content = None 
+    
+    # 2. Database Check (Separate try block)
     try:
         response = supabase.table('user_profiles').select('subscription_tier, monthly_draft_count').eq('id', user_id.strip()).execute()
         profile = response.data[0] if response.data else {'subscription_tier': 'starter', 'monthly_draft_count': 0}
         usage_count = profile.get('monthly_draft_count', 0)
-        
         if profile.get('subscription_tier') == 'starter' and usage_count >= 25:
             raise HTTPException(status_code=403, detail="Monthly limit reached.")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Database check failed: {str(e)}")
 
-    # 2. UPLOAD TO SUPABASE BUCKET
+    # 3. UPLOAD TO SUPABASE BUCKET
     try:
         file_content = await file.read()
         img = Image.open(io.BytesIO(file_content))
         if img.mode != "RGB":
             img = img.convert("RGB")
         
-        # Initialize buffer properly
+        # Define buffer within this scope
         buffer = io.BytesIO()
         img.save(buffer, format="JPEG", quality=90, optimize=True)
         jpeg_content = buffer.getvalue()
@@ -118,13 +112,14 @@ async def generate_draft(
         supabase_admin.storage.from_("tavapost-images").upload(file_name, jpeg_content, {"content_type": "image/jpeg"})
         public_url = supabase_admin.storage.from_("tavapost-images").get_public_url(file_name)
     except Exception as e:
+        # Print the error to logs for debugging, then re-raise
+        print(f"DEBUG: Storage upload failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
 
-    # 3. GEMINI AI GENERATION
-    gemini_key = os.environ.get("GEMINI_API_KEY")
+    # 4. GEMINI AI GENERATION
     try:
         if jpeg_content is None:
-            raise Exception("Image processing failed.")
+            raise Exception("Image processing failed, no valid JPEG data found.")
             
         base64_image = base64.b64encode(jpeg_content).decode("utf-8")
         
