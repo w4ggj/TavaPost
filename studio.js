@@ -444,3 +444,21 @@ async function finalizeAccount() {
     alert("Registration complete! Welcome to Founders.");
     window.location.href = "index.html";
 }
+
+async function provisionUser() {
+    const email = document.getElementById('new-user-email').value;
+    const password = document.getElementById('new-user-pass').value;
+    const tier = document.getElementById('new-user-tier').value;
+
+    const response = await fetch(`${backendBaseUrl}/admin/create-user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, tier })
+    });
+
+    if (response.ok) {
+        alert("User created successfully!");
+    } else {
+        alert("Provisioning failed.");
+    }
+}
