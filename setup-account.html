@@ -25,48 +25,12 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="studio.js"></script>
     <script>
-    const supabaseClient = supabase.createClient(
-    "https://fntsthjupopvbwvmfsmz.supabase.co", 
-    "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"
-);
-
-        // Grab email from URL if you passed it, or just let them type it
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             document.getElementById('signup-email').value = params.get('email') || "";
         };
-
-    async function finalizeAccount() {
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
-
-    // 1. Verify they paid first
-    const { data: pending } = await supabase
-        .from('pending_registrations')
-        .select('*')
-        .eq('email', email)
-        .eq('status', 'paid')
-        .maybeSingle();
-
-    if (!pending) {
-        return alert("No payment record found for this email. Did you complete the subscription?");
-    }
-
-    // 2. Sign up
-    const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-    if (authError) return document.getElementById('signup-error').innerText = authError.message;
-
-    // 3. Upgrade to Founders
-    await supabase.from('user_profiles').upsert({ 
-        id: authData.user.id, 
-        subscription_tier: 'founders' 
-    });
-
-    alert("Registration complete! Welcome to Founders.");
-    window.location.href = "index.html";
-}
-}
     </script>
 </body>
 </html>
