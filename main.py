@@ -101,11 +101,16 @@ async def generate_draft(
     try:
         file_content = await file.read()
         img = Image.open(io.BytesIO(file_content))
-        if img.mode in ("RGBA", "P"):
+        if img.mode != "RGB":
             img = img.convert("RGB")
         
         buffer = io.BytesIO()
         img.save(buffer, format="JPEG", quality=90)
+        jpeg_content = buffer.getvalue()
+
+        # Force re-save as standard JPEG
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=90, optimize=True)
         jpeg_content = buffer.getvalue()
         
         file_name = f"{uuid.uuid4()}.jpg"
