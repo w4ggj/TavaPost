@@ -168,14 +168,13 @@ async function saveSettings() {
 }
 
 async function generateDraft() {
-    // 1. Declare all variables at the top level of the function
+    // 1. Declare all variables
     const fileInput = document.getElementById('imageInput');
     const loadingLabel = document.getElementById('loading');
     const btnGen = document.getElementById('btn-generate');
     const customPromptElement = document.getElementById('customPrompt');
     const customPromptValue = customPromptElement ? customPromptElement.value : "";
     
-    // Declare formData here so it is accessible in the finally block if needed
     let formData = new FormData(); 
 
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -205,29 +204,36 @@ async function generateDraft() {
         }
 
         const data = await response.json();
-        // Inside generateDraft() -> try block -> after const data = await response.json();
-        console.log("Full Backend Response:", data); // Check this in the console!
-
-        if (data.image_url) {
-            window.cachedImageUrl = data.image_url;
-        } else {
-            console.error("Backend did not provide a valid image_url");
-        }
+        
         if (data.image_url) {
             window.cachedImageUrl = data.image_url;
             console.log("URL Cached for publishing:", window.cachedImageUrl);
-        } else {
-            console.warn("Backend response did not contain an image_url.");
         }
+
+        // --- 2. RENDER SEPARATE CARDS ---
         const container = document.getElementById('draft-cards');
         if (container) {
-            container.innerHTML = "";
-            const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i).filter(t => t.trim().length > 0);
+            container.innerHTML = ""; // CRITICAL: Wipes previous results
+            
+            // Regex splits variations correctly
+            const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i)
+                                           .filter(t => t.trim().length > 0);
+            
             options.forEach((txt, i) => {
                 const card = document.createElement('div');
+                // Apply styling to ensure they don't "clump"
                 card.className = "draft-card";
-                card.innerHTML = `<header>DRAFT VARIATION ${i + 1}</header><p>${txt.trim()}</p>`;
-                card.onclick = () => { document.getElementById('finalCaption').value = txt.trim(); };
+                card.style.cssText = "border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 8px; cursor: pointer; transition: 0.3s;";
+                
+                card.innerHTML = `<header style="font-weight:bold; margin-bottom:8px;">DRAFT VARIATION ${i + 1}</header><p>${txt.trim()}</p>`;
+                
+                card.onclick = () => { 
+                    document.getElementById('finalCaption').value = txt.trim();
+                    // Visual feedback
+                    document.querySelectorAll('.draft-card').forEach(el => el.style.borderColor = "#ccc");
+                    card.style.borderColor = "#4a90e2"; 
+                };
+                
                 container.appendChild(card);
             });
             document.getElementById('selection-area').className = "view-active-block";
@@ -236,7 +242,6 @@ async function generateDraft() {
         console.error("Draft error:", err);
         alert("Generation failed: " + err.message);
     } finally {
-        // Now 'loadingLabel' and 'btnGen' are guaranteed to exist here
         if (loadingLabel) loadingLabel.className = "view-section";
         if (btnGen) btnGen.disabled = false;
     }
