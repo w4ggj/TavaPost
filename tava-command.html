@@ -1,4 +1,4 @@
-            <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -36,35 +36,35 @@
         </div>
 
         <details style="margin-bottom: 2rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
-    <summary style="cursor: pointer; font-weight: 600; color: var(--accent-purple);">➕ Provision New User Account</summary>
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; margin-top: 1rem; align-items: end;">
-        <div class="input-group">
-            <label style="font-size: 0.8rem; color: var(--text-muted);">Email</label>
-            <input type="email" id="new-user-email" placeholder="user@brand.com" style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: white;">
-        </div>
-        <div class="input-group">
-            <label style="font-size: 0.8rem; color: var(--text-muted);">Password</label>
-            <input type="password" id="new-user-pass" placeholder="••••••••" style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: white;">
-        </div>
-        <div class="input-group">
-            <label style="font-size: 0.8rem; color: var(--text-muted);">Initial Tier</label>
-            <select id="new-user-tier" style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: white;">
-                <option value="starter">Starter</option>
-                <option value="founders">Founders</option>
-                <option value="complimentary">Complimentary</option>
-            </select>
-        </div>
-        <button class="btn btn-primary" onclick="provisionUser()">Create Account</button>
-    </div>
-</details>
+            <summary style="cursor: pointer; font-weight: 600; color: var(--accent-purple);">➕ Provision New User Account</summary>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; margin-top: 1rem; align-items: end;">
+                <div class="input-group">
+                    <label style="font-size: 0.8rem; color: var(--text-muted);">Email</label>
+                    <input type="email" id="new-user-email" placeholder="user@brand.com" style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: white;">
+                </div>
+                <div class="input-group">
+                    <label style="font-size: 0.8rem; color: var(--text-muted);">Password</label>
+                    <input type="password" id="new-user-pass" placeholder="••••••••" style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: white;">
+                </div>
+                <div class="input-group">
+                    <label style="font-size: 0.8rem; color: var(--text-muted);">Initial Tier</label>
+                    <select id="new-user-tier" style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: white;">
+                        <option value="starter">Starter</option>
+                        <option value="founders">Founders</option>
+                        <option value="complimentary">Complimentary</option>
+                        <option value="demo">Demo</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="provisionUser()">Create Account</button>
+            </div>
+        </details>
 
-<table class="admin-table">
         <table class="admin-table">
             <thead>
                 <tr>
                     <th>User ID / Email</th>
                     <th>Tier</th>
-                    <th>Meta Connection</th>
+                    <th>Admin Controls</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -84,9 +84,18 @@
     <script src="studio.js"></script>
     
     <script>
-        // We will build out this logic to talk to your Python backend next
-        const BACKEND_URL = "https://tavapost-backend.onrender.com"; // Your Render URL
-        const ADMIN_SECRET = "tava-admin-998877"; // Must match what is in main.py
+        const BACKEND_URL = "https://tavapost-backend.onrender.com";
+        const ADMIN_SECRET = "tava-admin-998877";
+
+        // Security Check: Redirect if not logged in
+        document.addEventListener("DOMContentLoaded", async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = "index.html";
+                return;
+            }
+            loadUsers();
+        });
 
         async function loadUsers() {
             const tableBody = document.getElementById('admin-user-list');
@@ -95,13 +104,10 @@
             try {
                 const response = await fetch(`${BACKEND_URL}/admin/users`, {
                     method: 'GET',
-                    headers: {
-                        'x-admin-secret': ADMIN_SECRET
-                    }
+                    headers: { 'x-admin-secret': ADMIN_SECRET }
                 });
                 
                 const result = await response.json();
-                
                 if (!response.ok) throw new Error(result.detail || "Failed to load users");
                 
                 if (result.data.length === 0) {
@@ -109,21 +115,15 @@
                     return;
                 }
                 
-                // Build the table rows dynamically based on the database response
                 tableBody.innerHTML = result.data.map(user => {
-                    // Decide what colors to make the badges based on their tier
-                    const tierBadgeClass = user.tier.toLowerCase() === 'pro' ? 'badge active' : 'badge';
-                    
-                    // ... inside loadUsers() .map() function:
+                    const tierBadgeClass = user.tier.toLowerCase() === 'admin' ? 'badge active' : 'badge';
                     return `
                     <tr>
                         <td>
                             <div style="font-weight: 600;">${user.email}</div>
                             <div style="font-size: 0.75rem; color: var(--text-muted);">ID: ${user.id.substring(0, 8)}...</div>
                         </td>
-                        <td>
-                            <span class="${tierBadgeClass}" style="text-transform: capitalize;">${user.tier}</span>
-                        </td>
+                        <td><span class="${tierBadgeClass}" style="text-transform: capitalize;">${user.tier}</span></td>
                         <td>
                             <button class="btn-small" onclick="toggleAdmin('${user.id}', '${user.tier}')">
                                 ${user.tier === 'admin' ? 'Revoke Admin' : 'Make Admin'}
@@ -136,65 +136,62 @@
                     </tr>
                     `;
                 }).join('');
-                
             } catch (error) {
-                console.error(error);
                 tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #ef4444;">Error: ${error.message}</td></tr>`;
             }
         }
-        async function disconnectSocial(userId) {
-            if(confirm("Are you sure you want to revoke this user's Meta tokens?")) {
-                const response = await fetch(`${BACKEND_URL}/admin/disconnect`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-admin-secret': ADMIN_SECRET
-                    },
-                    body: JSON.stringify({ target_user_id: userId })
-                });
-                const data = await response.json();
-                alert(data.message || "Action completed.");
-                loadUsers(); // Refresh the table
-            }
-        }
 
-        async function deleteUser(userId) {
-            if(confirm("WARNING: This will permanently delete the user's account and all associated data. Proceed?")) {
-                const response = await fetch(`${BACKEND_URL}/admin/delete`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-admin-secret': ADMIN_SECRET
-                    },
-                    body: JSON.stringify({ target_user_id: userId })
-                });
-                const data = await response.json();
-                alert(data.message || "User deleted.");
-                loadUsers(); // Refresh the table
+        async function provisionUser() {
+            const email = document.getElementById('new-user-email').value;
+            const password = document.getElementById('new-user-pass').value;
+            const tier = document.getElementById('new-user-tier').value;
+
+            const response = await fetch(`${BACKEND_URL}/admin/create-user`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
+                body: JSON.stringify({ email, password, tier })
+            });
+
+            if (response.ok) {
+                alert("User created successfully!");
+                loadUsers();
+            } else {
+                alert("Provisioning failed.");
             }
         }
 
         async function toggleAdmin(userId, currentTier) {
-    const newTier = (currentTier === 'admin') ? 'starter' : 'admin';
-    
-    if(!confirm(`Change tier from ${currentTier} to ${newTier}?`)) return;
+            const newTier = (currentTier === 'admin') ? 'starter' : 'admin';
+            if(!confirm(`Change tier from ${currentTier} to ${newTier}?`)) return;
+            const response = await fetch(`${BACKEND_URL}/admin/update-tier`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
+                body: JSON.stringify({ target_user_id: userId, new_tier: newTier })
+            });
+            if (response.ok) { loadUsers(); } else { alert("Update failed."); }
+        }
 
-    const response = await fetch(`${BACKEND_URL}/admin/update-tier`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-admin-secret': ADMIN_SECRET
-        },
-        body: JSON.stringify({ target_user_id: userId, new_tier: newTier })
-    });
+        async function disconnectSocial(userId) {
+            if(confirm("Revoke Meta tokens?")) {
+                await fetch(`${BACKEND_URL}/admin/disconnect`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
+                    body: JSON.stringify({ target_user_id: userId })
+                });
+                loadUsers();
+            }
+        }
 
-    if (response.ok) {
-        alert("Tier updated.");
-        loadUsers(); // Refresh table
-    } else {
-        alert("Update failed.");
-    }
-}
+        async function deleteUser(userId) {
+            if(confirm("PERMANENTLY delete user?")) {
+                await fetch(`${BACKEND_URL}/admin/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
+                    body: JSON.stringify({ target_user_id: userId })
+                });
+                loadUsers();
+            }
+        }
     </script>
 </body>
 </html>
