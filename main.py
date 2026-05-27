@@ -102,19 +102,52 @@ async def generate_draft(
         if profile.get('subscription_tier') == 'starter' and usage_count >= 25:
             raise HTTPException(status_code=403, detail="Monthly limit reached.")
 
-        # B. Upload
+        ## B. Process & Upload
         file_content = await file.read()
         img = Image.open(io.BytesIO(file_content))
         if img.mode != "RGB":
             img = img.convert("RGB")
+
+        # Enforce Instagram-safe dimensions
+        w, h = img.size
+        max_dim = 1080
         
+        # Scale down if too large
+        if w > max_dim or h > max_dim:
+            ratio = min(max_dim / w, max_dim / h)
+            w = int(w * ratio)
+            h = int(h * ratio)
+            img = img.resize((w, h), Image.LANCZOS)
+
+        # Enforce aspect ratio between 4:5 (0.8) and 1.91:1
+        aspect = w / h
+        if aspect < 0.8:
+            # Too tall — crop height
+            new_h = int(w / 0.8)
+            top = (h - new_h) // 2
+            img = img.crop((0, top, w, top + new_h))
+        elif aspect > 1.91:
+            # Too wide — crop width
+            new_w = int(h * 1.91)
+            left = (w - new_w) // 2
+            img = img.crop((left, 0, left + new_w, h))
+
+        # Minimum 320px on shortest side
+        w, h = img.size
+        if w < 320 or h < 320:
+            scale = 320 / min(w, h)
+            img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+
         buffer = io.BytesIO()
         img.save(buffer, format="JPEG", quality=90, optimize=True)
         jpeg_content = buffer.getvalue()
-        
+
         file_name = f"{uuid.uuid4()}.jpg"
-        supabase_admin.storage.from_("tavapost-images").upload(file_name, jpeg_content, {"content_type": "image/jpeg"})
+        supabase_admin.storage.from_("tavapost-images").upload(
+            file_name, jpeg_content, {"content_type": "image/jpeg"}
+        )
         public_url = supabase_admin.storage.from_("tavapost-images").get_public_url(file_name)
+        print(f"DEBUG: Image uploaded to {public_url}")
 
         # C. Gemini
         if not gemini_key:
