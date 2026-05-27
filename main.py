@@ -154,6 +154,27 @@ async def generate_draft(
         # 4. Increment usage
         supabase_admin.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
         
+        # SANITIZE HASHTAGS
+        words = raw_text.split()
+        hashtags = [word for word in words if word.startswith('#')]
+        
+        if len(hashtags) > 30:
+            print(f"DEBUG: Truncating {len(hashtags)} hashtags to 30.")
+            # Keep only the first 30 hashtags
+            allowed_hashtags = hashtags[:30]
+            
+            # Rebuild the caption
+            new_caption_parts = []
+            hashtag_count = 0
+            for word in words:
+                if word.startswith('#'):
+                    if hashtag_count < 30:
+                        new_caption_parts.append(word)
+                        hashtag_count += 1
+                else:
+                    new_caption_parts.append(word)
+            raw_text = " ".join(new_caption_parts)
+            
         return {"image_url": public_url, "draft_text": raw_text}
         
     except Exception as e:
