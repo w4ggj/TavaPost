@@ -383,16 +383,30 @@ class UpdateTierRequest(BaseModel):
     target_user_id: str
     new_tier: str
 
-@app.post("/admin/update-tier")
-async def update_tier(request: UpdateTierRequest, x_admin_secret: str = Header(...)):
+@app.post("/admin/create-user")
+async def create_user(request: CreateUserRequest, x_admin_secret: str = Header(...)):
+    # 1. Security Check
     if x_admin_secret != os.environ.get("ADMIN_SECRET"):
         raise HTTPException(status_code=403, detail="Unauthorized")
         
     try:
-        supabase_admin.table('user_profiles').update({
-            'subscription_tier': request.new_tier
-        }).eq('id', request.target_user_id).execute()
+        # 2. Create the Auth User (This triggers your database profile creation)
+        new_user = supabase_admin.auth.admin.create_user({
+            "email": request.email,
+            "password": request.password,
+            "email_confirm": True
+        })
         
-        return {"status": "success"}
+        # 3. Update the profile with your specified tier
+        # Using .update() since the trigger already inserted the initial row
+        supabase_admin.table('user_profiles').update({
+            'subscription_tier': request.tier,
+            'monthly_draft_count': 0
+        }).eq('id', new_user.user.id).execute()
+        
+        return {"status": "success", "user_id": new_user.user.id}
+        
     except Exception as e:
+        # Log error for your own diagnostics
+        print(f"Error provisioning user: {e}")
         raise HTTPException(status_code=500, detail=str(e))
