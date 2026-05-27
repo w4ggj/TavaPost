@@ -143,7 +143,7 @@ async def generate_draft(
             raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
             
        # D. Increment usage
-        supabase_admin.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
+       supabase_admin.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
         
         return {"image_url": public_url, "draft_text": raw_text}
 
