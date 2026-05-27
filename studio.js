@@ -349,6 +349,20 @@ async function publishToSocials() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return alert("Session expired. Please log in again.");
 
+    // --- NEW: DEMO MODE INTERCEPT ---
+    // Fetch profile to check tier (or use a global variable if you have one)
+    const { data: profile } = await supabaseClient
+        .from('user_profiles')
+        .select('subscription_tier')
+        .eq('id', session.user.id)
+        .single();
+
+    if (profile && profile.subscription_tier === 'demo') {
+        alert("🚀 [DEMO MODE] Workflow complete! Your content would have been published to your live channels. No real action taken.");
+        return; // Stops here, no backend call made
+    }
+    // --------------------------------
+
     const caption = document.getElementById('finalCaption').value.trim();
     if (!caption) return alert("Please select or write a caption first.");
 
