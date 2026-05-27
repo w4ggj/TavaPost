@@ -1,32 +1,20 @@
-let supabaseClient;
+// studio.js
 const supabaseUrl = "https://fntsthjupopvbwvmfsmz.supabase.co";
 const supabaseKey = "sb_publishable_MLMqkdV5LqZsqvq9JhN4kw_XrJvzjAS"; 
 const backendBaseUrl = "https://tavapost-backend.onrender.com";
 
-// --- 1. SINGLE INITIALIZATION POINT ---
-async function initializeApp() {
-    try {
-        supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-        // Do NOT run checkSession() here. 
-        // We let the "componentsLoaded" event trigger it.
-    } catch (err) {
-        console.error("CRITICAL ERROR: ", err);
-        const crashAlert = document.getElementById('system-crash-alert');
-        if (crashAlert) crashAlert.className = "container view-active-block";
-    }
-}
+// 1. INITIALIZE CLIENT
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-// --- 2. EVENT-BASED SYNCING ---
+// 2. EVENT-BASED SYNCING
 document.addEventListener("componentsLoaded", async () => {
     console.log("Components ready, syncing UI...");
     await checkSession();
 });
 
-window.addEventListener('load', initializeApp);
-
+// 3. SESSION LOGIC
 async function checkSession() {
-    // Ensure you only call this ONCE using your correctly initialized variable
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     
     const loginView = document.getElementById('view-login');
     const dashView = document.getElementById('view-dashboard');
@@ -41,6 +29,7 @@ async function checkSession() {
         if (logoutBtn) logoutBtn.className = "btn btn-logout view-active-block";
         
         try {
+            // Check if these functions exist before calling
             if (typeof handleZernioCallback === 'function') await handleZernioCallback();
             if (typeof loadSettings === 'function') await loadSettings();
             if (typeof loadUsageStats === 'function') await loadUsageStats();
@@ -48,17 +37,31 @@ async function checkSession() {
     }
 }
 
-// --- 4. UTILITY FUNCTIONS ---
-async function signInUser() {
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) {
-        const errLabel = document.getElementById('login-error');
-        errLabel.innerText = error.message;
-        errLabel.className = "text-red view-active-block";
-    } else {
-        location.reload();
+// 4. SETTINGS & UTILS
+async function loadSettings() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    const { data, error } = await supabaseClient
+        .from('user_settings')
+        .select('custom_prompt, zernio_facebook_id, zernio_instagram_id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+    if (data) {
+        if (data.custom_prompt) document.getElementById('customPrompt').value = data.custom_prompt;
+        
+        if (data.zernio_facebook_id) {
+            window.currentFbId = data.zernio_facebook_id;
+            const fbStatus = document.getElementById('fb-status');
+            if (fbStatus) { fbStatus.innerText = "Connected ✅"; fbStatus.className = "badge badge-green"; }
+        }
+        
+        if (data.zernio_instagram_id) {
+            window.currentIgId = data.zernio_instagram_id;
+            const igStatus = document.getElementById('ig-status');
+            if (igStatus) { igStatus.innerText = "Connected ✅"; igStatus.className = "badge badge-green"; }
+        }
     }
 }
 
@@ -142,30 +145,21 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
-    // 1. Get the values from your UI
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return alert("Session expired.");
+
     const customPromptValue = document.getElementById("custom-prompt-input")?.value;
     
-    // 2. Prepare the data to save
-    const settingsData = {
-        custom_prompt: customPromptValue,
-        // Add other settings fields here
-    };
+    const { error } = await supabaseClient
+        .from('user_settings')
+        .update({ custom_prompt: customPromptValue })
+        .eq('user_id', session.user.id);
 
-    try {
-        console.log("Saving settings:", settingsData);
-        
-        // 3. Send to Supabase
-        const { data, error } = await supabase
-            .from('user_profiles')
-            .update({ custom_prompt: customPromptValue })
-            .eq('id', your_user_id_variable); // Ensure you have the correct user ID here
-
-        if (error) throw error;
-        
+    if (error) {
+        console.error("Save error:", error);
+        alert("Failed to save: " + error.message);
+    } else {
         alert("Settings saved successfully!");
-    } catch (err) {
-        console.error("Error saving settings:", err);
-        alert("Failed to save settings: " + err.message);
     }
 }
 
