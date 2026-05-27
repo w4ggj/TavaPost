@@ -132,16 +132,17 @@ async def generate_draft(
         google_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
         headers = {"Content-Type": "application/json"}
         
-        system_rules = "CRITICAL: Output ONLY caption options. No filler."
-        if custom_prompt and custom_prompt.strip():
-            system_rules += f"\nStrict Voice Guidelines:\n{custom_prompt.strip()}"
+        # --- UPDATE THE PROMPT IN main.py ---
+system_rules = "CRITICAL: Output ONLY caption options. Use '###SEPARATOR###' between each option. No filler."
+if custom_prompt and custom_prompt.strip():
+    system_rules += f"\nStrict Voice Guidelines:\n{custom_prompt.strip()}"
 
-        body = {
-            "contents": [{"parts": [
-                {"text": f"{system_rules}\n\nTask: Provide 3 distinct social media caption variations."},
-                {"inlineData": {"mimeType": "image/jpeg", "data": base64_image}}
-            ]}]
-        }
+body = {
+    "contents": [{"parts": [
+        {"text": f"{system_rules}\n\nTask: Provide 3 distinct social media caption variations. Separate each one with ###SEPARATOR###."},
+        {"inlineData": {"mimeType": "image/jpeg", "data": base64_image}}
+    ]}]
+}
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(google_url, json=body, headers=headers)
