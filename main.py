@@ -173,16 +173,17 @@ async def publish_post(payload: PostRequest):
     # This prevents the API from returning an "invalid file" error based on a prior failed attempt.
     clean_url = f"{payload.image_url}?t={int(time.time())}"
     
-    body = {
-        "profileId": "6a1350634beb548c15895d64",
-        "content": payload.caption,
-        "publishNow": True,
-        "status": "published", 
-        "platforms": [p.dict() for p in payload.platforms],
-        "mediaItems": [
+    if payload.image_url:
+        import time
+        # Append cache-buster
+        clean_url = f"{payload.image_url}?t={int(time.time())}"
+        
+        body["mediaItems"] = [
             {
                 "type": "image",
-                "url": clean_url
+                "url": clean_url,
+                # Explicitly tell Zernio/Instagram that this is an image
+                "mimeType": "image/jpeg" 
             }
         ]
     }
