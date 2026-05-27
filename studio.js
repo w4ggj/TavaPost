@@ -139,6 +139,35 @@ async function loadSettings() {
         }
     }
 }
+
+async function saveSettings() {
+    // 1. Get the values from your UI
+    const customPromptValue = document.getElementById("custom-prompt-input")?.value;
+    
+    // 2. Prepare the data to save
+    const settingsData = {
+        custom_prompt: customPromptValue,
+        // Add other settings fields here
+    };
+
+    try {
+        console.log("Saving settings:", settingsData);
+        
+        // 3. Send to Supabase
+        const { data, error } = await supabase
+            .from('user_profiles')
+            .update({ custom_prompt: customPromptValue })
+            .eq('id', your_user_id_variable); // Ensure you have the correct user ID here
+
+        if (error) throw error;
+        
+        alert("Settings saved successfully!");
+    } catch (err) {
+        console.error("Error saving settings:", err);
+        alert("Failed to save settings: " + err.message);
+    }
+}
+
 async function generateDraft() {
     // 1. Declare all variables at the top level of the function
     const fileInput = document.getElementById('imageInput');
