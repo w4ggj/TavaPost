@@ -25,13 +25,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (footerPlaceholder) {
                 footerPlaceholder.innerHTML = html;
                 document.getElementById("current-year").textContent = new Date().getFullYear();
+                
+                // ADD THIS LINE TO SET THE VERSION
+                const versionEl = document.getElementById("app-version");
+                if (versionEl) {
+                    versionEl.textContent = "2.1.3";
+                }
             }
         });
-
-    // 3. Broadcast that the UI is ready
-    Promise.all([loadHeader, loadFooter])
-        .then(() => {
-            document.dispatchEvent(new Event("componentsLoaded"));
-        })
-        .catch(error => console.error("Error loading components:", error));
-});
