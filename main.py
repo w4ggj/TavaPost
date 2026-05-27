@@ -153,46 +153,48 @@ async def generate_draft(
         
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
-    # REMOVE 'import time' FROM HERE. It is already imported at the top as 'time_lib'.
+    # 1. Initialize variables immediately
     zernio_key = os.environ.get("ZERNIO_API_KEY")
-    # ...
+    if not zernio_key:
+        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
+    
+    # 2. Define headers before any try/except logic
+    headers = {
+        "Authorization": f"Bearer {zernio_key.strip()}",
+        "Content-Type": "application/json"
+    }
+
+    # 3. Build body safely
+    body = {
+        "profileId": "6a1350634beb548c15895d64",
+        "content": payload.caption,
+        "publishNow": True,
+        "status": "published",
+        "platforms": [p.dict() for p in payload.platforms]
+    }
     
     if payload.image_url:
-        # Use the alias we defined at the top of the file
+        # Using the alias defined at the top
         clean_url = f"{payload.image_url}?t={int(time_lib.time())}"
-        
-        # NOTE: You were missing 'body =' definition here in your snippet
-        # Make sure 'body' is defined here as well!
-        body = {
-             "profileId": "6a1350634beb548c15895d64",
-             "content": payload.caption,
-             "publishNow": True,
-             "status": "published",
-             "platforms": [p.dict() for p in payload.platforms],
-             "mediaItems": [
-                 {
-                     "type": "image",
-                     "url": clean_url,
-                     "mimeType": "image/jpeg"
-                 }
-             ]
-        }
-    
-    # ... rest of the code ...
-    
+        body["mediaItems"] = [
+            {
+                "type": "image",
+                "url": clean_url,
+                "mimeType": "image/jpeg"
+            }
+        ]
+
+    # 4. Perform the request
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
-            
             if response.status_code in [200, 201]:
                 return {"status": "success", "data": response.json()}
             else:
-                # Log the actual error from Zernio so we can see why it rejected the file
-                print(f"Zernio API Error Details: {response.text}")
                 return {"status": "error", "detail": response.text}
-                
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Publishing failed: {str(e)}")
+            # This is now safe because headers and body were already defined
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/get-accounts")
 async def get_accounts():
