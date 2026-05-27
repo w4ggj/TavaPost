@@ -186,7 +186,6 @@ async def publish_post(payload: PostRequest):
                 "mimeType": "image/jpeg" 
             }
         ]
-    }
     
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
