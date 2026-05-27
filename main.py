@@ -378,3 +378,21 @@ async def create_user(request: CreateUserRequest):
         return {"status": "success", "user_id": new_user.user.id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class UpdateTierRequest(BaseModel):
+    target_user_id: str
+    new_tier: str
+
+@app.post("/admin/update-tier")
+async def update_tier(request: UpdateTierRequest, x_admin_secret: str = Header(...)):
+    if x_admin_secret != os.environ.get("ADMIN_SECRET"):
+        raise HTTPException(status_code=403, detail="Unauthorized")
+        
+    try:
+        supabase_admin.table('user_profiles').update({
+            'subscription_tier': request.new_tier
+        }).eq('id', request.target_user_id).execute()
+        
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
