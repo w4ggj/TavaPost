@@ -171,8 +171,7 @@ async def publish_post(payload: PostRequest):
     }
     
     if payload.image_url and payload.image_url.strip() and "placeholder" not in payload.image_url:
-        # ADD A UNIQUE TIMESTAMP QUERY PARAMETER
-        # This breaks Instagram's cache and forces a fresh validation fetch
+        # Append a unique timestamp to bypass Instagram's validation cache
         timestamp = int(time_lib.time())
         clean_url = f"{payload.image_url.strip()}?t={timestamp}"
         
@@ -180,7 +179,7 @@ async def publish_post(payload: PostRequest):
             {
                 "type": "image",
                 "url": clean_url,
-                "mimeType": "image/jpeg"
+                "mimeType": "image/jpeg" # Explicitly define the format
             }
         ]
 
@@ -189,7 +188,6 @@ async def publish_post(payload: PostRequest):
             response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
             if response.status_code in [200, 201]:
                 return {"status": "success", "data": response.json()}
-            # Log the error details so we can see why Instagram rejected it
             print(f"Zernio API Error Details: {response.text}")
             return {"status": "error", "detail": response.text}
         except Exception as e:
