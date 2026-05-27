@@ -450,15 +450,22 @@ async function provisionUser() {
     const password = document.getElementById('new-user-pass').value;
     const tier = document.getElementById('new-user-tier').value;
 
-    const response = await fetch(`${backendBaseUrl}/admin/create-user`, {
+    if (!email || !password) return alert("Please enter email and password.");
+
+    const response = await fetch(`${BACKEND_URL}/admin/create-user`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'x-admin-secret': ADMIN_SECRET 
+        },
         body: JSON.stringify({ email, password, tier })
     });
 
+    const data = await response.json();
     if (response.ok) {
         alert("User created successfully!");
+        loadUsers(); // Refresh the list
     } else {
-        alert("Provisioning failed.");
+        alert("Error: " + (data.detail || "Could not create user"));
     }
 }
