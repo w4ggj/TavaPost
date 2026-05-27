@@ -1,5 +1,6 @@
 # TavaPost Studio Backend API Node // Ver 2.1.2
 import os
+import io
 import httpx
 import base64
 import stripe
@@ -10,6 +11,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from supabase import create_client, Client
 from fastapi import Header, Request
+from PIL import Image
 
 # Setup
 url: str = os.environ.get("SUPABASE_URL")
@@ -88,22 +90,36 @@ async def generate_draft(
     try:
         response = supabase.table('user_profiles').select('subscription_tier, monthly_draft_count').eq('id', user_id.strip()).execute()
         profile = response.data[0] if response.data else {'subscription_tier': 'starter', 'monthly_draft_count': 0}
-        
         usage_count = profile.get('monthly_draft_count', 0)
+        
         if profile.get('subscription_tier') == 'starter' and usage_count >= 25:
             raise HTTPException(status_code=403, detail="Monthly limit reached.")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Database check failed: {str(e)}")
 
-    # 2. UPLOAD TO SUPABASE BUCKET: tavapost-images (Using ADMIN client to bypass RLS)
+    # 2. UPLOAD TO SUPABASE BUCKET: tavapost-images (Force JPEG conversion)
     try:
         file_content = await file.read()
-        file_name = f"{uuid.uuid4()}-{file.filename}"
         
-        # Use supabase_admin to bypass RLS policies
-        supabase_admin.storage.from_("tavapost-images").upload(file_name, file_content)
+        # Convert image to JPEG using Pillow
+        img = Image.open(io.BytesIO(file_content))
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
         
-        # Get the public URL
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=90)
+        jpeg_content = buffer.getvalue()
+        
+        # Unique clean filename
+        file_name = f"{uuid.uuid4()}.jpg"
+        
+        # Upload using admin client to bypass RLS
+        supabase_admin.storage.from_("tavapost-images").upload(
+            file_name, 
+            jpeg_content, 
+            {"content_type": "image/jpeg"}
+        )
+        
         public_url = supabase_admin.storage.from_("tavapost-images").get_public_url(file_name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
@@ -111,7 +127,8 @@ async def generate_draft(
     # 3. GEMINI AI GENERATION
     gemini_key = os.environ.get("GEMINI_API_KEY")
     try:
-        base64_image = base64.b64encode(file_content).decode("utf-8")
+        # Re-encode the Jpeg content for Gemini
+        base64_image = base64.b64encode(jpeg_content).decode("utf-8")
         google_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
         headers = {"Content-Type": "application/json"}
         
@@ -122,7 +139,7 @@ async def generate_draft(
         body = {
             "contents": [{"parts": [
                 {"text": f"{system_rules}\n\nTask: Provide 3 distinct social media caption variations."},
-                {"inlineData": {"mimeType": file.content_type, "data": base64_image}}
+                {"inlineData": {"mimeType": "image/jpeg", "data": base64_image}}
             ]}]
         }
 
@@ -134,14 +151,14 @@ async def generate_draft(
             data = response.json()
             raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
             
-        # 4. Increment usage (Using supabase_admin here is safer as well)
+        # 4. Increment usage
         supabase_admin.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
         
-        # RETURN THE REAL URL
         return {"image_url": public_url, "draft_text": raw_text}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+        
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
     media_items = [{"type": "image", "url": payload.image_url}]
