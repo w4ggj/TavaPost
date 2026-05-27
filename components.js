@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (headerPlaceholder) {
                 headerPlaceholder.outerHTML = html;
                 const currentPath = window.location.pathname.toLowerCase();
-                if (currentPath.includes("privacy") || currentPath.includes("terms") || currentPath.includes("support")) {
+                if (currentPath.includes("privacy") || currentPath.includes("terms") || currentPath.includes("features") || currentPath.includes("support")) {
                     document.getElementById("header-return").className = "btn btn-logout view-active-block";
                 }
             }
