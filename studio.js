@@ -215,11 +215,9 @@ const container = document.getElementById('draft-cards');
 if (container) {
     container.innerHTML = ""; 
     
-    // Split specifically on "Option 1:", "Option 2:", etc.
-    // The lookahead (?=Option \d+:) ensures we keep the label if we want it,
-    // or we can remove it. This regex splits whenever it sees "Option [number]:"
-    const options = data.draft_text.split(/Option\s+\d+:/i)
-                                   .filter(t => t.trim().length > 50); // Keep only substantial content
+    // Now we split based on our custom token, not on AI guessing games
+    const options = data.draft_text.split("###SEPARATOR###")
+                                   .filter(t => t.trim().length > 20);
     
     options.forEach((txt, i) => {
         const card = document.createElement('div');
