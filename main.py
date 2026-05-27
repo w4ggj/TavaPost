@@ -4,7 +4,7 @@ import io
 import httpx
 import base64
 import stripe
-import time as time_module  # Rename the import
+import time as time_lib
 import uuid
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -168,7 +168,7 @@ async def publish_post(payload: PostRequest):
     
     # 1. Force a clean, unique URL to bypass Instagram's internal cache
     # This prevents the API from returning an "invalid file" error based on a prior failed attempt.
-    clean_url = f"{payload.image_url}?t={int(time_module.time())}"
+    clean_url = f"{payload.image_url}?t={int(time_lib.time())}"
     
     if payload.image_url:
         import time
