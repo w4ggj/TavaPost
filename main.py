@@ -4,6 +4,7 @@ import io
 import httpx
 import base64
 import stripe
+import time
 import uuid
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -81,13 +82,9 @@ async def get_connect_url(platform: str, profile_id: str = None):
             raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-draft")
-async def generate_draft(
-    file: UploadFile = File(...), 
-    custom_prompt: str = Form(None),
-    user_id: str = Form(...) 
-):
-    # Initialize jpeg_content as None so it is defined for the whole function scope
-    jpeg_content = None 
+async def generate_draft(file: UploadFile = File(...), custom_prompt: str = Form(None), user_id: str = Form(...)):
+    # INITIALIZE THIS AT THE TOP
+    jpeg_content = None
 
     # 1. Verify User and Check Limits
     try:
@@ -102,6 +99,7 @@ async def generate_draft(
 
     # 2. UPLOAD TO SUPABASE BUCKET
     try:
+        jpeg_content = buffer.getvalue()
         file_content = await file.read()
         img = Image.open(io.BytesIO(file_content))
         if img.mode != "RGB":
@@ -120,9 +118,9 @@ async def generate_draft(
     # 3. GEMINI AI GENERATION
     gemini_key = os.environ.get("GEMINI_API_KEY")
     try:
+        # NOW THIS WILL WORK
         if jpeg_content is None:
-            raise Exception("Image processing failed.")
-            
+            raise Exception("Image processing failed, no valid JPEG data found.")
         base64_image = base64.b64encode(jpeg_content).decode("utf-8")
         
         # All of this must be indented inside the try block
@@ -160,7 +158,6 @@ async def generate_draft(
         
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
-    media_items = [{"type": "image", "url": payload.image_url}]
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
@@ -173,31 +170,37 @@ async def publish_post(payload: PostRequest):
         "Content-Type": "application/json"
     }
     
+    # 1. Force a clean, unique URL to bypass Instagram's internal cache
+    # This prevents the API from returning an "invalid file" error based on a prior failed attempt.
+    clean_url = f"{payload.image_url}?t={int(time.time())}"
+    
     body = {
         "profileId": "6a1350634beb548c15895d64",
         "content": payload.caption,
         "publishNow": True,
         "status": "published", 
-        "platforms": [p.dict() for p in payload.platforms]
-    }
-    
-    # Inject the image URL if it exists
-    if payload.image_url:
-        body["mediaItems"] = [
+        "platforms": [p.dict() for p in payload.platforms],
+        "mediaItems": [
             {
                 "type": "image",
-                "url": payload.image_url
+                "url": clean_url
             }
         ]
-        
+    }
+    
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
+            
             if response.status_code in [200, 201]:
                 return {"status": "success", "data": response.json()}
-            return {"status": "error", "detail": response.text}
+            else:
+                # Log the actual error from Zernio so we can see why it rejected the file
+                print(f"Zernio API Error Details: {response.text}")
+                return {"status": "error", "detail": response.text}
+                
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=f"Publishing failed: {str(e)}")
 
 @app.get("/api/get-accounts")
 async def get_accounts():
