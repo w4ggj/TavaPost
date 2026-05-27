@@ -84,7 +84,7 @@ async def generate_draft(
     custom_prompt: str = Form(None),
     user_id: str = Form(...) 
 ):
-    # 1. Verify User and Check Limits (Keep your existing logic)
+    # 1. Verify User and Check Limits
     try:
         response = supabase.table('user_profiles').select('subscription_tier, monthly_draft_count').eq('id', user_id.strip()).execute()
         profile = response.data[0] if response.data else {'subscription_tier': 'starter', 'monthly_draft_count': 0}
@@ -100,7 +100,7 @@ async def generate_draft(
         file_content = await file.read()
         file_name = f"{uuid.uuid4()}-{file.filename}"
         
-        # Upload the file
+        # Upload the file to 'tavapost-images'
         supabase.storage.from_("tavapost-images").upload(file_name, file_content)
         
         # Get the public URL
@@ -128,6 +128,9 @@ async def generate_draft(
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(google_url, json=body, headers=headers)
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail=f"Gemini Error: {response.text}")
+            
             data = response.json()
             raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
             
@@ -139,62 +142,6 @@ async def generate_draft(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
-
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(google_url, json=body, headers=headers)
-            if response.status_code != 200:
-                raise HTTPException(status_code=response.status_code, detail=f"Google API Error: {response.text}")
-            
-            data = response.json()
-            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-            
-            # 3. Increment the User's Usage Counter on Success
-            try:
-                supabase.table('user_profiles').update({
-                    'monthly_draft_count': usage_count + 1
-                }).eq('id', user_id).execute()
-            except Exception as e:
-                print(f"Non-fatal error updating count for {user_id}: {str(e)}")
-                
-            file_path = f"drafts/{user_id}/{file.filename}"
-supabase.storage.from_("posts").upload(file_path, file_content)
-
-# 2. Get the public URL
-public_url = supabase.storage.from_("posts").get_public_url(file_path)
-
-# 3. Return the real URL
-return {"image_url": public_url, "draft_text": raw_text}
-            
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/disconnect-platform")
-async def disconnect_platform(payload: dict):
-    zernio_key = os.environ.get("ZERNIO_API_KEY")
-    if not zernio_key:
-        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
-
-    clean_key = zernio_key.strip().replace("'", "").replace('"', "")
-    account_id = payload.get("account_id")
-    
-    if not account_id:
-        raise HTTPException(status_code=400, detail="Missing account_id")
-
-    zernio_disconnect_url = f"https://zernio.com/api/v1/accounts/{account_id}"
-    headers = {
-        "Authorization": f"Bearer {clean_key}",
-        "Content-Type": "application/json"
-    }
-
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        try:
-            response = await client.delete(zernio_disconnect_url, headers=headers)
-            if response.status_code in [200, 204, 404]:
-                return {"status": "success"}
-            else:
-                raise HTTPException(status_code=response.status_code, detail=response.text)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
