@@ -210,14 +210,15 @@ async function generateDraft() {
             console.log("URL Cached for publishing:", window.cachedImageUrl);
         }
 
-// --- PRECISE SPLITTING LOGIC ---
+// --- PRECISE SPLITTING LOGIC FOR "OPTION X:" FORMAT ---
 const container = document.getElementById('draft-cards');
 if (container) {
     container.innerHTML = ""; 
     
-    // Split specifically on the text "DRAFT VARIATION" followed by a number
-    // This ignores all internal paragraph breaks within a variation
-    const options = data.draft_text.split(/DRAFT\s+VARIATION\s+\d+/i)
+    // Split specifically on "Option 1:", "Option 2:", etc.
+    // The lookahead (?=Option \d+:) ensures we keep the label if we want it,
+    // or we can remove it. This regex splits whenever it sees "Option [number]:"
+    const options = data.draft_text.split(/Option\s+\d+:/i)
                                    .filter(t => t.trim().length > 50); // Keep only substantial content
     
     options.forEach((txt, i) => {
