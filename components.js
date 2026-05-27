@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Set the version number
                 const versionEl = document.getElementById("app-version");
                 if (versionEl) {
-                    versionEl.textContent = "2.1.3";
+                    versionEl.textContent = "2.2.0";
                 }
             }
         }); // <-- THIS WAS MISSING
