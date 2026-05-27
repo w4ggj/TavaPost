@@ -87,19 +87,22 @@ async def generate_draft(
     custom_prompt: str = Form(None),
     user_id: str = Form(...) 
 ):
-    # 1. INITIALIZE ALL VARIABLES AT THE TOP
+    # 1. INITIALIZE VARIABLES AT THE TOP LEVEL
+    usage_count = 0
     jpeg_content = None
-    gemini_key = os.environ.get("GEMINI_API_KEY") # Define it here!
+    gemini_key = os.environ.get("GEMINI_API_KEY")
 
-    # 2. Database Check
+    # 2. WRAP THE ENTIRE FLOW IN ONE MAIN TRY/EXCEPT
     try:
+        # A. Database Check
         response = supabase.table('user_profiles').select('subscription_tier, monthly_draft_count').eq('id', user_id.strip()).execute()
-        # ... rest of DB logic ...
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Database check failed: {str(e)}")
+        profile = response.data[0] if response.data else {'subscription_tier': 'starter', 'monthly_draft_count': 0}
+        usage_count = profile.get('monthly_draft_count', 0)
+        
+        if profile.get('subscription_tier') == 'starter' and usage_count >= 25:
+            raise HTTPException(status_code=403, detail="Monthly limit reached.")
 
-    # 3. UPLOAD TO SUPABASE
-    try:
+        # B. Upload
         file_content = await file.read()
         img = Image.open(io.BytesIO(file_content))
         if img.mode != "RGB":
@@ -112,20 +115,12 @@ async def generate_draft(
         file_name = f"{uuid.uuid4()}.jpg"
         supabase_admin.storage.from_("tavapost-images").upload(file_name, jpeg_content, {"content_type": "image/jpeg"})
         public_url = supabase_admin.storage.from_("tavapost-images").get_public_url(file_name)
-    except Exception as e:
-        print(f"DEBUG: Storage failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
 
-    # 4. GEMINI AI GENERATION
-    try:
-        # Now gemini_key and jpeg_content are guaranteed to exist
+        # C. Gemini
         if not gemini_key:
-            raise Exception("Gemini API Key is missing in environment variables.")
-        if jpeg_content is None:
-            raise Exception("No valid image data to process.")
+            raise Exception("Gemini key missing.")
             
         base64_image = base64.b64encode(jpeg_content).decode("utf-8")
-        # ... rest of your Gemini code ...
         
         system_rules = "CRITICAL: Output ONLY caption options. Use '###SEPARATOR###' between each option. No filler."
         if custom_prompt and custom_prompt.strip():
@@ -147,12 +142,14 @@ async def generate_draft(
             data = response.json()
             raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
             
+       # D. Increment usage
         supabase_admin.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
         
         return {"image_url": public_url, "draft_text": raw_text}
-        
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+        print(f"DEBUG: Process failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
         
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
