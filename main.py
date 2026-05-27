@@ -164,27 +164,20 @@ async def publish_post(payload: PostRequest):
 
     # 1. Start with the base body
     body = {
-        "profileId": "6a1350634beb548c15895d64",
-        "content": payload.caption,
-        "publishNow": True,
-        "status": "published",
-        "platforms": [p.dict() for p in payload.platforms]
-    }
-    
-    if payload.image_url:
-        # APPEND A RANDOM STRING AS A QUERY PARAMETER
-        # This breaks Instagram's cache and forces a fresh fetch
-        import uuid
-        cache_buster = uuid.uuid4().hex
-        clean_url = f"{payload.image_url}?v={cache_buster}"
-        
-        body["mediaItems"] = [
-            {
-                "type": "image",
-                "url": clean_url,
-                "mimeType": "image/jpeg"
-            }
-        ]
+    "profileId": "6a1350634beb548c15895d64",
+    "content": payload.caption,
+    "publishNow": True,
+    "platforms": [p.dict() for p in payload.platforms]
+}
+
+# Only attach image if a real URL is provided
+if payload.image_url and payload.image_url.strip() and "placeholder" not in payload.image_url:
+    body["mediaItems"] = [
+        {
+            "type": "image",
+            "url": payload.image_url.strip()
+        }
+    ]
     
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
