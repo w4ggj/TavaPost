@@ -176,9 +176,12 @@ async function loadUsageStats() {
         // --- COUNTER DISPLAY LOGIC ---
         if (!counter) return;
 
-        if (tier === 'founders' || isPrivileged) {
-            counter.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Unlimited Access</span>`;
+        if (tier === 'founders') {
+            counter.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Founder Unlimited</span>`;
+        } else if (isPrivileged) {
+            counter.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Complimentary Unlimited</span>`;
         } else {
+            // Logic for standard users (Starter tier)
             counter.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 25 Drafts</span>`;
         }
     } catch (err) {
