@@ -159,12 +159,28 @@ async function loadUsageStats() {
             .eq('id', session.user.id)
             .single();
 
-        const counter = document.getElementById('usage-counter');
-        if (!counter || !profile) return;
+        if (!profile) return;
 
-        counter.innerHTML = profile.subscription_tier === 'founders'
-            ? `<span style="color: var(--accent-green); font-weight: bold;">Unlimited (Founders)</span>`
-            : `<span style="color: ${profile.monthly_draft_count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 25 Drafts</span>`;
+        const counter = document.getElementById('usage-counter');
+        const tier = profile.subscription_tier;
+
+        // --- ADMIN/PRIVILEGED GATES ---
+        // Treat 'admin' and 'complimentary' as privileged tiers
+        const isPrivileged = (tier === 'admin' || tier === 'complimentary');
+
+        if (isPrivileged) {
+            // Reveal elements tagged with 'admin-only'
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+        }
+
+        // --- COUNTER DISPLAY LOGIC ---
+        if (!counter) return;
+
+        if (tier === 'founders' || isPrivileged) {
+            counter.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Unlimited Access</span>`;
+        } else {
+            counter.innerHTML = `<span style="color: ${profile.monthly_draft_count >= 25 ? '#ef4444' : 'var(--accent-blue)'}; font-weight: bold;">${profile.monthly_draft_count} / 25 Drafts</span>`;
+        }
     } catch (err) {
         console.error("loadUsageStats error:", err);
     }
