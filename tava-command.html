@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard // TavaOne Studio</title>
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/png" href="favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -35,6 +35,30 @@
             <button class="btn btn-primary" onclick="loadUsers()">Refresh Data</button>
         </div>
 
+        <details style="margin-bottom: 2rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
+    <summary style="cursor: pointer; font-weight: 600; color: var(--accent-purple);">➕ Provision New User Account</summary>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; margin-top: 1rem; align-items: end;">
+        <div class="input-group">
+            <label style="font-size: 0.8rem; color: var(--text-muted);">Email</label>
+            <input type="email" id="new-user-email" placeholder="user@brand.com" style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: white;">
+        </div>
+        <div class="input-group">
+            <label style="font-size: 0.8rem; color: var(--text-muted);">Password</label>
+            <input type="password" id="new-user-pass" placeholder="••••••••" style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: white;">
+        </div>
+        <div class="input-group">
+            <label style="font-size: 0.8rem; color: var(--text-muted);">Initial Tier</label>
+            <select id="new-user-tier" style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: white;">
+                <option value="starter">Starter</option>
+                <option value="founders">Founders</option>
+                <option value="complimentary">Complimentary</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="provisionUser()">Create Account</button>
+    </div>
+</details>
+
+<table class="admin-table">
         <table class="admin-table">
             <thead>
                 <tr>
