@@ -172,9 +172,11 @@ async function loadUsageStats() {
 
         if (!counter) return;
 
-        // --- UPDATED TIER LIMIT LOGIC ---
+// --- UPDATED TIER LIMIT LOGIC ---
         if (tier === 'admin') {
             counter.innerHTML = `<span style="color: var(--accent-purple); font-weight: bold;">Admin: Unlimited</span>`;
+        } else if (tier === 'demo') {
+            counter.innerHTML = `<span style="color: var(--accent-purple); font-weight: bold;">SANDBOX MODE ACTIVE</span>`;
         } else if (tier === 'complimentary') {
             counter.innerHTML = `<span style="color: var(--accent-green); font-weight: bold;">Complimentary: ${count} / 75 Drafts</span>`;
         } else if (tier === 'founders') {
