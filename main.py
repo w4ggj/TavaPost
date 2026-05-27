@@ -168,12 +168,11 @@ async def publish_post(payload: PostRequest):
     
     # 1. Force a clean, unique URL to bypass Instagram's internal cache
     # This prevents the API from returning an "invalid file" error based on a prior failed attempt.
-    clean_url = f"{payload.image_url}?t={int(time_lib.time())}"
     
     if payload.image_url:
         import time
         # Append cache-buster
-        clean_url = f"{payload.image_url}?t={int(time.time())}"
+        clean_url = f"{payload.image_url}?t={int(time_lib.time())}"
         
         body["mediaItems"] = [
             {
