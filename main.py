@@ -162,32 +162,23 @@ async def publish_post(payload: PostRequest):
         "Content-Type": "application/json"
     }
 
-    # 1. Start with the base body
     body = {
-    "profileId": "6a1350634beb548c15895d64",
-    "content": payload.caption,
-    "publishNow": True,
-    "platforms": [p.dict() for p in payload.platforms]
-}
+        "profileId": "6a1350634beb548c15895d64",
+        "content": payload.caption,
+        "publishNow": True,
+        "platforms": [p.dict() for p in payload.platforms]
+    }
 
-# Only attach image if a real URL is provided
-if payload.image_url and payload.image_url.strip() and "placeholder" not in payload.image_url:
-    body["mediaItems"] = [
-        {
-            "type": "image",
-            "url": payload.image_url.strip()
-        }
-    ]
-    
+    if payload.image_url and payload.image_url.strip() and "placeholder" not in payload.image_url:
+        body["mediaItems"] = [{"type": "image", "url": payload.image_url.strip()}]
+
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
             if response.status_code in [200, 201]:
                 return {"status": "success", "data": response.json()}
-            else:
-                # This will print the error to your Render logs so you can see it
-                print(f"Zernio API Error: {response.text}")
-                return {"status": "error", "detail": response.text}
+            print(f"Zernio API Error: {response.text}")
+            return {"status": "error", "detail": response.text}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
             
