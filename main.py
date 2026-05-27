@@ -129,6 +129,7 @@ async def generate_draft(
     try:
         # Re-encode the Jpeg content for Gemini
         base64_image = base64.b64encode(jpeg_content).decode("utf-8")
+        system_rules = "CRITICAL: Output ONLY caption options. Use '###SEPARATOR###' between each option. No filler."
         google_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
         headers = {"Content-Type": "application/json"}
         
@@ -179,7 +180,8 @@ body = {
         return {"image_url": public_url, "draft_text": raw_text}
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+        print(f"Error in Gemini generation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
         
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
