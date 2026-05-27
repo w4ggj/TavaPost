@@ -162,6 +162,7 @@ async def publish_post(payload: PostRequest):
         "Content-Type": "application/json"
     }
 
+    # Initialize body with required fields
     body = {
         "profileId": "6a1350634beb548c15895d64",
         "content": payload.caption,
@@ -170,19 +171,20 @@ async def publish_post(payload: PostRequest):
         "platforms": [p.dict() for p in payload.platforms]
     }
     
-    if payload.image_url and payload.image_url.strip() and "placeholder" not in payload.image_url:
-        # Append a unique timestamp to bypass Instagram's validation cache
-        timestamp = int(time_lib.time())
-        clean_url = f"{payload.image_url.strip()}?t={timestamp}"
+    if payload.image_url and payload.image_url.strip():
+        # FORCE CACHE BYPASS: Append a random value every time
+        # This makes the URL look 'brand new' to Instagram's validator
+        random_id = uuid.uuid4().hex
+        clean_url = f"{payload.image_url.strip()}?v={random_id}"
         
         body["mediaItems"] = [
             {
                 "type": "image",
                 "url": clean_url,
-                "mimeType": "image/jpeg" # Explicitly define the format
+                "mimeType": "image/jpeg"
             }
         ]
-
+    
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
