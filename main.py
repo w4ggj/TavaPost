@@ -166,21 +166,34 @@ async def publish_post(payload: PostRequest):
         "profileId": "6a1350634beb548c15895d64",
         "content": payload.caption,
         "publishNow": True,
+        "status": "published",
         "platforms": [p.dict() for p in payload.platforms]
     }
-
+    
     if payload.image_url and payload.image_url.strip() and "placeholder" not in payload.image_url:
-        body["mediaItems"] = [{"type": "image", "url": payload.image_url.strip()}]
+        # ADD A UNIQUE TIMESTAMP QUERY PARAMETER
+        # This breaks Instagram's cache and forces a fresh validation fetch
+        timestamp = int(time_lib.time())
+        clean_url = f"{payload.image_url.strip()}?t={timestamp}"
+        
+        body["mediaItems"] = [
+            {
+                "type": "image",
+                "url": clean_url,
+                "mimeType": "image/jpeg"
+            }
+        ]
 
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
             if response.status_code in [200, 201]:
                 return {"status": "success", "data": response.json()}
-            print(f"Zernio API Error: {response.text}")
+            # Log the error details so we can see why Instagram rejected it
+            print(f"Zernio API Error Details: {response.text}")
             return {"status": "error", "detail": response.text}
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=f"Publishing failed: {str(e)}")
             
 @app.get("/api/get-accounts")
 async def get_accounts():
