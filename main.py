@@ -142,10 +142,10 @@ async def generate_draft(
             data = response.json()
             raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
             
-       # D. Increment usage
-       supabase_admin.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
-        
-        return {"image_url": public_url, "draft_text": raw_text}
+            # Ensure this line is aligned with the 'data =' line above it
+            supabase_admin.table('user_profiles').update({'monthly_draft_count': usage_count + 1}).eq('id', user_id).execute()
+            
+            return {"image_url": public_url, "draft_text": raw_text}
 
     except Exception as e:
         print(f"DEBUG: Process failed: {str(e)}")
