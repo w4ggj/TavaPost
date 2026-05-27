@@ -24,9 +24,10 @@ document.addEventListener("componentsLoaded", async () => {
 
 window.addEventListener('load', initializeApp);
 
-// --- 3. SESSION & UI LOGIC ---
 async function checkSession() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
+    // Ensure you only call this ONCE using your correctly initialized variable
+    const { data: { session } } = await supabase.auth.getSession();
+    
     const loginView = document.getElementById('view-login');
     const dashView = document.getElementById('view-dashboard');
     const logoutBtn = document.getElementById('header-logout');
