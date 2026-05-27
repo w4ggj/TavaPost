@@ -349,3 +349,32 @@ async def stripe_webhook(request: Request):
             }).execute()
 
     return {"status": "success"}
+
+# ─── Add User ───────────────────────────────────────────────────────────────────
+
+class CreateUserRequest(BaseModel):
+    email: str
+    password: str
+    tier: str
+
+@app.post("/admin/create-user")
+async def create_user(request: CreateUserRequest):
+    # CRITICAL: Add a check here to ensure only YOU can call this
+    try:
+        # Create user via Supabase Auth
+        new_user = supabase_admin.auth.admin.create_user({
+            "email": request.email,
+            "password": request.password,
+            "email_confirm": True
+        })
+        
+        # Add profile
+        supabase_admin.table('user_profiles').insert({
+            'id': new_user.user.id,
+            'subscription_tier': request.tier,
+            'monthly_draft_count': 0
+        }).execute()
+        
+        return {"status": "success", "user_id": new_user.user.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
