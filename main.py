@@ -153,18 +153,17 @@ async def generate_draft(
         
 @app.post("/publish-post")
 async def publish_post(payload: PostRequest):
-    # 1. Initialize variables immediately
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
-    
-    # 2. Define headers before any try/except logic
+
+    # Define headers at the function level so they are always available
     headers = {
         "Authorization": f"Bearer {zernio_key.strip()}",
         "Content-Type": "application/json"
     }
 
-    # 3. Build body safely
+    # Construct the body with the cache-busting parameter
     body = {
         "profileId": "6a1350634beb548c15895d64",
         "content": payload.caption,
@@ -174,8 +173,11 @@ async def publish_post(payload: PostRequest):
     }
     
     if payload.image_url:
-        # Using the alias defined at the top
-        clean_url = f"{payload.image_url}?t={int(time_lib.time())}"
+        # 1. Use the 'time_lib' alias we fixed earlier
+        # 2. Append a dynamic timestamp so Instagram thinks this is a fresh file
+        timestamp = int(time_lib.time())
+        clean_url = f"{payload.image_url}?t={timestamp}"
+        
         body["mediaItems"] = [
             {
                 "type": "image",
@@ -183,8 +185,7 @@ async def publish_post(payload: PostRequest):
                 "mimeType": "image/jpeg"
             }
         ]
-
-    # 4. Perform the request
+    
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             response = await client.post("https://zernio.com/api/v1/posts", json=body, headers=headers)
@@ -193,9 +194,8 @@ async def publish_post(payload: PostRequest):
             else:
                 return {"status": "error", "detail": response.text}
         except Exception as e:
-            # This is now safe because headers and body were already defined
             raise HTTPException(status_code=500, detail=str(e))
-
+            
 @app.get("/api/get-accounts")
 async def get_accounts():
     zernio_key = os.environ.get("ZERNIO_API_KEY")
