@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+            <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -114,6 +114,7 @@
                     // Decide what colors to make the badges based on their tier
                     const tierBadgeClass = user.tier.toLowerCase() === 'pro' ? 'badge active' : 'badge';
                     
+                    // ... inside loadUsers() .map() function:
                     return `
                     <tr>
                         <td>
@@ -122,12 +123,15 @@
                         </td>
                         <td>
                             <span class="${tierBadgeClass}" style="text-transform: capitalize;">${user.tier}</span>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Usage: ${user.usage} Drafts</div>
                         </td>
-                        <td><span class="badge">Check DB</span></td>
                         <td>
-                            <button class="btn-small" onclick="disconnectSocial('${user.id}')">Disconnect Meta</button>
-                            <button class="btn-small btn-danger" onclick="deleteUser('${user.id}')" style="margin-left: 0.5rem;">Wipe Data</button>
+                            <button class="btn-small" onclick="toggleAdmin('${user.id}', '${user.tier}')">
+                                ${user.tier === 'admin' ? 'Revoke Admin' : 'Make Admin'}
+                            </button>
+                        </td>
+                        <td>
+                            <button class="btn-small" onclick="disconnectSocial('${user.id}')">Disconnect</button>
+                            <button class="btn-small btn-danger" onclick="deleteUser('${user.id}')" style="margin-left: 0.5rem;">Wipe</button>
                         </td>
                     </tr>
                     `;
@@ -169,6 +173,28 @@
                 loadUsers(); // Refresh the table
             }
         }
+
+        async function toggleAdmin(userId, currentTier) {
+    const newTier = (currentTier === 'admin') ? 'starter' : 'admin';
+    
+    if(!confirm(`Change tier from ${currentTier} to ${newTier}?`)) return;
+
+    const response = await fetch(`${BACKEND_URL}/admin/update-tier`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-admin-secret': ADMIN_SECRET
+        },
+        body: JSON.stringify({ target_user_id: userId, new_tier: newTier })
+    });
+
+    if (response.ok) {
+        alert("Tier updated.");
+        loadUsers(); // Refresh table
+    } else {
+        alert("Update failed.");
+    }
+}
     </script>
 </body>
 </html>
