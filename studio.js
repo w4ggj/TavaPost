@@ -210,34 +210,38 @@ async function generateDraft() {
             console.log("URL Cached for publishing:", window.cachedImageUrl);
         }
 
-        // --- 2. RENDER SEPARATE CARDS ---
-        const container = document.getElementById('draft-cards');
-        if (container) {
-            container.innerHTML = ""; // CRITICAL: Wipes previous results
-            
-            // Regex splits variations correctly
-            const options = data.draft_text.split(/(?:Option|Variation)?\s*\d+\.\s*/i)
-                                           .filter(t => t.trim().length > 0);
-            
-            options.forEach((txt, i) => {
-                const card = document.createElement('div');
-                // Apply styling to ensure they don't "clump"
-                card.className = "draft-card";
-                card.style.cssText = "border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 8px; cursor: pointer; transition: 0.3s;";
-                
-                card.innerHTML = `<header style="font-weight:bold; margin-bottom:8px;">DRAFT VARIATION ${i + 1}</header><p>${txt.trim()}</p>`;
-                
-                card.onclick = () => { 
-                    document.getElementById('finalCaption').value = txt.trim();
-                    // Visual feedback
-                    document.querySelectorAll('.draft-card').forEach(el => el.style.borderColor = "#ccc");
-                    card.style.borderColor = "#4a90e2"; 
-                };
-                
-                container.appendChild(card);
-            });
-            document.getElementById('selection-area').className = "view-active-block";
-        }
+        // --- IMPROVED SPLITTING LOGIC ---
+const container = document.getElementById('draft-cards');
+if (container) {
+    container.innerHTML = ""; 
+    
+    // Split by double newlines or standard labels to catch variations
+    // This looks for "Option", "Variation", or just newlines
+    const options = data.draft_text.split(/\n\s*\n|(?=Option|Variation|\d+\.)/i)
+                                   .filter(t => t.trim().length > 10); // Ignore tiny fragments
+    
+    options.forEach((txt, i) => {
+        const card = document.createElement('div');
+        card.className = "draft-card";
+        card.style.cssText = "border: 1px solid #475569; padding: 20px; margin-bottom: 20px; border-radius: 12px; cursor: pointer; background: rgba(30, 41, 59, 0.5);";
+        
+        card.innerHTML = `
+            <header style="font-weight:bold; margin-bottom:10px; color: #38bdf8; text-transform: uppercase; font-size: 0.8rem;">
+                Draft Variation ${i + 1}
+            </header>
+            <p style="margin: 0; line-height: 1.6; font-size: 0.95rem;">${txt.trim()}</p>
+        `;
+        
+        card.onclick = () => { 
+            document.getElementById('finalCaption').value = txt.trim();
+            document.querySelectorAll('.draft-card').forEach(el => el.style.borderColor = "#475569");
+            card.style.borderColor = "#22c55e"; 
+        };
+        
+        container.appendChild(card);
+    });
+    document.getElementById('selection-area').className = "view-active-block";
+}
     } catch (err) {
         console.error("Draft error:", err);
         alert("Generation failed: " + err.message);
