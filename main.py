@@ -180,7 +180,8 @@ body = {
         return {"image_url": public_url, "draft_text": raw_text}
         
     except Exception as e:
-        print(f"Error in Gemini generation: {e}")
+        # This must follow the try block immediately
+        print(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
         
 @app.post("/publish-post")
