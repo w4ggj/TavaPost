@@ -100,21 +100,28 @@ async def generate_draft(
     # 2. UPLOAD TO SUPABASE BUCKET
     try:
         file_content = await file.read()
+        
+        # Use a BytesIO object for the initial open
         img = Image.open(io.BytesIO(file_content))
+        
+        # Ensure RGB
         if img.mode != "RGB":
             img = img.convert("RGB")
         
-        buffer = io.BytesIO()
-        img.save(buffer, format="JPEG", quality=90, optimize=True)
-        jpeg_content = buffer.getvalue()
-
-        # Force re-save as standard JPEG
-        buffer = io.BytesIO()
-        img.save(buffer, format="JPEG", quality=90, optimize=True)
-        jpeg_content = buffer.getvalue()
+        # Save ONCE to a fresh buffer
+        output_buffer = io.BytesIO()
+        img.save(output_buffer, format="JPEG", quality=90, optimize=True)
+        jpeg_content = output_buffer.getvalue()
         
         file_name = f"{uuid.uuid4()}.jpg"
-        supabase_admin.storage.from_("tavapost-images").upload(file_name, jpeg_content, {"content_type": "image/jpeg"})
+        
+        # Upload
+        supabase_admin.storage.from_("tavapost-images").upload(
+            file_name, 
+            jpeg_content, 
+            {"content_type": "image/jpeg"}
+        )
+        
         public_url = supabase_admin.storage.from_("tavapost-images").get_public_url(file_name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
