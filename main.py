@@ -260,9 +260,97 @@ async def publish_post(payload: PostRequest):
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Publishing failed: {str(e)}")
 
+# ─── STRIPE ───────────────────────────────────────────────────────────────────
+
+@app.post("/create-checkout-session")
+async def create_checkout_session(request: CheckoutRequest):
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{'price': request.price_id, 'quantity': 1}],
+            mode='subscription',
+            success_url='https://studio.tavaone.com/setup-account.html?email={CHECKOUT_SESSION_EMAIL}',
+            cancel_url='https://studio.tavaone.com/',
+        )
+        return {"url": checkout_session.url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/webhook")
+async def stripe_webhook(request: Request):
+    payload = await request.body()
+    sig_header = request.headers.get('stripe-signature')
+    endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid signature")
+
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        customer_email = session.get('customer_details', {}).get('email')
+        if customer_email:
+            print(f"Payment successful for: {customer_email}")
+            supabase_admin.table('pending_registrations').insert({
+                'email': customer_email,
+                'tier': 'founders',
+                'status': 'paid'
+            }).execute()
+
+    return {"status": "success"}
+
 # ─── ADMIN ────────────────────────────────────────────────────────────────────
 
-ADMIN_SECRET = os.environ.get("ADMIN_SECRET_KEY", "super-secret-tava-key-123")
+ADMIN_SECRET = os.environ.get("ADMIN_SECRET_KEY", "tava-admin-998877")
+
+class AdminRequest(BaseModel):
+    target_user_id: str
+
+class UpdateTierRequest(BaseModel):
+    target_user_id: str
+    new_tier: str
+
+class CreateUserRequest(BaseModel):
+    email: str
+    password: str
+    tier: str
+
+@app.post("/admin/create-user")
+async def create_user(request: CreateUserRequest, x_admin_secret: str = Header(...)):
+    if x_admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+        
+    try:
+        # Create Auth User
+        new_user = supabase_admin.auth.admin.create_user({
+            "email": request.email,
+            "password": request.password,
+            "email_confirm": True
+        })
+        
+        # Upsert Profile (Prevents duplication errors)
+        supabase_admin.table('user_profiles').upsert({
+            'id': new_user.user.id,
+            'subscription_tier': request.tier,
+            'monthly_draft_count': 0
+        }).execute()
+        
+        return {"status": "success", "user_id": new_user.user.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/admin/update-tier")
+async def update_tier(request: UpdateTierRequest, x_admin_secret: str = Header(...)):
+    if x_admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    try:
+        supabase_admin.table('user_profiles').update({
+            'subscription_tier': request.new_tier
+        }).eq('id', request.target_user_id).execute()
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/admin/disconnect")
 async def admin_disconnect_social(request: AdminRequest, x_admin_secret: str = Header(...)):
@@ -305,109 +393,6 @@ async def admin_list_users(x_admin_secret: str = Header(...)):
                 "tier": profile.get('subscription_tier', 'starter'),
                 "usage": profile.get('monthly_draft_count', 0)
             })
-
         return {"status": "success", "data": user_list}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# ─── STRIPE ───────────────────────────────────────────────────────────────────
-
-@app.post("/create-checkout-session")
-async def create_checkout_session(request: CheckoutRequest):
-    try:
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{'price': request.price_id, 'quantity': 1}],
-            mode='subscription',
-            success_url='https://studio.tavaone.com/setup-account.html?email={CHECKOUT_SESSION_EMAIL}',
-            cancel_url='https://studio.tavaone.com/',
-        )
-        return {"url": checkout_session.url}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/webhook")
-async def stripe_webhook(request: Request):
-    payload = await request.body()
-    sig_header = request.headers.get('stripe-signature')
-    endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
-
-    try:
-        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid signature")
-
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        customer_email = session.get('customer_details', {}).get('email')
-        if customer_email:
-            print(f"Payment successful for: {customer_email}")
-            supabase_admin.table('pending_registrations').insert({
-                'email': customer_email,
-                'tier': 'founders',
-                'status': 'paid'
-            }).execute()
-
-    return {"status": "success"}
-
-# ─── Add User ───────────────────────────────────────────────────────────────────
-
-class CreateUserRequest(BaseModel):
-    email: str
-    password: str
-    tier: str
-
-@app.post("/admin/create-user")
-async def create_user(request: CreateUserRequest):
-    # CRITICAL: Add a check here to ensure only YOU can call this
-    try:
-        # Create user via Supabase Auth
-        new_user = supabase_admin.auth.admin.create_user({
-            "email": request.email,
-            "password": request.password,
-            "email_confirm": True
-        })
-        
-        # Add profile
-        supabase_admin.table('user_profiles').insert({
-            'id': new_user.user.id,
-            'subscription_tier': request.tier,
-            'monthly_draft_count': 0
-        }).execute()
-        
-        return {"status": "success", "user_id": new_user.user.id}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-class UpdateTierRequest(BaseModel):
-    target_user_id: str
-    new_tier: str
-
-@app.post("/admin/create-user")
-async def create_user(request: CreateUserRequest, x_admin_secret: str = Header(...)):
-    if x_admin_secret != os.environ.get("ADMIN_SECRET"):
-        raise HTTPException(status_code=403, detail="Unauthorized")
-        
-    try:
-        # 1. Create the Auth User
-        new_user = supabase_admin.auth.admin.create_user({
-            "email": request.email,
-            "password": request.password,
-            "email_confirm": True
-        })
-        
-        # 2. Use UPSERT instead of UPDATE
-        # This will either overwrite the tier the trigger created, 
-        # or create it if the trigger hasn't fired yet.
-        supabase_admin.table('user_profiles').upsert({
-            'id': new_user.user.id,
-            'subscription_tier': request.tier,
-            'monthly_draft_count': 0
-        }).execute()
-        
-        return {"status": "success", "user_id": new_user.user.id}
-        
-    except Exception as e:
-        # If it's a genuine error, we log it
-        print(f"Provisioning error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
