@@ -7,9 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .then(html => {
             const headerPlaceholder = document.getElementById("header-placeholder");
             if (headerPlaceholder) {
-                headerPlaceholder.outerHTML = html; // Replaces the placeholder with the actual header
-                
-                // Show the "Return" button if we are on a legal/support page
+                headerPlaceholder.outerHTML = html;
                 const currentPath = window.location.pathname.toLowerCase();
                 if (currentPath.includes("privacy") || currentPath.includes("terms") || currentPath.includes("support")) {
                     document.getElementById("header-return").className = "btn btn-logout view-active-block";
@@ -26,10 +24,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 footerPlaceholder.innerHTML = html;
                 document.getElementById("current-year").textContent = new Date().getFullYear();
                 
-                // ADD THIS LINE TO SET THE VERSION
+                // Set the version number
                 const versionEl = document.getElementById("app-version");
                 if (versionEl) {
                     versionEl.textContent = "2.1.3";
                 }
             }
-        });
+        }); // <-- THIS WAS MISSING
+
+    // 3. Broadcast that the UI is ready
+    Promise.all([loadHeader, loadFooter])
+        .then(() => {
+            document.dispatchEvent(new Event("componentsLoaded"));
+        })
+        .catch(error => console.error("Error loading components:", error));
+});
