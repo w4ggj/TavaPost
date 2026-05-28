@@ -149,7 +149,10 @@ async def generate_draft(
             ratio = min(max_dim / w, max_dim / h)
             img = img.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
         
-        # (Proceed with your existing aspect ratio/crop logic here...)
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=85)
+        jpeg_content = buffer.getvalue()
+        
         # Note: Keep the rest of your image processing logic until jpeg_content is created
 
         # Save to /tmp
