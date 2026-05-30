@@ -126,26 +126,31 @@ async def create_zernio_profile(payload: ProfileCreateRequest):
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str, profileId: str):
     zernio_key = os.environ.get("ZERNIO_API_KEY")
-    headers = {
-        "Authorization": f"Bearer {zernio_key.strip()}",
-        "Accept": "application/json" # Force JSON
-    }
+    headers = {"Authorization": f"Bearer {zernio_key.strip()}"}
+    
+    # 1. Endpoint construction
+    zernio_endpoint = f"https://zernio.com/api/v1/profiles/{profileId}/auth?platform={platform}"
     
     async with httpx.AsyncClient() as client:
-        # Use the exact endpoint structure Zernio expects
-        zernio_endpoint = f"https://zernio.com/api/v1/profiles/{profileId}/auth?platform={platform}"
-        response = await client.get(zernio_endpoint, headers=headers, timeout=10.0)
-        
-        # Check if response is actually JSON
         try:
-            data = response.json()
-        except:
-            raise HTTPException(status_code=500, detail="Zernio returned non-JSON data (likely an invalid URL/Endpoint)")
+            response = await client.get(zernio_endpoint, headers=headers, timeout=10.0)
+            
+            # 2. Check if the response is actually JSON
+            try:
+                data = response.json()
+            except:
+                # If Zernio returns 404 HTML, this will catch it
+                print(f"CRITICAL: Zernio returned non-JSON response (Status: {response.status_code})")
+                raise HTTPException(status_code=500, detail="Zernio returned an invalid response (not JSON)")
 
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=f"Zernio API returned {response.status_code}: {data}")
-
-        return data
+            # 3. Only proceed if status is 200
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail=f"Zernio API Error: {response.text}")
+            
+            return data
+            
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/get-accounts")
 async def get_accounts():
