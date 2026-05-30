@@ -130,7 +130,7 @@ async def get_connect_url(platform: str, profileId: str):
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     headers = {"Authorization": f"Bearer {zernio_key.strip()}"}
     
-    redirect_uri = "https://studio.tavaone.com/"  # ← sends user back here after auth
+    redirect_url = "https://studio.tavaone.com/"  # ← sends user back here after auth
     zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profileId}&redirectUri={redirect_uri}"
     
     # Retry loop — Zernio has a propagation delay after profile creation.
