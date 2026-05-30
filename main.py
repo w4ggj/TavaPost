@@ -123,29 +123,45 @@ async def create_zernio_profile(payload: ProfileCreateRequest):
             print(f"CRITICAL ERROR: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Database write failed: {str(e)}")
 
+import asyncio  # add this at the top of the file with the other imports
+
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str, profileId: str):
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     headers = {"Authorization": f"Bearer {zernio_key.strip()}"}
     
-    async with httpx.AsyncClient() as client:
-        zernio_endpoint = f"https://zernio.com/api/v1/profiles/{profileId}/auth?platform={platform}"
-        response = await client.get(zernio_endpoint, headers=headers, timeout=10.0)
-        
-        # 1. Handle 404 Not Found explicitly
-        if response.status_code == 404:
-            print(f"CRITICAL: Profile ID {profileId} not found on Zernio. Clearing stale DB record.")
-            # Clear the stale ID from your database so the next 'Connect' click forces a new creation
-            supabase_admin.table('user_settings').update({"zernio_profile_id": None}).eq("zernio_profile_id", profileId).execute()
-            raise HTTPException(status_code=404, detail="Workspace expired or not found. Please reconnect.")
+    zernio_endpoint = f"https://zernio.com/api/v1/profiles/{profileId}/auth?platform={platform}"
+    
+    # Retry loop — Zernio has a propagation delay after profile creation.
+    # A newly created profile may return 404 for 1-5 seconds. Retry before giving up.
+    MAX_RETRIES = 4
+    RETRY_DELAY = 1.5  # seconds between attempts
 
-        # 2. Existing JSON validation logic
-        try:
-            data = response.json()
-        except:
-            raise HTTPException(status_code=500, detail="Invalid response from Zernio")
-            
-        return data
+    async with httpx.AsyncClient() as client:
+        for attempt in range(1, MAX_RETRIES + 1):
+            response = await client.get(zernio_endpoint, headers=headers, timeout=10.0)
+            print(f"DEBUG get-connect-url: attempt {attempt}, status {response.status_code}")
+
+            if response.status_code == 200:
+                try:
+                    return response.json()
+                except Exception:
+                    raise HTTPException(status_code=500, detail="Invalid JSON from Zernio")
+
+            if response.status_code == 404:
+                if attempt < MAX_RETRIES:
+                    print(f"INFO: Profile {profileId} not yet indexed by Zernio. Retrying in {RETRY_DELAY}s... ({attempt}/{MAX_RETRIES})")
+                    await asyncio.sleep(RETRY_DELAY)
+                    continue
+                else:
+                    # Only clear the DB record after all retries are exhausted —
+                    # this means the profile is genuinely gone, not just slow to propagate.
+                    print(f"CRITICAL: Profile {profileId} not found after {MAX_RETRIES} attempts. Clearing stale DB record.")
+                    supabase_admin.table('user_settings').update({"zernio_profile_id": None}).eq("zernio_profile_id", profileId).execute()
+                    raise HTTPException(status_code=404, detail="Workspace expired or not found. Please click Connect again.")
+
+            # Any other non-200 status (500, 403, etc.) — fail immediately
+            raise HTTPException(status_code=response.status_code, detail=f"Zernio error: {response.text}")
 
 @app.get("/api/get-accounts")
 async def get_accounts():
