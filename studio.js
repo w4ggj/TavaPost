@@ -270,6 +270,10 @@ async function connectPlatform(platform) {
             
             // Sync current browser runtime state cache instantly
             window.zernioProfileId = targetProfileId;
+            // ── NEW: Give Zernio a moment to finish indexing the new profile ──
+console.log("New workspace provisioned. Waiting for Zernio to index profile...");
+await new Promise(resolve => setTimeout(resolve, 2000));
+// ─────────────────────────────────────────────────────────────────
         }
 
         // Step 2: Use the user's explicit profile id to safely structure the connection loop
