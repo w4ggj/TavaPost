@@ -82,49 +82,26 @@ async def serve_image(filename: str):
 
 @app.post("/api/create-zernio-profile")
 async def create_zernio_profile(payload: ProfileCreateRequest):
-    # Ensure we actually have an ID to work with
-    if not payload.user_id:
-        raise HTTPException(status_code=400, detail="Missing user_id for profile creation")
+    # ... (Keep the Zernio creation code as it is, it's working!) ...
 
-    zernio_key = os.environ.get("ZERNIO_API_KEY")
-    if not zernio_key:
-        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY.")
+    try:
+        # Get the new ID from Zernio
+        new_profile_id = zernio_data.get("_id")
+        
+        # ✅ FIX: Make the database write very strict and log any error details
+        response = supabase_admin.table('user_settings').upsert({
+            "user_id": payload.user_id,
+            "zernio_profile_id": new_profile_id
+        }, on_conflict="user_id").execute()
+        
+        # Verify the write actually happened
+        print(f"DEBUG: Supabase write result: {response.data}")
+        return {"zernio_profile_id": new_profile_id}
 
-    headers = {
-        "Authorization": f"Bearer {zernio_key.strip()}",
-        "Content-Type": "application/json"
-    }
-    
-    # Generate a truly unique name
-    unique_suffix = str(uuid.uuid4())[:8]
-    profile_name = f"TavaOne_{payload.user_id}_{unique_suffix}"
-
-    body = {"name": profile_name}
-
-    async with httpx.AsyncClient() as client:
-        try:
-            zernio_resp = await client.post("https://zernio.com/api/v1/profiles", json=body, headers=headers, timeout=15.0)
-            
-            # Log the full response so we can debug if this fails
-            print(f"DEBUG: Zernio Response: {zernio_resp.status_code} - {zernio_resp.text}")
-            
-            if zernio_resp.status_code not in [200, 201]:
-                raise HTTPException(status_code=zernio_resp.status_code, detail=zernio_resp.text)
-            
-            zernio_data = zernio_resp.json()
-            new_profile_id = zernio_data.get("_id")
-            
-            # Use specific match on user_id to prevent collision
-            supabase_admin.table('user_settings').upsert({
-                "user_id": payload.user_id, 
-                "zernio_profile_id": new_profile_id
-            }, on_conflict="user_id").execute()
-
-            return {"zernio_profile_id": new_profile_id}
-
-        except Exception as e:
-            print(f"CRITICAL ERROR: {str(e)}")
-            raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        # This will print the EXACT reason Supabase rejected the write
+        print(f"CRITICAL ERROR: Supabase write failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database write failed: {str(e)}")
 
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str, profileId: Optional[str] = None):
