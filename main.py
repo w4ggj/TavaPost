@@ -82,10 +82,6 @@ async def serve_image(filename: str):
 
 @app.post("/api/create-zernio-profile")
 async def create_zernio_profile(payload: ProfileCreateRequest):
-    # 1. Initialize variables at the top to ensure scope safety
-    new_profile_id = None
-    body = {"name": "init"} # Guaranteed to exist
-    
     if not payload.user_id:
         raise HTTPException(status_code=400, detail="Missing user_id")
 
@@ -93,27 +89,27 @@ async def create_zernio_profile(payload: ProfileCreateRequest):
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY")
 
-    headers = {
-        "Authorization": f"Bearer {zernio_key.strip()}",
-        "Content-Type": "application/json"
-    }
-    
+    headers = {"Authorization": f"Bearer {zernio_key.strip()}", "Content-Type": "application/json"}
     unique_id = str(uuid.uuid4())[:8]
     body = {"name": f"TavaOne_{payload.user_id}_{unique_id}"}
 
     async with httpx.AsyncClient() as client:
         try:
-            # Send the request
             resp = await client.post("https://zernio.com/api/v1/profiles", json=body, headers=headers, timeout=15.0)
             
+            # --- DEBUGGING BLOCK ---
+            raw_json = resp.json()
+            print(f"DEBUG: Full Zernio Response JSON: {raw_json}")
+            # -----------------------
+
             if resp.status_code not in [200, 201]:
-                raise HTTPException(status_code=resp.status_code, detail=f"Zernio Error: {resp.text}")
+                raise HTTPException(status_code=resp.status_code, detail=f"Zernio API Error: {resp.text}")
             
-            zernio_data = resp.json()
-            new_profile_id = zernio_data.get("_id")
+            # Use a more flexible search for the ID
+            new_profile_id = raw_json.get("_id") or raw_json.get("id") or (raw_json.get("profile") or {}).get("_id")
             
             if not new_profile_id:
-                raise HTTPException(status_code=500, detail="Zernio failed to return an _id")
+                raise HTTPException(status_code=500, detail=f"Zernio response format unexpected. Response: {raw_json}")
 
             # Database write
             supabase_admin.table('user_settings').upsert({
@@ -124,10 +120,8 @@ async def create_zernio_profile(payload: ProfileCreateRequest):
             return {"zernio_profile_id": new_profile_id}
 
         except Exception as e:
-            # Now, even if the code crashes, the 'body' and 'new_profile_id' variables exist
-            # and won't trigger an 'undefined' error message.
             print(f"CRITICAL ERROR: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Process failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Database write failed: {str(e)}")
 
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str, profileId: Optional[str] = None):
