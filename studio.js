@@ -84,25 +84,48 @@ async function handleZernioCallback() {
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
 
 async function loadSettings() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) return;
+    console.log("Loading user settings...");
+    
+    // 1. Ensure we wait for the session to be fully ready
+    const { data: authData } = await supabaseClient.auth.getSession();
+    let session = authData.session;
+    
+    if (!session) {
+        console.warn("No session initially, waiting for auth refresh...");
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const { data: retryData } = await supabaseClient.auth.getSession();
+        session = retryData.session;
+    }
+    
+    if (!session) {
+        console.error("No active session. User must log in.");
+        return;
+    }
 
+    // 2. Fetch the settings row linked to this specific user
     const { data, error } = await supabaseClient
         .from('user_settings')
         .select('custom_prompt, zernio_facebook_id, zernio_instagram_id, zernio_profile_id')
         .eq('user_id', session.user.id)
         .maybeSingle();
 
-    if (error) { console.error("loadSettings error:", error); return; }
+    if (error) { 
+        console.error("loadSettings Supabase error:", error); 
+        return; 
+    }
 
+    // 3. Populate UI and set global state context
     if (data) {
+        console.log("Settings loaded successfully:", data);
+        
+        // Populate the Brand Voice / Prompt
         const promptEl = document.getElementById('custom_prompt');
-        if (promptEl && data.custom_prompt) promptEl.value = data.custom_prompt;
+        if (promptEl) promptEl.value = data.custom_prompt || "";
 
-        // Cache the custom dynamic workspace token locally inside the running app context
+        // Cache the custom dynamic workspace token
         window.zernioProfileId = data.zernio_profile_id || null;
 
-        // Facebook
+        // Facebook Status
         const fbStatus = document.getElementById('fb-status');
         const fbAction = document.getElementById('fb-action-area');
         if (data.zernio_facebook_id) {
@@ -115,7 +138,7 @@ async function loadSettings() {
             if (fbAction) fbAction.innerHTML = `<button type="button" class="btn btn-fb" onclick="connectPlatform('facebook')">Connect Page</button>`;
         }
 
-        // Instagram
+        // Instagram Status
         const igStatus = document.getElementById('ig-status');
         const igAction = document.getElementById('ig-action-area');
         if (data.zernio_instagram_id) {
@@ -127,9 +150,10 @@ async function loadSettings() {
             if (igStatus) { igStatus.innerText = "Not Connected"; igStatus.className = "badge badge-red"; }
             if (igAction) igAction.innerHTML = `<button type="button" class="btn btn-ig" onclick="connectPlatform('instagram')">Connect IG</button>`;
         }
+    } else {
+        console.log("No settings found for this user. Initial state initialized.");
     }
 }
-
 async function saveSettings() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return alert("Session expired.");
