@@ -163,6 +163,27 @@ async def get_connect_url(platform: str, profileId: str):
             # Any other non-200 status (500, 403, etc.) — fail immediately
             raise HTTPException(status_code=response.status_code, detail=f"Zernio error: {response.text}")
 
+@app.get("/api/debug-zernio-profile")
+async def debug_zernio_profile(profileId: str):
+    zernio_key = os.environ.get("ZERNIO_API_KEY")
+    headers = {"Authorization": f"Bearer {zernio_key.strip()}"}
+    
+    async with httpx.AsyncClient() as client:
+        # Test 1: Does the profile exist at all?
+        r1 = await client.get(f"https://zernio.com/api/v1/profiles/{profileId}", headers=headers, timeout=10.0)
+        
+        # Test 2: Does the /auth sub-path exist?
+        r2 = await client.get(f"https://zernio.com/api/v1/profiles/{profileId}/auth?platform=facebook", headers=headers, timeout=10.0)
+        
+        # Test 3: What does the top-level profiles list look like?
+        r3 = await client.get("https://zernio.com/api/v1/profiles", headers=headers, timeout=10.0)
+        
+        return {
+            "profile_direct": {"status": r1.status_code, "body": r1.text},
+            "profile_auth":   {"status": r2.status_code, "body": r2.text},
+            "profiles_list":  {"status": r3.status_code, "body": r3.text},
+        }
+        
 @app.get("/api/get-accounts")
 async def get_accounts():
     zernio_key = os.environ.get("ZERNIO_API_KEY")
