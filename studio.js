@@ -134,7 +134,7 @@ async function saveSettings() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return alert("Session expired.");
 
-    const inputEl = document.getElementById("customPrompt");
+    const inputEl = document.getElementById("custom_prompt");
     const customPromptValue = inputEl ? inputEl.value : "";
 
     const { error } = await supabaseClient
@@ -302,7 +302,7 @@ async function generateDraft() {
     const fileInput        = document.getElementById('imageInput');
     const loadingLabel     = document.getElementById('loading');
     const btnGen           = document.getElementById('btn-generate');
-    const customPromptEl   = document.getElementById('customPrompt');
+    const customPromptEl   = document.getElementById('custom_prompt');
     const customPromptValue = customPromptEl ? customPromptEl.value : "";
 
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
