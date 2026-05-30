@@ -124,28 +124,46 @@ async def create_zernio_profile(payload: ProfileCreateRequest):
             raise HTTPException(status_code=500, detail=f"Database write failed: {str(e)}")
 
 @app.get("/api/get-connect-url")
-async def get_connect_url(platform: str, profileId: Optional[str] = None):
-    zernio_key = os.environ.get("ZERNIO_API_KEY")
-    # ... (header setup) ...
+async def get_connect_url(platform: str, profileId: str):
+    try:
+        # 1. Validation
+        if not profileId or profileId == "null":
+            print("ERROR: Missing profileId")
+            raise HTTPException(status_code=400, detail="Missing profileId")
 
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(zernio_endpoint, headers=headers, params=params)
+        zernio_key = os.environ.get("ZERNIO_API_KEY")
+        if not zernio_key:
+            print("ERROR: ZERNIO_API_KEY is missing in environment variables")
+            raise HTTPException(status_code=500, detail="API Key missing")
+
+        headers = {"Authorization": f"Bearer {zernio_key.strip()}"}
+        zernio_endpoint = f"https://zernio.com/api/v1/profiles/{profileId}/auth?platform={platform}"
+
+        # 2. Request
+        async with httpx.AsyncClient() as client:
+            print(f"DEBUG: Requesting auth URL from: {zernio_endpoint}")
+            response = await client.get(zernio_endpoint, headers=headers, timeout=10.0)
+            
+            # 3. Log Status
+            print(f"DEBUG: Zernio returned status {response.status_code}")
+            
+            if response.status_code != 200:
+                print(f"ERROR: Zernio responded with {response.text}")
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+            
             data = response.json()
+            # Handle potential key variations
+            auth_url = data.get("authUrl") or data.get("url") or data.get("authorization_url")
             
-            # DEBUG: Log what Zernio actually returned
-            print(f"DEBUG: Zernio auth response: {data}")
-            
-            if response.status_code == 200:
-                # If Zernio uses a different key name like 'url' instead of 'authUrl', 
-                # you must map it here:
-                if 'authUrl' not in data:
-                    # Provide a fallback or fix the key name
-                    return {"authUrl": data.get("url") or data.get("authorization_url")}
-                return data
-            raise HTTPException(status_code=response.status_code, detail=f"Zernio Error: {response.text}")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            if not auth_url:
+                print(f"ERROR: Payload missing URL keys. Received: {data}")
+                raise HTTPException(status_code=500, detail="No URL found in response")
+                
+            return {"authUrl": auth_url}
+
+    except Exception as e:
+        print(f"CRITICAL BACKEND ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/get-accounts")
 async def get_accounts():
