@@ -84,38 +84,34 @@ async def serve_image(filename: str):
 async def create_zernio_profile(payload: ProfileCreateRequest):
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
-        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY configuration.")
+        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY.")
 
     headers = {
         "Authorization": f"Bearer {zernio_key.strip()}",
         "Content-Type": "application/json"
     }
     
-    # ✅ FIX: Add a short random string (uuid) to ensure the name is ALWAYS unique
-    unique_suffix = str(uuid.uuid4())[:8]
-    profile_name = f"TavaOne_{payload.user_id}_{unique_suffix}"
-
+    # ✅ FIX: Use a unique ID suffix so Zernio never sees a duplicate name
+    unique_id = str(uuid.uuid4())[:8]
     body = {
-        "name": profile_name
+        "name": f"TavaOne_{payload.user_id}_{unique_id}"
     }
 
     async with httpx.AsyncClient() as client:
         try:
             zernio_resp = await client.post("https://zernio.com/api/v1/profiles", json=body, headers=headers, timeout=15.0)
             
-            # If Zernio still rejects it, log the error clearly
             if zernio_resp.status_code not in [200, 201]:
-                raise HTTPException(status_code=zernio_resp.status_code, detail=f"Zernio workspace rejection: {zernio_resp.text}")
+                raise HTTPException(status_code=zernio_resp.status_code, detail=f"Zernio rejection: {zernio_resp.text}")
             
             zernio_data = zernio_resp.json()
             new_profile_id = zernio_data.get("_id")
             
-            # Write to Supabase...
-            db_update = {
+            # Save the new ID to Supabase
+            supabase_admin.table('user_settings').upsert({
                 "user_id": payload.user_id,
                 "zernio_profile_id": new_profile_id
-            }
-            supabase_admin.table('user_settings').upsert(db_update).execute()
+            }).execute()
 
             return {"zernio_profile_id": new_profile_id}
 
