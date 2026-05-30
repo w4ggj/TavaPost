@@ -82,10 +82,6 @@ async def serve_image(filename: str):
 
 @app.post("/api/create-zernio-profile")
 async def create_zernio_profile(payload: ProfileCreateRequest):
-    """
-    Dynamically generates a distinct Zernio Profile for a user on-the-fly when they click 
-    connect on their dashboard, saving the key safely to Supabase user_settings.
-    """
     zernio_key = os.environ.get("ZERNIO_API_KEY")
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY configuration.")
@@ -95,22 +91,26 @@ async def create_zernio_profile(payload: ProfileCreateRequest):
         "Content-Type": "application/json"
     }
     
+    # ✅ FIX: Add a short random string (uuid) to ensure the name is ALWAYS unique
+    unique_suffix = str(uuid.uuid4())[:8]
+    profile_name = f"TavaOne_{payload.user_id}_{unique_suffix}"
+
     body = {
-        "name": f"TavaOne Profile Stack // User ID: {payload.user_id}"
+        "name": profile_name
     }
 
     async with httpx.AsyncClient() as client:
         try:
             zernio_resp = await client.post("https://zernio.com/api/v1/profiles", json=body, headers=headers, timeout=15.0)
+            
+            # If Zernio still rejects it, log the error clearly
             if zernio_resp.status_code not in [200, 201]:
                 raise HTTPException(status_code=zernio_resp.status_code, detail=f"Zernio workspace rejection: {zernio_resp.text}")
             
             zernio_data = zernio_resp.json()
             new_profile_id = zernio_data.get("_id")
             
-            if not new_profile_id:
-                raise HTTPException(status_code=502, detail="Zernio profile creation succeeded but returned an empty ID token.")
-
+            # Write to Supabase...
             db_update = {
                 "user_id": payload.user_id,
                 "zernio_profile_id": new_profile_id
@@ -119,10 +119,8 @@ async def create_zernio_profile(payload: ProfileCreateRequest):
 
             return {"zernio_profile_id": new_profile_id}
 
-        except httpx.RequestError as exc:
-            raise HTTPException(status_code=503, detail=f"Zernio API communication gateway timeout: {exc}")
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Internal database update failure: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str, profileId: Optional[str] = None):
