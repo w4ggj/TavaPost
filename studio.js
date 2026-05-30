@@ -96,7 +96,7 @@ async function loadSettings() {
     if (error) { console.error("loadSettings error:", error); return; }
 
     if (data) {
-        const promptEl = document.getElementById('customPrompt');
+        const promptEl = document.getElementById('custom_prompt');
         if (promptEl && data.custom_prompt) promptEl.value = data.custom_prompt;
 
         // Cache the custom dynamic workspace token locally inside the running app context
