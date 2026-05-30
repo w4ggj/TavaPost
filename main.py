@@ -129,27 +129,23 @@ async def create_zernio_profile(payload: ProfileCreateRequest):
 @app.get("/api/get-connect-url")
 async def get_connect_url(platform: str, profileId: Optional[str] = None):
     zernio_key = os.environ.get("ZERNIO_API_KEY")
-    if not zernio_key:
-        raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
-
-    active_profile = profileId or "6a1350634beb548c15895d64"
-    zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}"
-
-    params = {
-        "profileId": active_profile,
-        "redirect_url": "https://studio.tavaone.com/index.html"
-    }
-
-    headers = {
-        "Authorization": f"Bearer {zernio_key.strip()}",
-        "Content-Type": "application/json"
-    }
+    # ... (header setup) ...
 
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(zernio_endpoint, headers=headers, params=params)
+            data = response.json()
+            
+            # DEBUG: Log what Zernio actually returned
+            print(f"DEBUG: Zernio auth response: {data}")
+            
             if response.status_code == 200:
-                return response.json()
+                # If Zernio uses a different key name like 'url' instead of 'authUrl', 
+                # you must map it here:
+                if 'authUrl' not in data:
+                    # Provide a fallback or fix the key name
+                    return {"authUrl": data.get("url") or data.get("authorization_url")}
+                return data
             raise HTTPException(status_code=response.status_code, detail=f"Zernio Error: {response.text}")
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
