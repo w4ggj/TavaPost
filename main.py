@@ -1,4 +1,4 @@
-# TavaPost Studio Backend API Node // Ver 2.2.0
+# TavaPost Studio Backend API Node // Ver 2.2.1
 import os
 import io
 import httpx
@@ -33,10 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ─── MODELS ───────────────────────────────────────────────────────────────────
-
-class AdminRequest(BaseModel):
-    target_user_id: str
+# ─── MODELS (ALL UNIFIED AT TOP FOR PYTHON TYPE PARSING) ──────────────────────
 
 class CheckoutRequest(BaseModel):
     price_id: str
@@ -49,10 +46,22 @@ class PostRequest(BaseModel):
     image_url: str
     caption: str
     platforms: List[PlatformTarget]
-    profile_id: Optional[str] = None  # Added explicitly to capture dynamic routing tables
+    profile_id: Optional[str] = None
 
 class ProfileCreateRequest(BaseModel):
     user_id: str
+
+class AdminRequest(BaseModel):
+    target_user_id: str
+
+class UpdateTierRequest(BaseModel):
+    target_user_id: str
+    new_tier: str
+
+class CreateUserRequest(BaseModel):
+    email: str
+    password: str
+    tier: str
 
 # ─── HEALTH ───────────────────────────────────────────────────────────────────
 
@@ -86,14 +95,12 @@ async def create_zernio_profile(payload: ProfileCreateRequest):
         "Content-Type": "application/json"
     }
     
-    # Structure the programmatic name to separate operators inside your master Zernio hub
     body = {
         "name": f"TavaOne Profile Stack // User ID: {payload.user_id}"
     }
 
     async with httpx.AsyncClient() as client:
         try:
-            # 1. Server-to-server create request to Zernio
             zernio_resp = await client.post("https://zernio.com/api/v1/profiles", json=body, headers=headers, timeout=15.0)
             if zernio_resp.status_code not in [200, 201]:
                 raise HTTPException(status_code=zernio_resp.status_code, detail=f"Zernio workspace rejection: {zernio_resp.text}")
@@ -104,12 +111,10 @@ async def create_zernio_profile(payload: ProfileCreateRequest):
             if not new_profile_id:
                 raise HTTPException(status_code=502, detail="Zernio profile creation succeeded but returned an empty ID token.")
 
-            # 2. Write the new profile identifier securely directly into your user metadata matrix inside Supabase
             db_update = {
                 "user_id": payload.user_id,
                 "zernio_profile_id": new_profile_id
             }
-            # Upsert will safely merge this value into their existing setting row (like custom prompts) without wiping them
             supabase_admin.table('user_settings').upsert(db_update).execute()
 
             return {"zernio_profile_id": new_profile_id}
@@ -125,7 +130,6 @@ async def get_connect_url(platform: str, profileId: Optional[str] = None):
     if not zernio_key:
         raise HTTPException(status_code=500, detail="Missing ZERNIO_API_KEY config.")
 
-    # Dynamically inject the incoming operator's custom profile workspace key passed down from studio.js
     active_profile = profileId or "6a1350634beb548c15895d64"
     zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}"
 
@@ -167,6 +171,8 @@ async def get_accounts():
             raise HTTPException(status_code=response.status_code, detail=response.text)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+# ─── CAPTION GENERATOR PIPELINE ───────────────────────────────────────────────
 
 @app.post("/generate-draft")
 async def generate_draft(
@@ -266,7 +272,6 @@ async def publish_post(payload: PostRequest):
         "Content-Type": "application/json"
     }
 
-    # Dynamic fallback checks to make sure the target payload matches the user's specific profile box
     active_profile = payload.profile_id or "6a1350634beb548c15895d64"
 
     body = {
@@ -294,7 +299,7 @@ async def publish_post(payload: PostRequest):
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Publishing failed: {str(e)}")
 
-# ─── STRIPE ───────────────────────────────────────────────────────────────────
+# ─── STRIPE SUB SERVICES ──────────────────────────────────────────────────────
 
 @app.post("/create-checkout-session")
 async def create_checkout_session(request: CheckoutRequest):
@@ -334,18 +339,9 @@ async def stripe_webhook(request: Request):
 
     return {"status": "success"}
 
-# ─── ADMIN ────────────────────────────────────────────────────────────────────
+# ─── ADMIN SYSTEM METHODS ─────────────────────────────────────────────────────
 
 ADMIN_SECRET = os.environ.get("ADMIN_SECRET_KEY", "tava-admin-998877")
-
-class UpdateTierRequest(BaseModel):
-    target_user_id: str
-    new_tier: str
-
-class CreateUserRequest(BaseModel):
-    email: str
-    password: str
-    tier: str
 
 @app.post("/admin/create-user")
 async def create_user(request: CreateUserRequest, x_admin_secret: str = Header(...)):
