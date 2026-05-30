@@ -131,7 +131,7 @@ async def get_connect_url(platform: str, profileId: str):
     headers = {"Authorization": f"Bearer {zernio_key.strip()}"}
     
     redirect_url = "https://studio.tavaone.com/"  # ← sends user back here after auth
-    zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profileId}&redirectUri={redirect_uri}"
+    zernio_endpoint = f"https://zernio.com/api/v1/connect/{platform}?profileId={profileId}&redirectUri={redirect_url}"
     
     # Retry loop — Zernio has a propagation delay after profile creation.
     # A newly created profile may return 404 for 1-5 seconds. Retry before giving up.
